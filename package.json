@@ -1,0 +1,67 @@
+{
+  "name": "blockly-nominal-connection-checker",
+  "version": "0.0.0",
+  "description": "A Blockly plugin for creating more advanced connection checks, targeted at nominally typed languages.",
+  "scripts": {
+    "audit:fix": "blockly-scripts auditFix",
+    "build": "blockly-scripts build",
+    "clean": "blockly-scripts clean",
+    "dist": "blockly-scripts build prod",
+    "lint": "blockly-scripts lint",
+    "predeploy": "blockly-scripts predeploy",
+    "prepublishOnly": "npm run clean && npm run dist",
+    "start": "blockly-scripts start",
+    "test": "blockly-scripts test"
+  },
+  "main": "./dist/index.js",
+  "module": "./src/index.js",
+  "unpkg": "./dist/index.js",
+  "author": "",
+  "private": true,
+  "keywords": [
+    "blockly",
+    "blockly-plugin",
+    "nominal-conneciton-checker",
+    "connection-checker",
+    "type-checker"
+  ],
+  "homepage": "git@github.com:BeksOmega/nominal-connection-checker/tree/main",
+  "bugs": {
+    "url": "git@github.com:BeksOmega/nominal-connection-checker/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:BeksOmega/nominal-connection-checker.git",
+    "directory": "test"
+  },
+  "license": "MIT",
+  "directories": {
+    "dist": "dist",
+    "src": "src"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "devDependencies": {
+    "@blockly/dev-scripts": "^1.2.10",
+    "@blockly/dev-tools": "^2.6.1",
+    "blockly": "^3.0.0",
+    "typescript": "^4.4.3"
+  },
+  "peerDependencies": {
+    "blockly": "3.0.0 - 7.0.0"
+  },
+  "publishConfig": {},
+  "eslintConfig": {
+    "extends": "@blockly/eslint-config"
+  },
+  "engines": {
+    "node": ">=8.17.0"
+  },
+  "browserslist": [
+    "defaults",
+    "IE 11",
+    "IE_Mob 11"
+  ]
+}

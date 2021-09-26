@@ -4,9 +4,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-/**
- * Represents an instance of a type.
- */
 export class TypeInstantiation {
   readonly name: string;
   readonly isGeneric: boolean;
@@ -14,9 +11,9 @@ export class TypeInstantiation {
   readonly hasParams: boolean;
 
   constructor(
-    name: string,
-    isGeneric: boolean = false,
-    params: TypeInstantiation[] = []
+      name: string,
+      isGeneric = false,
+      params: TypeInstantiation[] = []
   ) {
     this.name = name;
     this.isGeneric = isGeneric;
@@ -37,7 +34,7 @@ export class TypeInstantiation {
 
   /**
    * Returns a new type instance which has the an identical name, generic
-   * status, and paramters to this type instance.
+   * status, and parameters to this type instance.
    */
   clone(): TypeInstantiation {
     return new TypeInstantiation(

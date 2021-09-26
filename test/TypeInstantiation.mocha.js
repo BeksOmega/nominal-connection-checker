@@ -36,8 +36,8 @@ suite('TypeStructure', function() {
     });
 
     test('identical generics are equal', function() {
-      const a = new TypeInstantiation('t');
-      const b = new TypeInstantiation('t');
+      const a = new TypeInstantiation('test', true);
+      const b = new TypeInstantiation('test', true);
 
       assert.isTrue(
           a.equals(b),
@@ -45,8 +45,8 @@ suite('TypeStructure', function() {
     });
 
     test('different generics are not equal', function() {
-      const a = new TypeInstantiation('t');
-      const b = new TypeInstantiation('g');
+      const a = new TypeInstantiation('test', true);
+      const b = new TypeInstantiation('test2', true);
 
       assert.isFalse(
           a.equals(b),
@@ -54,50 +54,70 @@ suite('TypeStructure', function() {
     });
 
     test('differently cased generics are not equal', function() {
-      const a = new TypeInstantiation('t');
-      const b = new TypeInstantiation('T');
+      const a = new TypeInstantiation('test', true);
+      const b = new TypeInstantiation('TEST', true);
 
       assert.isFalse(
           a.equals(b),
           'Expected generic TypeInstantiations with different casing to not be equal');
     });
 
+    test('generics and non-generics are not equal', function() {
+      const a = new TypeInstantiation('test', true);
+      const b = new TypeInstantiation('test', false);
+
+      assert.isFalse(
+          a.equals(b),
+          'Expected a generic and a non-generic to not be equal');
+    })
+
     test('identical params are equal', function() {
       const p1A = new TypeInstantiation('p1');
       const p1B = new TypeInstantiation('p1');
       const p2A = new TypeInstantiation('p2');
       const p2B = new TypeInstantiation('p2');
-      const a = new TypeInstantiation('test', [p1A, p2A]);
-      const b = new TypeInstantiation('test', [p1B, p2B]);
+      const a = new TypeInstantiation('test', false, [p1A, p2A]);
+      const b = new TypeInstantiation('test', false, [p1B, p2B]);
 
       assert.isTrue(
           a.equals(b),
           'Expected TypeInstantiations with identical parameters to be equal');
     });
 
-    test('differently named params are not equal', function() {
-      const p1 = new TypeInstantiation('p1');
-      const p2 = new TypeInstantiation('p2');
-      const p3 = new TypeInstantiation('p3');
-      const p4 = new TypeInstantiation('p4');
-      const a = new TypeInstantiation('test', [p1, p2]);
-      const b = new TypeInstantiation('test', [p3, p4]);
-
-      assert.isFalse(
-          a.equals(b),
-          'Expected TypeInstantiations with different parameter names to not be equal');
-    });
-
     test('different param counts are not equal', function() {
       const p1A = new TypeInstantiation('p1');
       const p1B = new TypeInstantiation('p1');
       const p2A = new TypeInstantiation('p2');
-      const a = new TypeInstantiation('test', [p1A, p2A]);
-      const b = new TypeInstantiation('test', [p1B]);
+      const a = new TypeInstantiation('test', false, [p1A, p2A]);
+      const b = new TypeInstantiation('test', false, [p1B]);
 
       assert.isFalse(
           a.equals(b),
           'Expected TypeInstantiations with different numbers of parameters to not be equal');
     });
   });
+
+  suite('cloning', function() {
+    test('cloning a simple explicit type', function() {
+      const t = new TypeInstantiation('test');
+      const c = t.clone();
+
+      assert.deepEqual(c, t, 'Expected the clone to deeply equal the original');
+    });
+
+    test('cloning a generic type', function() {
+      const t = new TypeInstantiation('test', true);
+      const c = t.clone();
+
+      assert.deepEqual(c, t, 'Expected the clone to deeply equal the original');
+    });
+
+    test('cloning a parameterized type', function() {
+      const p = new TypeInstantiation('parameter')
+      const t = new TypeInstantiation('test', false, [p]);
+      const c = t.clone();
+
+      assert.deepEqual(c, t, 'Expected the clone to deeply equal the original');
+    });
+  })
 });

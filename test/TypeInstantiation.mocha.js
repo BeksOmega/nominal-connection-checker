@@ -119,5 +119,22 @@ suite('TypeStructure', function() {
 
       assert.deepEqual(c, t, 'Expected the clone to deeply equal the original');
     });
+  });
+
+  suite('having params', function() {
+    test('having params', function() {
+      const p = new TypeInstantiation('p');
+      const t = new TypeInstantiation('test', false, [p]);
+
+      assert.isTrue(
+          t.hasParams, 'Expected the TypeInstantiation to have params');
+    });
+
+    test('not having params', function() {
+      const t = new TypeInstantiation('test');
+
+      assert.isFalse(
+          t.hasParams, 'Expected the TypeInstantiation to not have params');
+    });
   })
 });

@@ -6,6 +6,6 @@
     "lib": ["es6", "dom"]
   },
   "include": [
-    "src", "test"
-  ],
+    "src", "test",
+  ]
 }

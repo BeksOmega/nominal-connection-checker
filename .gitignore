@@ -21,3 +21,6 @@ gh-pages/examples
 
 # Optional npm cache directory
 .npm
+
+# stryker temp files
+.stryker-tmp

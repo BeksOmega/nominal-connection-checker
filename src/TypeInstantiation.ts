@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: MIT
  */
 
+/**
+ * Represents an instance of a type.
+ */
 export class TypeInstantiation {
   readonly name: string;
   readonly isGeneric: boolean;
@@ -21,6 +24,10 @@ export class TypeInstantiation {
     this.hasParams = !!params.length;
   }
 
+  /**
+   * Returns true if this type instance has the same name, generic status, and
+   * parameters of the provided type instance. Otherwise false.
+   */
   equals(b: TypeInstantiation): boolean {
     return this.name === b.name &&
         this.isGeneric === b.isGeneric &&
@@ -28,6 +35,10 @@ export class TypeInstantiation {
         this.params.every((p, i) => p.equals(b.params[i]));
   }
 
+  /**
+   * Returns a new type instance which has the an identical name, generic
+   * status, and paramters to this type instance.
+   */
   clone(): TypeInstantiation {
     return new TypeInstantiation(
         this.name, this.isGeneric, this.params.map(p => p.clone()));

@@ -3,6 +3,7 @@
  * Copyright 2021 Beka Westberg
  * SPDX-License-Identifier: MIT
  */
+
 import {TypeDefinition} from './TypeDefinition';
 import {TypeInstantiation} from './TypeInstantiation';
 

@@ -6,7 +6,7 @@
 
 export interface ParameterDefinition {
   readonly name: string;
-  readonly variance: Variance
+  readonly variance: Variance;
 }
 
 enum Variance {

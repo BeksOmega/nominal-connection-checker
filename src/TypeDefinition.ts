@@ -7,20 +7,19 @@
 import {ParameterDefinition} from './ParameterDefinition';
 import {TypeHierarchy} from './TypeHierarchy';
 import {TypeInstantiation} from './TypeInstantiation';
-import {IncompatibleType} from "./exceptions";
+import {IncompatibleType} from './exceptions';
 
 export class TypeDefinition {
-  private hierarchy: TypeHierarchy;
-  readonly name: string;
   private readonly parents_: TypeInstantiation[] = [];
   private readonly children_: TypeInstantiation[] = [];
   private readonly ancestors_: TypeInstantiation[] = [];
   private readonly descendants_: TypeInstantiation[] = [];
   private readonly params_: ParameterDefinition[] = [];
 
-  constructor(hierarchy: TypeHierarchy, name: string) {
-    this.hierarchy = hierarchy;
-    this.name = name;
+  constructor(
+      readonly hierarchy: TypeHierarchy,
+      readonly name: string
+  ) {
     this.ancestors_.push(this.createInstance());
     this.descendants_.push(this.createInstance());
   }

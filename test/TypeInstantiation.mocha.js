@@ -69,7 +69,7 @@ suite('TypeStructure', function() {
       assert.isFalse(
           a.equals(b),
           'Expected a generic and a non-generic to not be equal');
-    })
+    });
 
     test('identical params are equal', function() {
       const p1A = new TypeInstantiation('p1');
@@ -113,7 +113,7 @@ suite('TypeStructure', function() {
     });
 
     test('cloning a parameterized type', function() {
-      const p = new TypeInstantiation('parameter')
+      const p = new TypeInstantiation('parameter');
       const t = new TypeInstantiation('test', false, [p]);
       const c = t.clone();
 
@@ -136,5 +136,5 @@ suite('TypeStructure', function() {
       assert.isFalse(
           t.hasParams, 'Expected the TypeInstantiation to not have params');
     });
-  })
+  });
 });

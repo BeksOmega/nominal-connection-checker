@@ -57,16 +57,17 @@ suite('TypeDefinition', function() {
       assert.throws(
           () => cd.addParent(pi),
           IncompatibleType,
-          '',
+          /The type instance .* is incompatible with the given TypeHierarchy/,
           'Expected adding a nonexistent parent to throw an IncompatibleType error');
     });
 
     test('adding a parent twice only creates one parent', function() {
       const h = new TypeHierarchy();
       const cd = h.addTypeDef('c');
-      h.addTypeDef('p');
+      const pd = h.addTypeDef('p');
       const pi1 = new TypeInstantiation('p');
       const pi2 = new TypeInstantiation('p');
+      const ci = new TypeInstantiation('c')
       cd.addParent(pi1);
 
       cd.addParent(pi2);
@@ -75,6 +76,10 @@ suite('TypeDefinition', function() {
           cd.parents.reduce((acc, t) => acc + (t.equals(pi1) ? 1 : 0), 0),
           1,
           'Expected the parent to only exist once');
+      assert.equal(
+          pd.children.reduce((acc, t) => acc + (t.equals(ci) ? 1 : 0), 0),
+          1,
+          'Expected the child to only exist once');
     });
 
     test('adding a parent with a parent creates an ancestor', function() {

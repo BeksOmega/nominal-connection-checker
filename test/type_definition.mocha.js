@@ -82,7 +82,7 @@ suite('TypeDefinition', function() {
           'Expected the child to only exist once');
     });
 
-    test('adding a parent with a parent creates an ancestor', function() {
+    test('adding a parent with a parent creates an ancestor and a descendant', function() {
       const h = new TypeHierarchy();
       const td = h.addTypeDef('t');
       const pd = h.addTypeDef('p');

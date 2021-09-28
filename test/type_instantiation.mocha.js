@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import {TypeInstantiation} from '../src/TypeInstantiation';
+import {TypeInstantiation} from '../src/type_instantiation';
 import {assert} from 'chai';
 
 suite('TypeStructure', function() {

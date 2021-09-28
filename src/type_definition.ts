@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: MIT
  */
 
-import {ParameterDefinition} from './ParameterDefinition';
-import {TypeHierarchy} from './TypeHierarchy';
-import {TypeInstantiation} from './TypeInstantiation';
+import {ParameterDefinition} from './parameter_definition';
+import {TypeHierarchy} from './type_hierarchy';
+import {TypeInstantiation} from './type_instantiation';
 import {IncompatibleType} from './exceptions';
 
 export class TypeDefinition {

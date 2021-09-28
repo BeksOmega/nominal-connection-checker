@@ -5,9 +5,9 @@
  */
 
 import {IncompatibleType} from '../src/exceptions';
-import {TypeDefinition} from '../src/TypeDefinition';
-import {TypeHierarchy} from '../src/TypeHierarchy';
-import {TypeInstantiation} from '../src/TypeInstantiation';
+import {TypeDefinition} from '../src/type_definition';
+import {TypeHierarchy} from '../src/type_hierarchy';
+import {TypeInstantiation} from '../src/type_instantiation';
 import {assert} from 'chai';
 
 suite('TypeDefinition', function() {

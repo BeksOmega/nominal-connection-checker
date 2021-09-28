@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-import {TypeDefinition} from './TypeDefinition';
-import {TypeInstantiation} from './TypeInstantiation';
+import {TypeDefinition} from './type_definition';
+import {TypeInstantiation} from './type_instantiation';
 
 export class TypeHierarchy {
   private typeDefsMap = new Map();

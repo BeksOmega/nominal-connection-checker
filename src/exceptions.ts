@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import {TypeInstantiation} from './TypeInstantiation';
+import {TypeInstantiation} from './type_instantiation';
 
 export class IncompatibleType extends Error {
   constructor(t: TypeInstantiation) {

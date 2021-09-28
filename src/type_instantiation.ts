@@ -5,19 +5,13 @@
  */
 
 export class TypeInstantiation {
-  readonly name: string;
-  readonly isGeneric: boolean;
-  readonly params: readonly TypeInstantiation[];
   readonly hasParams: boolean;
 
   constructor(
-      name: string,
-      isGeneric = false,
-      params: TypeInstantiation[] = []
+      readonly name: string,
+      readonly isGeneric = false,
+      readonly params: readonly TypeInstantiation[] = []
   ) {
-    this.name = name;
-    this.isGeneric = isGeneric;
-    this.params = params;
     this.hasParams = !!params.length;
   }
 

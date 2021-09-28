@@ -8,7 +8,7 @@ import {TypeDefinition} from './type_definition';
 import {TypeInstantiation} from './type_instantiation';
 
 export class TypeHierarchy {
-  private typeDefsMap = new Map();
+  private readonly typeDefsMap = new Map();
 
   addTypeDef(n: string) {
     const d = new TypeDefinition(this, n)

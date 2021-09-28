@@ -24,7 +24,7 @@ export class TypeHierarchy {
    * Returns the type definition with the given name if it exists, undefined
    * otherwise.
    */
-  getTypeDef(n: string) {
+  getTypeDef(n: string): TypeDefinition {
     return this.typeDefsMap.get(n);
   }
 

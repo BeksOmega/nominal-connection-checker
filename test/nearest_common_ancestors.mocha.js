@@ -25,8 +25,15 @@ suite('Nearest common ancestors', function() {
       chai.assert.isTrue(aas.every((aa, i) => aa.equals(eas[i])), msg)
     }
 
+    test('not being finalized throws errors', function() {
+      const h = new TypeHierarchy();
+
+      assert.throws(h.nearestCommonAncestors());
+    });
+
     test('nca of no types is null', function() {
       const h = new TypeHierarchy();
+      h.finalize();
 
       assert.isNull(
           h.nearestCommonAncestors(),
@@ -36,6 +43,7 @@ suite('Nearest common ancestors', function() {
     test('nca of one type is itself', function() {
       const h = new TypeHierarchy();
       h.addTypeDef('t');
+      h.finalize();
       const ti = new TypeInstantiation('t')
 
       assertNearestCommonAncestors(
@@ -48,6 +56,7 @@ suite('Nearest common ancestors', function() {
       h.addTypeDef('b');
       const ai = new TypeInstantiation('a')
       const bi = new TypeInstantiation('b')
+      h.finalize();
 
       assert.isNull(
           h.nearestCommonAncestors(ai, bi),
@@ -59,6 +68,7 @@ suite('Nearest common ancestors', function() {
       h.addTypeDef('t');
       const ti1 = new TypeInstantiation('t')
       const ti2 = new TypeInstantiation('t')
+      h.finalize();
 
       assertNearestCommonAncestors(
           h, [ti1, ti2], [ti1],
@@ -72,6 +82,7 @@ suite('Nearest common ancestors', function() {
       const ti = new TypeInstantiation('t')
       const pi = new TypeInstantiation('p');
       td.addParent(pi);
+      h.finalize();
 
       assertNearestCommonAncestors(
           h, [ti, pi], [pi],
@@ -88,6 +99,7 @@ suite('Nearest common ancestors', function() {
       const gpi = new TypeInstantiation('gp');
       pd.addParent(gpi);
       td.addParent(pi);
+      h.finalize();
 
       assertNearestCommonAncestors(
           h, [ti, gpi], [gpi],
@@ -105,6 +117,7 @@ suite('Nearest common ancestors', function() {
           const gpi = new TypeInstantiation('gp');
           pd.addParent(gpi);
           td.addParent(pi);
+          h.finalize();
 
           assertNearestCommonAncestors(
               h, [ti, pi, gpi], [gpi],
@@ -121,6 +134,7 @@ suite('Nearest common ancestors', function() {
       const pi = new TypeInstantiation('p')
       ad.addParent(pi);
       bd.addParent(pi);
+      h.finalize();
 
       assertNearestCommonAncestors(
           h, [ai, bi], [pi],
@@ -139,6 +153,7 @@ suite('Nearest common ancestors', function() {
       const pi = new TypeInstantiation('p')
       ad.addParent(pi);
       bd.addParent(pi);
+      h.finalize();
 
       assertNearestCommonAncestors(
           h, [ci, bi, ai], [pi],
@@ -161,6 +176,7 @@ suite('Nearest common ancestors', function() {
       pbd.addParent(gpi);
       cad.addParent(pai);
       cbd.addParent(pbi);
+      h.fianlize();
 
       assertNearestCommonAncestors(
           h, [cai, cbi], [gpi],
@@ -180,6 +196,7 @@ suite('Nearest common ancestors', function() {
       pad.addParent(gpi);
       pbd.addParent(gpi);
       cd.addParent(pai);
+      h.finalize();
 
       assertNearestCommonAncestors(
           h, [ci, pbi], [gpi],
@@ -201,6 +218,7 @@ suite('Nearest common ancestors', function() {
           cad.addParent(pbi);
           cbd.addParent(pai);
           cbd.addParent(pbi);
+          h.finalize();
 
           assertNearestCommonAncestors(
               h, [cai, cbi], [pai, pbi],
@@ -228,6 +246,7 @@ suite('Nearest common ancestors', function() {
           cbd.addParent(pbi);
           cbd.addParent(pci);
           cbd.addParent(pdi);
+          h.finalize();
 
           assertNearestCommonAncestors(
               h, [cai, cbi], [pbi, pci],
@@ -274,6 +293,8 @@ suite('Nearest common ancestors', function() {
         yd.addParent(vi);
         yd.addParent(zi);
         xd.addParent(zi);
+
+        h.finalize();
 
         return h;
       }

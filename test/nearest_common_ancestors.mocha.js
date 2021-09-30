@@ -7,8 +7,10 @@
 import {TypeHierarchy} from '../src/type_hierarchy';
 import {TypeInstantiation} from '../src/type_instantiation';
 import {assert} from 'chai';
+import {NotFinalized} from '../src/exceptions';
 
 suite('Nearest common ancestors', function() {
+  // TODO: Test for three siblings.
   suite('basic explicit nearest common ancestors', function() {
     /**
      * Asserts that the nearest common ancestors of the types ts are the
@@ -21,22 +23,26 @@ suite('Nearest common ancestors', function() {
      * @param {string} msg The message to include in the assertion.
      */
     function assertNearestCommonAncestors(h, ts, eas, msg) {
-      const aas = h.getNearestCommonAncestors(ts);
-      chai.assert.isTrue(aas.every((aa, i) => aa.equals(eas[i])), msg)
+      const aas = h.getNearestCommonAncestors(...ts);
+      assert.equal(aas.length, eas.length, msg);
+      assert.isTrue(aas.every((aa, i) => aa.equals(eas[i])), msg)
     }
 
     test('not being finalized throws errors', function() {
       const h = new TypeHierarchy();
 
-      assert.throws(h.nearestCommonAncestors());
+      assert.throws(
+          () => h.getNearestCommonAncestors(),
+          'The TypeHierarchy has not been finalized',
+          NotFinalized);
     });
 
-    test('nca of no types is null', function() {
+    test('nca of no types is empty', function() {
       const h = new TypeHierarchy();
       h.finalize();
 
-      assert.isNull(
-          h.nearestCommonAncestors(),
+      assert.isEmpty(
+          h.getNearestCommonAncestors(),
           'Expected the nca of no types to be null');
     });
 
@@ -50,7 +56,7 @@ suite('Nearest common ancestors', function() {
           h, [ti], [ti], 'Expected the nca of one type to be itself');
     });
 
-    test('nca of two unrelated types is null', function() {
+    test('nca of two unrelated types is empty', function() {
       const h = new TypeHierarchy();
       h.addTypeDef('a');
       h.addTypeDef('b');
@@ -58,8 +64,8 @@ suite('Nearest common ancestors', function() {
       const bi = new TypeInstantiation('b')
       h.finalize();
 
-      assert.isNull(
-          h.nearestCommonAncestors(ai, bi),
+      assert.isEmpty(
+          h.getNearestCommonAncestors(ai, bi),
           'Expected the nca of two unrelated types to be null');
     });
 
@@ -153,6 +159,7 @@ suite('Nearest common ancestors', function() {
       const pi = new TypeInstantiation('p')
       ad.addParent(pi);
       bd.addParent(pi);
+      cd.addParent(pi);
       h.finalize();
 
       assertNearestCommonAncestors(
@@ -176,7 +183,7 @@ suite('Nearest common ancestors', function() {
       pbd.addParent(gpi);
       cad.addParent(pai);
       cbd.addParent(pbi);
-      h.fianlize();
+      h.finalize();
 
       assertNearestCommonAncestors(
           h, [cai, cbi], [gpi],
@@ -306,7 +313,7 @@ suite('Nearest common ancestors', function() {
         const zi = new TypeInstantiation('z');
         const ui = new TypeInstantiation('u');
         assertNearestCommonAncestors(
-            h, [xi, yi], [zi, ui],
+            h, [xi, yi], [ui, zi],
             'Expected the ncas of X and Y to be Z and U')
       });
 
@@ -338,7 +345,7 @@ suite('Nearest common ancestors', function() {
         const wi = new TypeInstantiation('w');
         const ui = new TypeInstantiation('u');
         assertNearestCommonAncestors(
-            h, [xi, yi, vi], [wi, ui],
+            h, [xi, yi, vi], [ui, wi],
             'Expected the ncas of X, Y and V to be W and U')
       });
 

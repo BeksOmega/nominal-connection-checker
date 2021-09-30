@@ -16,12 +16,13 @@ export class TypeHierarchy {
   private readonly typeDefsMap: Map<string, TypeDefinition> = new Map();
 
   /**
-   * A map of type names to maps of type names to lists of type names that are
-   * the nearest common ancestors of the two types. You can think of this like
-   * a two-dimensional array where both axes contain all of the type names.
+   * A map of type names to maps of type names to lists of TypeInstantiations
+   * that are the nearest common ancestors of the two types. You can think of
+   * this like a two-dimensional array where both axes contain all of the type
+   * names.
    *
    * A nearest common ancestor of two types x and y is defined as:
-   * An ancestor type of both x and y that has no descendant which  is also an
+   * An ancestor type of both x and y that has no descendant which is also an
    * ancestor of both x and y.
    */
   private readonly nearestCommonAncestors:
@@ -44,7 +45,7 @@ export class TypeHierarchy {
 
   /**
    * Initializes the nearestCommonAncestors graph so the nearest common
-   * ancestors of two types can be accessed inconstant time.
+   * ancestors of two types can be accessed in inconstant time.
    *
    * Implements the pre-processing algorithm defined in:
    * Czumaj, Artur, Miroslaw Kowaluk and and Andrzej Lingas. "Faster algorithms
@@ -69,8 +70,8 @@ export class TypeHierarchy {
 
   /**
    * Creates a map of type names to arrays of TypeInstantiations which are the
-   * nearest common ancestors of the type key and the type passed to this
-   * method.
+   * nearest common ancestors of the type represented by the name and the type
+   * passed to this method.
    */
   private createNearestCommonAncestorMap(
       t1: TypeDefinition
@@ -93,8 +94,8 @@ export class TypeHierarchy {
   }
 
   /**
-   * This generates a callback which is meant to be passed to Array.filter().
-   * Removes any TypeInstantiations that also have descendants in the array.
+   * Returns a filter function which removes any TypeInstantiations that also
+   * have descendants in the array.
    */
   private removeDescendants() {
     return (t1, i, arr) =>

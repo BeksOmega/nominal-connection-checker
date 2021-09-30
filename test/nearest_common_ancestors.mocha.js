@@ -10,7 +10,6 @@ import {assert} from 'chai';
 import {NotFinalized} from '../src/exceptions';
 
 suite('Nearest common ancestors', function() {
-  // TODO: Test for three siblings.
   suite('basic explicit nearest common ancestors', function() {
     /**
      * Asserts that the nearest common ancestors of the types ts are the
@@ -25,7 +24,7 @@ suite('Nearest common ancestors', function() {
     function assertNearestCommonAncestors(h, ts, eas, msg) {
       const aas = h.getNearestCommonAncestors(...ts);
       assert.equal(aas.length, eas.length, msg);
-      assert.isTrue(aas.every((aa, i) => aa.equals(eas[i])), msg)
+      assert.isTrue(aas.every((aa, i) => aa.equals(eas[i])), msg);
     }
 
     test('not being finalized throws errors', function() {
@@ -50,7 +49,7 @@ suite('Nearest common ancestors', function() {
       const h = new TypeHierarchy();
       h.addTypeDef('t');
       h.finalize();
-      const ti = new TypeInstantiation('t')
+      const ti = new TypeInstantiation('t');
 
       assertNearestCommonAncestors(
           h, [ti], [ti], 'Expected the nca of one type to be itself');
@@ -60,8 +59,8 @@ suite('Nearest common ancestors', function() {
       const h = new TypeHierarchy();
       h.addTypeDef('a');
       h.addTypeDef('b');
-      const ai = new TypeInstantiation('a')
-      const bi = new TypeInstantiation('b')
+      const ai = new TypeInstantiation('a');
+      const bi = new TypeInstantiation('b');
       h.finalize();
 
       assert.isEmpty(
@@ -72,8 +71,8 @@ suite('Nearest common ancestors', function() {
     test('nca of a type and itself is itself', function() {
       const h = new TypeHierarchy();
       h.addTypeDef('t');
-      const ti1 = new TypeInstantiation('t')
-      const ti2 = new TypeInstantiation('t')
+      const ti1 = new TypeInstantiation('t');
+      const ti2 = new TypeInstantiation('t');
       h.finalize();
 
       assertNearestCommonAncestors(
@@ -84,8 +83,8 @@ suite('Nearest common ancestors', function() {
     test('nca of a type and its parent is the parent', function() {
       const h = new TypeHierarchy();
       const td = h.addTypeDef('t');
-      h.addTypeDef('p')
-      const ti = new TypeInstantiation('t')
+      h.addTypeDef('p');
+      const ti = new TypeInstantiation('t');
       const pi = new TypeInstantiation('p');
       td.addParent(pi);
       h.finalize();
@@ -98,9 +97,9 @@ suite('Nearest common ancestors', function() {
     test('nca of a type and its grandparent is the grandparent', function() {
       const h = new TypeHierarchy();
       const td = h.addTypeDef('t');
-      const pd = h.addTypeDef('p')
-      h.addTypeDef('gp')
-      const ti = new TypeInstantiation('t')
+      const pd = h.addTypeDef('p');
+      h.addTypeDef('gp');
+      const ti = new TypeInstantiation('t');
       const pi = new TypeInstantiation('p');
       const gpi = new TypeInstantiation('gp');
       pd.addParent(gpi);
@@ -116,9 +115,9 @@ suite('Nearest common ancestors', function() {
         function() {
           const h = new TypeHierarchy();
           const td = h.addTypeDef('t');
-          const pd = h.addTypeDef('p')
-          h.addTypeDef('gp')
-          const ti = new TypeInstantiation('t')
+          const pd = h.addTypeDef('p');
+          h.addTypeDef('gp');
+          const ti = new TypeInstantiation('t');
           const pi = new TypeInstantiation('p');
           const gpi = new TypeInstantiation('gp');
           pd.addParent(gpi);
@@ -128,16 +127,16 @@ suite('Nearest common ancestors', function() {
           assertNearestCommonAncestors(
               h, [ti, pi, gpi], [gpi],
               'Expected the nca of a type and its grandparent to be the grandparent');
-        })
+        });
 
     test('nca of two siblings is their parent', function() {
       const h = new TypeHierarchy();
       const ad = h.addTypeDef('a');
       const bd = h.addTypeDef('b');
       h.addTypeDef('p');
-      const ai = new TypeInstantiation('a')
-      const bi = new TypeInstantiation('b')
-      const pi = new TypeInstantiation('p')
+      const ai = new TypeInstantiation('a');
+      const bi = new TypeInstantiation('b');
+      const pi = new TypeInstantiation('p');
       ad.addParent(pi);
       bd.addParent(pi);
       h.finalize();
@@ -153,10 +152,10 @@ suite('Nearest common ancestors', function() {
       const bd = h.addTypeDef('b');
       const cd = h.addTypeDef('c');
       h.addTypeDef('p');
-      const ai = new TypeInstantiation('a')
-      const bi = new TypeInstantiation('b')
-      const ci = new TypeInstantiation('c')
-      const pi = new TypeInstantiation('p')
+      const ai = new TypeInstantiation('a');
+      const bi = new TypeInstantiation('b');
+      const ci = new TypeInstantiation('c');
+      const pi = new TypeInstantiation('p');
       ad.addParent(pi);
       bd.addParent(pi);
       cd.addParent(pi);
@@ -260,6 +259,41 @@ suite('Nearest common ancestors', function() {
               'Expected the ncas two siblings with some shared parents to be the shared parents');
         });
 
+    test('ncas of three siblings with some shared parents is the shared parent',
+        function() {
+          const h = new TypeHierarchy();
+          h.addTypeDef('pa');
+          h.addTypeDef('pb');
+          h.addTypeDef('pc');
+          h.addTypeDef('pd');
+          h.addTypeDef('pe');
+          const cad = h.addTypeDef('ca');
+          const cbd = h.addTypeDef('cb');
+          const ccd = h.addTypeDef('cc');
+          const pai = new TypeInstantiation('pa');
+          const pbi = new TypeInstantiation('pb');
+          const pci = new TypeInstantiation('pc');
+          const pdi = new TypeInstantiation('pd');
+          const pei = new TypeInstantiation('pe');
+          const cai = new TypeInstantiation('ca');
+          const cbi = new TypeInstantiation('cb');
+          const cci = new TypeInstantiation('cc');
+          cad.addParent(pai);
+          cad.addParent(pbi);
+          cad.addParent(pci);
+          cbd.addParent(pbi);
+          cbd.addParent(pci);
+          cbd.addParent(pdi);
+          ccd.addParent(pci);
+          ccd.addParent(pdi);
+          ccd.addParent(pei);
+          h.finalize();
+
+          assertNearestCommonAncestors(
+              h, [cai, cbi, cci], [pci],
+              'Expected the ncas three siblings with some shared parents to be the share parent');
+        });
+
     /* All of these tests  use the follow graph. Children are below their
      * ancestors.
      *
@@ -314,7 +348,7 @@ suite('Nearest common ancestors', function() {
         const ui = new TypeInstantiation('u');
         assertNearestCommonAncestors(
             h, [xi, yi], [ui, zi],
-            'Expected the ncas of X and Y to be Z and U')
+            'Expected the ncas of X and Y to be Z and U');
       });
 
       test('nca of X, Y, and Z is Z', function() {
@@ -324,7 +358,7 @@ suite('Nearest common ancestors', function() {
         const zi = new TypeInstantiation('z');
         assertNearestCommonAncestors(
             h, [xi, yi, zi], [zi],
-            'Expected the nca of X, Y and Z to be Z')
+            'Expected the nca of X, Y and Z to be Z');
       });
 
       test('nca of X, Y, and W is W', function() {
@@ -334,7 +368,7 @@ suite('Nearest common ancestors', function() {
         const wi = new TypeInstantiation('w');
         assertNearestCommonAncestors(
             h, [xi, yi, wi], [wi],
-            'Expected the nca of X, Y and W to be W')
+            'Expected the nca of X, Y and W to be W');
       });
 
       test('ncas of X, Y, and V are W and U', function() {
@@ -346,10 +380,10 @@ suite('Nearest common ancestors', function() {
         const ui = new TypeInstantiation('u');
         assertNearestCommonAncestors(
             h, [xi, yi, vi], [ui, wi],
-            'Expected the ncas of X, Y and V to be W and U')
+            'Expected the ncas of X, Y and V to be W and U');
       });
 
-      test('nca of X, Y, and Q is U', function () {
+      test('nca of X, Y, and Q is U', function() {
         const h = createHierarchy();
         const xi = new TypeInstantiation('x');
         const yi = new TypeInstantiation('y');
@@ -357,7 +391,7 @@ suite('Nearest common ancestors', function() {
         const ui = new TypeInstantiation('u');
         assertNearestCommonAncestors(
             h, [xi, yi, qi], [ui],
-            'Expected the nca of X, Y and Q to be U')
+            'Expected the nca of X, Y and Q to be U');
       });
     });
   });

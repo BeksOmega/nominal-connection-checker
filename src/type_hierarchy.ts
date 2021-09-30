@@ -63,7 +63,7 @@ export class TypeHierarchy {
         unvisited.delete(t.name);
         this.nearestCommonAncestors.set(
             t.name, this.createNearestCommonAncestorMap(t));
-      })
+      });
     }
   }
 
@@ -98,8 +98,8 @@ export class TypeHierarchy {
    */
   private removeDescendants() {
     return (t1, i, arr) =>
-        arr.every(
-            (t2, j) => i == j || !this.getTypeDef(t1.name).hasDescendant(t2));
+      arr.every(
+          (t2, j) => i == j || !this.getTypeDef(t1.name).hasDescendant(t2));
   }
 
   /**
@@ -137,6 +137,9 @@ export class TypeHierarchy {
     return this.typeDefsMap.get(a.name).hasAncestor(b);
   }
 
+  /**
+   * Returns the nearest common ancestor(s) of the given types.
+   */
   getNearestCommonAncestors(
       ...types: TypeInstantiation[]
   ): TypeInstantiation[] {
@@ -150,6 +153,10 @@ export class TypeHierarchy {
         [types[0]]);
   }
 
+  /**
+   * Returns the nearest common ancestor(s) of the given type pair, as defined
+   * in the nearestCommonAncestors array.
+   */
   private getNearestCommonAncestorsOfPair(
       a: TypeInstantiation, b: TypeInstantiation) {
     return this.nearestCommonAncestors.get(a.name).get(b.name);

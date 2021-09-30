@@ -3,7 +3,8 @@
     "outDir": "build",
     "target": "es5",
     "sourceMap": true,
-    "lib": ["es6", "dom"]
+    "lib": ["es6", "dom"],
+    "downlevelIteration": true
   },
   "include": [
     "src", "test",

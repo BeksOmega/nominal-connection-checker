@@ -12,3 +12,9 @@ export class IncompatibleType extends Error {
         `The type instance ${t} is incompatible with the given TypeHierarchy`);
   }
 }
+
+export class NotFinalized extends Error {
+  constructor() {
+    super('The TypeHierarchy has not been finalized');
+  }
+}

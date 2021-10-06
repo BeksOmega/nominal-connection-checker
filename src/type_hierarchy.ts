@@ -99,7 +99,7 @@ export class TypeHierarchy {
           (t1: TypeDefinition, t2: TypeDefinition) => boolean,
       getDirectRelatives:
         (t: TypeDefinition) => readonly TypeInstantiation[],
-      getNearestCommonOfPair:
+      getNearestCommonsOfPair:
         (t1: TypeInstantiation, t2: TypeInstantiation) => TypeInstantiation[],
       removeNonNearestRelatives:
           (t: TypeInstantiation, i: number, a: TypeInstantiation[]) => boolean,
@@ -115,7 +115,7 @@ export class TypeHierarchy {
                 t,
                 typeIsNearestCommonOfPair,
                 getDirectRelatives,
-                getNearestCommonOfPair,
+                getNearestCommonsOfPair,
                 removeNonNearestRelatives));
       });
     }
@@ -132,7 +132,7 @@ export class TypeHierarchy {
         (t1: TypeDefinition, t2: TypeDefinition) => boolean,
       getDirectRelatives:
         (t: TypeDefinition) => readonly TypeInstantiation[],
-      getNearestCommonOfPair:
+      getNearestCommonsOfPair:
         (t1: TypeInstantiation, t2: TypeInstantiation) => TypeInstantiation[],
       removeNonNearestRelatives:
         (t: TypeInstantiation, i: number, a: TypeInstantiation[]) => boolean,
@@ -145,7 +145,7 @@ export class TypeHierarchy {
         map.set(
           t2.name,
           getDirectRelatives(t1)
-            .flatMap(pi => getNearestCommonOfPair(pi, t2.createInstance()))
+            .flatMap(pi => getNearestCommonsOfPair(pi, t2.createInstance()))
             .filter(removeDuplicates())
             .filter(removeNonNearestRelatives));
       }

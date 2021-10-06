@@ -13,7 +13,7 @@ suite('Nearest common ancestors', function() {
   suite('basic explicit nearest common ancestors', function() {
     /**
      * Asserts that the nearest common ancestors of the types ts are the
-     * ancestors as.
+     * ancestors eas.
      * @param {!TypeHierarchy} h The hierarchy to use to find the nearest common
      *     ancestors.
      * @param {!Array<TypeInstantiation>} ts The types to find the nearest
@@ -42,7 +42,7 @@ suite('Nearest common ancestors', function() {
 
       assert.isEmpty(
           h.getNearestCommonAncestors(),
-          'Expected the nca of no types to be null');
+          'Expected the nca of no types to be empty');
     });
 
     test('nca of one type is itself', function() {
@@ -65,7 +65,7 @@ suite('Nearest common ancestors', function() {
 
       assert.isEmpty(
           h.getNearestCommonAncestors(ai, bi),
-          'Expected the nca of two unrelated types to be null');
+          'Expected the nca of two unrelated types to be empty');
     });
 
     test('nca of a type and itself is itself', function() {
@@ -126,7 +126,7 @@ suite('Nearest common ancestors', function() {
 
           assertNearestCommonAncestors(
               h, [ti, pi, gpi], [gpi],
-              'Expected the nca of a type and its grandparent to be the grandparent');
+              'Expected the nca of a type, its parent, and its grandparent to be the grandparent');
         });
 
     test('nca of two siblings is their parent', function() {
@@ -291,7 +291,7 @@ suite('Nearest common ancestors', function() {
 
           assertNearestCommonAncestors(
               h, [cai, cbi, cci], [pci],
-              'Expected the ncas three siblings with some shared parents to be the share parent');
+              'Expected the ncas three siblings with some shared parents to be the shared parent');
         });
 
     /* All of these tests  use the follow graph. Children are below their

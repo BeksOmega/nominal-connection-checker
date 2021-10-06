@@ -69,12 +69,12 @@ export class TypeHierarchy {
 
   private initNearestCommonDescendants() {
     this.initNearestCommon(
-      this.nearestCommonDescendants,
-      (t, unvisited) => t.children.some(c => unvisited.has(c.name)),
-      (t1, t2) => t1.hasAncestor(t2.createInstance()),
-      (t) => t.children,
-      this.getNearestCommonDescendantsOfPair.bind(this),
-      this.removeAncestors());
+        this.nearestCommonDescendants,
+        (t, unvisited) => t.children.some(c => unvisited.has(c.name)),
+        (t1, t2) => t1.hasAncestor(t2.createInstance()),
+        (t) => t.children,
+        this.getNearestCommonDescendantsOfPair.bind(this),
+        this.removeAncestors());
   }
 
   /**
@@ -145,9 +145,9 @@ export class TypeHierarchy {
         map.set(
           t2.name,
           getDirectRelatives(t1)
-            .flatMap(pi => getNearestCommonsOfPair(pi, t2.createInstance()))
-            .filter(removeDuplicates())
-            .filter(removeNonNearestRelatives));
+              .flatMap(pi => getNearestCommonsOfPair(pi, t2.createInstance()))
+              .filter(removeDuplicates())
+              .filter(removeNonNearestRelatives));
       }
     });
     return map;
@@ -170,7 +170,7 @@ export class TypeHierarchy {
   private removeAncestors() {
     return (t1, i, arr) =>
       arr.every(
-        (t2, j) => i == j || !this.getTypeDef(t1.name).hasAncestor(t2));
+          (t2, j) => i == j || !this.getTypeDef(t1.name).hasAncestor(t2));
   }
 
   /**
@@ -222,7 +222,7 @@ export class TypeHierarchy {
   }
 
   getNearestCommonDescendants(
-    ...types: TypeInstantiation[]
+      ...types: TypeInstantiation[]
   ): TypeInstantiation[] {
     if (!this.finalized) throw new NotFinalized();
     if (types.length < 2) return types;
@@ -248,7 +248,7 @@ export class TypeHierarchy {
    * in the nearestCommonDescendants array.
    */
   private getNearestCommonDescendantsOfPair(
-    a: TypeInstantiation, b: TypeInstantiation) {
+      a: TypeInstantiation, b: TypeInstantiation) {
     return this.nearestCommonDescendants.get(a.name).get(b.name);
   }
 }

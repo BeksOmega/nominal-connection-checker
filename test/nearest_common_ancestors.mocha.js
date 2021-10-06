@@ -5,28 +5,31 @@
  */
 
 import {TypeHierarchy} from '../src/type_hierarchy';
-import {ExplicitInstantiation} from '../src/type_instantiation';
+import {
+  ExplicitInstantiation,
+  GenericInstantiation
+} from '../src/type_instantiation';
 import {assert} from 'chai';
 import {NotFinalized} from '../src/exceptions';
 
 suite('Nearest common ancestors', function() {
-  suite('basic explicit nearest common ancestors', function() {
-    /**
-     * Asserts that the nearest common ancestors of the types ts are the
-     * ancestors eas.
-     * @param {!TypeHierarchy} h The hierarchy to use to find the nearest common
-     *     ancestors.
-     * @param {!Array<ExplicitInstantiation>} ts The types to find the nearest
-     *     common ancestors of.
-     * @param {!Array<!ExplicitInstantiation>} eas The expected ancestors.
-     * @param {string} msg The message to include in the assertion.
-     */
-    function assertNearestCommonAncestors(h, ts, eas, msg) {
-      const aas = h.getNearestCommonAncestors(...ts);
-      assert.equal(aas.length, eas.length, msg);
-      assert.isTrue(aas.every((aa, i) => aa.equals(eas[i])), msg);
-    }
+  /**
+   * Asserts that the nearest common ancestors of the types ts are the
+   * ancestors eas.
+   * @param {!TypeHierarchy} h The hierarchy to use to find the nearest common
+   *     ancestors.
+   * @param {!Array<ExplicitInstantiation>} ts The types to find the nearest
+   *     common ancestors of.
+   * @param {!Array<!ExplicitInstantiation>} eas The expected ancestors.
+   * @param {string} msg The message to include in the assertion.
+   */
+  function assertNearestCommonAncestors(h, ts, eas, msg) {
+    const aas = h.getNearestCommonAncestors(...ts);
+    assert.equal(aas.length, eas.length, msg);
+    assert.isTrue(aas.every((aa, i) => aa.equals(eas[i])), msg);
+  }
 
+  suite('basic explicit nearest common ancestors', function() {
     test('not being finalized throws errors', function() {
       const h = new TypeHierarchy();
 
@@ -393,6 +396,36 @@ suite('Nearest common ancestors', function() {
             h, [xi, yi, qi], [ui],
             'Expected the nca of X, Y and Q to be U');
       });
+    });
+  });
+
+  suite('basic generic nearest common ancestors', function() {
+    test('nca of only generics is a generic', function() {
+      const h = new TypeHierarchy();
+      h.finalize();
+      const g1 = new GenericInstantiation('g1');
+      const g2 = new GenericInstantiation('g2');
+      const g3 = new GenericInstantiation('g3');
+      const g = new GenericInstantiation();
+
+      assertNearestCommonAncestors(
+          h, [g1, g2, g3], [g],
+          'Expected the nca of only generics to be a generic');
+    });
+
+    test('generics are otherwise ignored', function() {
+      const h = new TypeHierarchy();
+      const td = h.addTypeDef('t');
+      h.addTypeDef('p');
+      const ti = new ExplicitInstantiation('t');
+      const pi = new ExplicitInstantiation('p');
+      const gi = new GenericInstantiation('g');
+      td.addParent(pi);
+      h.finalize();
+
+      assertNearestCommonAncestors(
+          h, [ti, pi, gi], [pi],
+          'Expected generics to be ignored when included with explicits');
     });
   });
 });

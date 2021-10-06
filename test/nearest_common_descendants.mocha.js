@@ -5,7 +5,10 @@
  */
 
 import {TypeHierarchy} from '../src/type_hierarchy';
-import {ExplicitInstantiation} from '../src/type_instantiation';
+import {
+  ExplicitInstantiation,
+  GenericInstantiation
+} from '../src/type_instantiation';
 import {assert} from 'chai';
 import {NotFinalized} from '../src/exceptions';
 
@@ -390,6 +393,36 @@ suite('Nearest common descendants', function() {
             h, [xi, yi, qi], [ui],
             'Expected the ncd of X, Y and Q to be U');
       });
+    });
+  });
+
+  suite('basic generic nearest common ancestors', function() {
+    test('nca of only generics is a generic', function() {
+      const h = new TypeHierarchy();
+      h.finalize();
+      const g1 = new GenericInstantiation('g1');
+      const g2 = new GenericInstantiation('g2');
+      const g3 = new GenericInstantiation('g3');
+      const g = new GenericInstantiation();
+
+      assertNearestCommonDescendants(
+          h, [g1, g2, g3], [g],
+          'Expected the ncd of only generics to be a generic');
+    });
+
+    test('generics are otherwise ignored', function() {
+      const h = new TypeHierarchy();
+      h.addTypeDef('t');
+      const cd = h.addTypeDef('c');
+      const ti = new ExplicitInstantiation('t');
+      const ci = new ExplicitInstantiation('c');
+      const gi = new GenericInstantiation('g');
+      cd.addParent(ti);
+      h.finalize();
+
+      assertNearestCommonDescendants(
+          h, [ti, ci, gi], [ci],
+          'Expected generics to be ignored when included with explicits');
     });
   });
 });

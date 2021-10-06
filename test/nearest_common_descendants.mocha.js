@@ -396,7 +396,7 @@ suite('Nearest common descendants', function() {
     });
   });
 
-  suite('basic generic nearest common ancestors', function() {
+  suite('basic generic nearest common descendants', function() {
     test('nca of only generics is a generic', function() {
       const h = new TypeHierarchy();
       h.finalize();

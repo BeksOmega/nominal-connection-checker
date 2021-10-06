@@ -29,6 +29,19 @@ export class TypeHierarchy {
       Map<string, Map<string, TypeInstantiation[]>> = new Map();
 
   /**
+   * A map of type names to maps of type names to lists of TypeInstantiations
+   * that are the nearest common descendants of the two types. You can think of
+   * this like a two-dimensional array where both axes contain all of the type
+   * names.
+   *
+   * A nearest common descendant of two types x and y is defined as:
+   * A descendant type of both x and y that has no ancestor which is also an
+   * descendant of both x and y.
+   */
+  private readonly nearestCommonDescendants:
+    Map<string, Map<string, TypeInstantiation[]>> = new Map();
+
+  /**
    * Whether this type hierarchy has had finalize() called on it or not.
    */
   private finalized = false;
@@ -40,12 +53,34 @@ export class TypeHierarchy {
    */
   finalize() {
     this.initNearestCommonAncestors();
+    this.initNearestCommonDescendants();
     this.finalized = true;
   }
 
+  private initNearestCommonAncestors() {
+    this.initNearestCommon(
+        this.nearestCommonAncestors,
+        (t, unvisited) => t.parents.some(p => unvisited.has(p.name)),
+        (t1, t2) => t1.hasDescendant(t2.createInstance()),
+        (t) => t.parents,
+        this.getNearestCommonAncestorsOfPair.bind(this),
+        this.removeDescendants());
+  }
+
+  private initNearestCommonDescendants() {
+    this.initNearestCommon(
+      this.nearestCommonDescendants,
+      (t, unvisited) => t.children.some(c => unvisited.has(c.name)),
+      (t1, t2) => t1.hasAncestor(t2.createInstance()),
+      (t) => t.children,
+      this.getNearestCommonDescendantsOfPair.bind(this),
+      this.removeAncestors());
+  }
+
   /**
-   * Initializes the nearestCommonAncestors graph so the nearest common
-   * ancestors of two types can be accessed in inconstant time.
+   * Initializes the given nearestCommonMap so the nearest common
+   * relatives (ancestors/descendants) of two types can be accessed in
+   * constant time.
    *
    * Implements the pre-processing algorithm defined in:
    * Czumaj, Artur, Miroslaw Kowaluk and and Andrzej Lingas. "Faster algorithms
@@ -56,38 +91,63 @@ export class TypeHierarchy {
    * Operates in O(nm) where n is the number of nodes and m is the number of
    * edges.
    */
-  private initNearestCommonAncestors() {
+  private initNearestCommon(
+      nearestCommonMap: Map<string, Map<string, TypeInstantiation[]>>,
+      hasUnvisitedRelatives:
+          (t: TypeDefinition, u: Map<string, TypeDefinition>) => boolean,
+      typeIsNearestCommonOfPair:
+          (t1: TypeDefinition, t2: TypeDefinition) => boolean,
+      getDirectRelatives:
+        (t: TypeDefinition) => readonly TypeInstantiation[],
+      getNearestCommonOfPair:
+        (t1: TypeInstantiation, t2: TypeInstantiation) => TypeInstantiation[],
+      removeNonNearestRelatives:
+          (t: TypeInstantiation, i: number, a: TypeInstantiation[]) => boolean,
+  ) {
     const unvisited = new Map(this.typeDefsMap);
     while (unvisited.size) {
       unvisited.forEach((t: TypeDefinition) => {
-        if (t.parents.some(p => unvisited.has(p.name))) return;
+        if (hasUnvisitedRelatives(t, unvisited)) return;
         unvisited.delete(t.name);
-        this.nearestCommonAncestors.set(
-            t.name, this.createNearestCommonAncestorMap(t));
+        nearestCommonMap.set(
+            t.name,
+            this.createNearestCommonMap(
+                t,
+                typeIsNearestCommonOfPair,
+                getDirectRelatives,
+                getNearestCommonOfPair,
+                removeNonNearestRelatives));
       });
     }
   }
 
   /**
    * Creates a map of type names to arrays of TypeInstantiations which are the
-   * nearest common ancestors of the type represented by the name and the type
-   * passed to this method.
+   * nearest common ancestors/descendants of the type represented by the name
+   * and the type passed to this method.
    */
-  private createNearestCommonAncestorMap(
-      t1: TypeDefinition
-  ): Map<string, TypeInstantiation[]> {
+  private createNearestCommonMap(
+      t1,
+      typeIsNearestCommonOfPair:
+        (t1: TypeDefinition, t2: TypeDefinition) => boolean,
+      getDirectRelatives:
+        (t: TypeDefinition) => readonly TypeInstantiation[],
+      getNearestCommonOfPair:
+        (t1: TypeInstantiation, t2: TypeInstantiation) => TypeInstantiation[],
+      removeNonNearestRelatives:
+        (t: TypeInstantiation, i: number, a: TypeInstantiation[]) => boolean,
+  ) {
     const map = new Map();
     this.typeDefsMap.forEach((t2: TypeDefinition) => {
-      const t2i = t2.createInstance();
-      if (t1.hasDescendant(t2i)) {
+      if (typeIsNearestCommonOfPair(t1, t2)) {
         map.set(t2.name, [t1.createInstance()]);
       } else {
         map.set(
-            t2.name,
-            t1.parents
-                .flatMap(pi => this.getNearestCommonAncestorsOfPair(pi, t2i))
-                .filter(removeDuplicates())
-                .filter(this.removeDescendants()));
+          t2.name,
+          getDirectRelatives(t1)
+            .flatMap(pi => getNearestCommonOfPair(pi, t2.createInstance()))
+            .filter(removeDuplicates())
+            .filter(removeNonNearestRelatives));
       }
     });
     return map;
@@ -101,6 +161,16 @@ export class TypeHierarchy {
     return (t1, i, arr) =>
       arr.every(
           (t2, j) => i == j || !this.getTypeDef(t1.name).hasDescendant(t2));
+  }
+
+  /**
+   * Returns a filter function which removes any TypeInstantiations that also
+   * have ancestors in the array.
+   */
+  private removeAncestors() {
+    return (t1, i, arr) =>
+      arr.every(
+        (t2, j) => i == j || !this.getTypeDef(t1.name).hasAncestor(t2));
   }
 
   /**
@@ -138,9 +208,6 @@ export class TypeHierarchy {
     return this.typeDefsMap.get(a.name).hasAncestor(b);
   }
 
-  /**
-   * Returns the nearest common ancestor(s) of the given types.
-   */
   getNearestCommonAncestors(
       ...types: TypeInstantiation[]
   ): TypeInstantiation[] {
@@ -154,6 +221,19 @@ export class TypeHierarchy {
         [types[0]]);
   }
 
+  getNearestCommonDescendants(
+    ...types: TypeInstantiation[]
+  ): TypeInstantiation[] {
+    if (!this.finalized) throw new NotFinalized();
+    if (types.length < 2) return types;
+
+    return types.reduce(
+      (ncds, type) =>
+        ncds.flatMap(ncd => this.getNearestCommonDescendantsOfPair(type, ncd))
+          .filter(removeDuplicates()),
+      [types[0]]);
+  }
+
   /**
    * Returns the nearest common ancestor(s) of the given type pair, as defined
    * in the nearestCommonAncestors array.
@@ -161,5 +241,14 @@ export class TypeHierarchy {
   private getNearestCommonAncestorsOfPair(
       a: TypeInstantiation, b: TypeInstantiation) {
     return this.nearestCommonAncestors.get(a.name).get(b.name);
+  }
+
+  /**
+   * Returns the nearest common descendant(s) of the given type pair, as defined
+   * in the nearestCommonDescendants array.
+   */
+  private getNearestCommonDescendantsOfPair(
+    a: TypeInstantiation, b: TypeInstantiation) {
+    return this.nearestCommonDescendants.get(a.name).get(b.name);
   }
 }

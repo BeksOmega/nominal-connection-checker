@@ -23,6 +23,7 @@ suite('Nearest common descendants', function() {
   function assertNearestCommonDescendants(h, ts, eds, msg) {
     const ads = h.getNearestCommonDescendants(...ts);
     assert.equal(ads.length, eds.length, msg);
+    console.log(ads);
     assert.isTrue(ads.every((ad, i) => ad.equals(eds[i])), msg);
   }
 
@@ -85,7 +86,7 @@ suite('Nearest common descendants', function() {
       h.addTypeDef('t');
       const cd = h.addTypeDef('c');
       const ti = new TypeInstantiation('t');
-      const ci = new TypeInstantiation('p');
+      const ci = new TypeInstantiation('c');
       cd.addParent(ti);
       h.finalize();
 
@@ -344,7 +345,7 @@ suite('Nearest common descendants', function() {
         const zi = new TypeInstantiation('z');
         const ui = new TypeInstantiation('u');
         assertNearestCommonDescendants(
-            h, [xi, yi], [ui, zi],
+            h, [xi, yi], [zi, ui],
             'Expected the ncds of X and Y to be Z and U');
       });
 
@@ -376,7 +377,7 @@ suite('Nearest common descendants', function() {
         const wi = new TypeInstantiation('w');
         const ui = new TypeInstantiation('u');
         assertNearestCommonDescendants(
-            h, [xi, yi, vi], [ui, wi],
+            h, [xi, yi, vi], [wi, ui],
             'Expected the ncds of X, Y and V to be W and U');
       });
 

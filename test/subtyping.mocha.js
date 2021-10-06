@@ -5,7 +5,7 @@
  */
 
 import {TypeHierarchy} from '../src/type_hierarchy';
-import {TypeInstantiation} from '../src/type_instantiation';
+import {ExplicitInstantiation} from '../src/type_instantiation';
 import {assert} from 'chai';
 
 suite('Subtyping', function() {
@@ -13,8 +13,8 @@ suite('Subtyping', function() {
     test('every type fulfills itself', function() {
       const h = new TypeHierarchy();
       h.addTypeDef('t');
-      const ti1 = new TypeInstantiation('t');
-      const ti2 = new TypeInstantiation('t');
+      const ti1 = new ExplicitInstantiation('t');
+      const ti2 = new ExplicitInstantiation('t');
 
       assert.isTrue(
           h.typeFulfillsType(ti1, ti2), 'Expected the type to fulfill itself');
@@ -24,8 +24,8 @@ suite('Subtyping', function() {
       const h = new TypeHierarchy();
       const cd = h.addTypeDef('c');
       h.addTypeDef('p');
-      const ci = new TypeInstantiation('c');
-      const pi = new TypeInstantiation('p');
+      const ci = new ExplicitInstantiation('c');
+      const pi = new ExplicitInstantiation('p');
       cd.addParent(pi);
 
       assert.isTrue(
@@ -37,8 +37,8 @@ suite('Subtyping', function() {
       const h = new TypeHierarchy();
       const cd = h.addTypeDef('c');
       h.addTypeDef('p');
-      const ci = new TypeInstantiation('c');
-      const pi = new TypeInstantiation('p');
+      const ci = new ExplicitInstantiation('c');
+      const pi = new ExplicitInstantiation('p');
       cd.addParent(pi);
 
       assert.isFalse(
@@ -51,9 +51,9 @@ suite('Subtyping', function() {
       const td = h.addTypeDef('t');
       const pd = h.addTypeDef('p');
       h.addTypeDef('gp');
-      const ti = new TypeInstantiation('t');
-      const pi = new TypeInstantiation('p');
-      const gpi = new TypeInstantiation('gp');
+      const ti = new ExplicitInstantiation('t');
+      const pi = new ExplicitInstantiation('p');
+      const gpi = new ExplicitInstantiation('gp');
       pd.addParent(gpi);
       td.addParent(pi);
 
@@ -67,9 +67,9 @@ suite('Subtyping', function() {
       const td = h.addTypeDef('t');
       const pd = h.addTypeDef('p');
       h.addTypeDef('gp');
-      const ti = new TypeInstantiation('t');
-      const pi = new TypeInstantiation('p');
-      const gpi = new TypeInstantiation('gp');
+      const ti = new ExplicitInstantiation('t');
+      const pi = new ExplicitInstantiation('p');
+      const gpi = new ExplicitInstantiation('gp');
       pd.addParent(gpi);
       td.addParent(pi);
 
@@ -82,8 +82,8 @@ suite('Subtyping', function() {
       const h = new TypeHierarchy();
       h.addTypeDef('a');
       h.addTypeDef('b');
-      const ai = new TypeInstantiation('a');
-      const bi = new TypeInstantiation('b');
+      const ai = new ExplicitInstantiation('a');
+      const bi = new ExplicitInstantiation('b');
 
       assert.isFalse(
           h.typeFulfillsType(ai, bi),
@@ -95,9 +95,9 @@ suite('Subtyping', function() {
       h.addTypeDef('p')
       const ad = h.addTypeDef('a');
       const bd = h.addTypeDef('b');
-      const pi = new TypeInstantiation('p');
-      const ai = new TypeInstantiation('a');
-      const bi = new TypeInstantiation('b');
+      const pi = new ExplicitInstantiation('p');
+      const ai = new ExplicitInstantiation('a');
+      const bi = new ExplicitInstantiation('b');
       ad.addParent(pi);
       bd.addParent(pi);
 
@@ -111,8 +111,8 @@ suite('Subtyping', function() {
       const cd = h.addTypeDef('c')
       h.addTypeDef('a');
       h.addTypeDef('b');
-      const ai = new TypeInstantiation('a');
-      const bi = new TypeInstantiation('b');
+      const ai = new ExplicitInstantiation('a');
+      const bi = new ExplicitInstantiation('b');
       cd.addParent(ai);
       cd.addParent(bi);
 

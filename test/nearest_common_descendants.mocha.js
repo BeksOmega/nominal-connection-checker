@@ -5,7 +5,7 @@
  */
 
 import {TypeHierarchy} from '../src/type_hierarchy';
-import {TypeInstantiation} from '../src/type_instantiation';
+import {ExplicitInstantiation} from '../src/type_instantiation';
 import {assert} from 'chai';
 import {NotFinalized} from '../src/exceptions';
 
@@ -15,15 +15,14 @@ suite('Nearest common descendants', function() {
    * ancestors eds.
    * @param {!TypeHierarchy} h The hierarchy to use to find the nearest common
    *     descendants.
-   * @param {!Array<TypeInstantiation>} ts The types to find the nearest
+   * @param {!Array<ExplicitInstantiation>} ts The types to find the nearest
    *     common descendants of.
-   * @param {!Array<!TypeInstantiation>} eds The expected descendants.
+   * @param {!Array<!ExplicitInstantiation>} eds The expected descendants.
    * @param {string} msg The message to include in the assertion.
    */
   function assertNearestCommonDescendants(h, ts, eds, msg) {
     const ads = h.getNearestCommonDescendants(...ts);
     assert.equal(ads.length, eds.length, msg);
-    console.log(ads);
     assert.isTrue(ads.every((ad, i) => ad.equals(eds[i])), msg);
   }
 
@@ -50,7 +49,7 @@ suite('Nearest common descendants', function() {
       const h = new TypeHierarchy();
       h.addTypeDef('t');
       h.finalize();
-      const ti = new TypeInstantiation('t');
+      const ti = new ExplicitInstantiation('t');
 
       assertNearestCommonDescendants(
           h, [ti], [ti], 'Expected the ncd of one type to be itself');
@@ -60,8 +59,8 @@ suite('Nearest common descendants', function() {
       const h = new TypeHierarchy();
       h.addTypeDef('a');
       h.addTypeDef('b');
-      const ai = new TypeInstantiation('a');
-      const bi = new TypeInstantiation('b');
+      const ai = new ExplicitInstantiation('a');
+      const bi = new ExplicitInstantiation('b');
       h.finalize();
 
       assert.isEmpty(
@@ -72,8 +71,8 @@ suite('Nearest common descendants', function() {
     test('ncd of a type and itself is itself', function() {
       const h = new TypeHierarchy();
       h.addTypeDef('t');
-      const ti1 = new TypeInstantiation('t');
-      const ti2 = new TypeInstantiation('t');
+      const ti1 = new ExplicitInstantiation('t');
+      const ti2 = new ExplicitInstantiation('t');
       h.finalize();
 
       assertNearestCommonDescendants(
@@ -85,8 +84,8 @@ suite('Nearest common descendants', function() {
       const h = new TypeHierarchy();
       h.addTypeDef('t');
       const cd = h.addTypeDef('c');
-      const ti = new TypeInstantiation('t');
-      const ci = new TypeInstantiation('c');
+      const ti = new ExplicitInstantiation('t');
+      const ci = new ExplicitInstantiation('c');
       cd.addParent(ti);
       h.finalize();
 
@@ -100,9 +99,9 @@ suite('Nearest common descendants', function() {
       h.addTypeDef('t');
       const cd = h.addTypeDef('c');
       const gcd = h.addTypeDef('gc');
-      const ti = new TypeInstantiation('t');
-      const ci = new TypeInstantiation('c');
-      const gci = new TypeInstantiation('gc');
+      const ti = new ExplicitInstantiation('t');
+      const ci = new ExplicitInstantiation('c');
+      const gci = new ExplicitInstantiation('gc');
       cd.addParent(ti);
       gcd.addParent(ci);
       h.finalize();
@@ -118,9 +117,9 @@ suite('Nearest common descendants', function() {
           h.addTypeDef('t');
           const cd = h.addTypeDef('c');
           const gcd = h.addTypeDef('gc');
-          const ti = new TypeInstantiation('t');
-          const ci = new TypeInstantiation('c');
-          const gci = new TypeInstantiation('gc');
+          const ti = new ExplicitInstantiation('t');
+          const ci = new ExplicitInstantiation('c');
+          const gci = new ExplicitInstantiation('gc');
           cd.addParent(ti);
           gcd.addParent(ci);
           h.finalize();
@@ -135,9 +134,9 @@ suite('Nearest common descendants', function() {
       h.addTypeDef('a');
       h.addTypeDef('b');
       const cd = h.addTypeDef('c');
-      const ai = new TypeInstantiation('a');
-      const bi = new TypeInstantiation('b');
-      const ci = new TypeInstantiation('c');
+      const ai = new ExplicitInstantiation('a');
+      const bi = new ExplicitInstantiation('b');
+      const ci = new ExplicitInstantiation('c');
       cd.addParent(ai);
       cd.addParent(bi);
       h.finalize();
@@ -153,10 +152,10 @@ suite('Nearest common descendants', function() {
       h.addTypeDef('y');
       h.addTypeDef('z');
       const cd = h.addTypeDef('c');
-      const xi = new TypeInstantiation('x');
-      const yi = new TypeInstantiation('y');
-      const zi = new TypeInstantiation('z');
-      const ci = new TypeInstantiation('c');
+      const xi = new ExplicitInstantiation('x');
+      const yi = new ExplicitInstantiation('y');
+      const zi = new ExplicitInstantiation('z');
+      const ci = new ExplicitInstantiation('c');
       cd.addParent(xi);
       cd.addParent(yi);
       cd.addParent(zi);
@@ -174,11 +173,11 @@ suite('Nearest common descendants', function() {
       const pbd = h.addTypeDef('pb');
       h.addTypeDef('gpa');
       h.addTypeDef('gpb');
-      const ci = new TypeInstantiation('c');
-      const pai = new TypeInstantiation('pa');
-      const pbi = new TypeInstantiation('pb');
-      const gpai = new TypeInstantiation('gpa');
-      const gpbi = new TypeInstantiation('gpb');
+      const ci = new ExplicitInstantiation('c');
+      const pai = new ExplicitInstantiation('pa');
+      const pbi = new ExplicitInstantiation('pb');
+      const gpai = new ExplicitInstantiation('gpa');
+      const gpbi = new ExplicitInstantiation('gpb');
       cd.addParent(pai);
       cd.addParent(pbi);
       pad.addParent(gpai);
@@ -196,10 +195,10 @@ suite('Nearest common descendants', function() {
       const pad = h.addTypeDef('pa');
       const pbd = h.addTypeDef('pb');
       h.addTypeDef('gpa');
-      const ci = new TypeInstantiation('c');
-      const pai = new TypeInstantiation('pa');
-      const pbi = new TypeInstantiation('pb');
-      const gpai = new TypeInstantiation('gpa');
+      const ci = new ExplicitInstantiation('c');
+      const pai = new ExplicitInstantiation('pa');
+      const pbi = new ExplicitInstantiation('pb');
+      const gpai = new ExplicitInstantiation('gpa');
       cd.addParent(pai);
       cd.addParent(pbi);
       pad.addParent(gpai);
@@ -217,10 +216,10 @@ suite('Nearest common descendants', function() {
           h.addTypeDef('pb');
           const cad = h.addTypeDef('ca');
           const cbd = h.addTypeDef('cb');
-          const pai = new TypeInstantiation('pa');
-          const pbi = new TypeInstantiation('pb');
-          const cai = new TypeInstantiation('ca');
-          const cbi = new TypeInstantiation('cb');
+          const pai = new ExplicitInstantiation('pa');
+          const pbi = new ExplicitInstantiation('pb');
+          const cai = new ExplicitInstantiation('ca');
+          const cbi = new ExplicitInstantiation('cb');
           cad.addParent(pai);
           cad.addParent(pbi);
           cbd.addParent(pai);
@@ -241,10 +240,10 @@ suite('Nearest common descendants', function() {
           const cbd = h.addTypeDef('cb');
           const ccd = h.addTypeDef('cc');
           const cdd = h.addTypeDef('cd');
-          const pai = new TypeInstantiation('pa');
-          const pbi = new TypeInstantiation('pb');
-          const cbi = new TypeInstantiation('cb');
-          const cci = new TypeInstantiation('cc');
+          const pai = new ExplicitInstantiation('pa');
+          const pbi = new ExplicitInstantiation('pb');
+          const cbi = new ExplicitInstantiation('cb');
+          const cci = new ExplicitInstantiation('cc');
           cad.addParent(pai);
           cbd.addParent(pai);
           cbd.addParent(pbi);
@@ -270,10 +269,10 @@ suite('Nearest common descendants', function() {
           h.addTypeDef('pa');
           h.addTypeDef('pb');
           h.addTypeDef('pc');
-          const cci = new TypeInstantiation('cc');
-          const pai = new TypeInstantiation('pa');
-          const pbi = new TypeInstantiation('pb');
-          const pci = new TypeInstantiation('pc');
+          const cci = new ExplicitInstantiation('cc');
+          const pai = new ExplicitInstantiation('pa');
+          const pbi = new ExplicitInstantiation('pb');
+          const pci = new ExplicitInstantiation('pc');
           cad.addParent(pai);
           cbd.addParent(pai);
           cbd.addParent(pbi);
@@ -316,11 +315,11 @@ suite('Nearest common descendants', function() {
         h.addTypeDef('x');
         h.addTypeDef('y');
         const zd = h.addTypeDef('z');
-        const qi = new TypeInstantiation('q');
-        const vi = new TypeInstantiation('v');
-        const xi = new TypeInstantiation('x');
-        const yi = new TypeInstantiation('y');
-        const zi = new TypeInstantiation('z');
+        const qi = new ExplicitInstantiation('q');
+        const vi = new ExplicitInstantiation('v');
+        const xi = new ExplicitInstantiation('x');
+        const yi = new ExplicitInstantiation('y');
+        const zi = new ExplicitInstantiation('z');
 
         zd.addParent(xi);
         wd.addParent(xi);
@@ -340,10 +339,10 @@ suite('Nearest common descendants', function() {
 
       test('ncds of X and Y are Z and U', function() {
         const h = createHierarchy();
-        const xi = new TypeInstantiation('x');
-        const yi = new TypeInstantiation('y');
-        const zi = new TypeInstantiation('z');
-        const ui = new TypeInstantiation('u');
+        const xi = new ExplicitInstantiation('x');
+        const yi = new ExplicitInstantiation('y');
+        const zi = new ExplicitInstantiation('z');
+        const ui = new ExplicitInstantiation('u');
         assertNearestCommonDescendants(
             h, [xi, yi], [zi, ui],
             'Expected the ncds of X and Y to be Z and U');
@@ -351,9 +350,9 @@ suite('Nearest common descendants', function() {
 
       test('ncd of X, Y, and Z is Z', function() {
         const h = createHierarchy();
-        const xi = new TypeInstantiation('x');
-        const yi = new TypeInstantiation('y');
-        const zi = new TypeInstantiation('z');
+        const xi = new ExplicitInstantiation('x');
+        const yi = new ExplicitInstantiation('y');
+        const zi = new ExplicitInstantiation('z');
         assertNearestCommonDescendants(
             h, [xi, yi, zi], [zi],
             'Expected the ncd of X, Y and Z to be Z');
@@ -361,9 +360,9 @@ suite('Nearest common descendants', function() {
 
       test('ncd of X, Y, and W is W', function() {
         const h = createHierarchy();
-        const xi = new TypeInstantiation('x');
-        const yi = new TypeInstantiation('y');
-        const wi = new TypeInstantiation('w');
+        const xi = new ExplicitInstantiation('x');
+        const yi = new ExplicitInstantiation('y');
+        const wi = new ExplicitInstantiation('w');
         assertNearestCommonDescendants(
             h, [xi, yi, wi], [wi],
             'Expected the ncd of X, Y and W to be W');
@@ -371,11 +370,11 @@ suite('Nearest common descendants', function() {
 
       test('ncds of X, Y, and V are W and U', function() {
         const h = createHierarchy();
-        const xi = new TypeInstantiation('x');
-        const yi = new TypeInstantiation('y');
-        const vi = new TypeInstantiation('v');
-        const wi = new TypeInstantiation('w');
-        const ui = new TypeInstantiation('u');
+        const xi = new ExplicitInstantiation('x');
+        const yi = new ExplicitInstantiation('y');
+        const vi = new ExplicitInstantiation('v');
+        const wi = new ExplicitInstantiation('w');
+        const ui = new ExplicitInstantiation('u');
         assertNearestCommonDescendants(
             h, [xi, yi, vi], [wi, ui],
             'Expected the ncds of X, Y and V to be W and U');
@@ -383,10 +382,10 @@ suite('Nearest common descendants', function() {
 
       test('ncd of X, Y, and Q is U', function() {
         const h = createHierarchy();
-        const xi = new TypeInstantiation('x');
-        const yi = new TypeInstantiation('y');
-        const qi = new TypeInstantiation('q');
-        const ui = new TypeInstantiation('u');
+        const xi = new ExplicitInstantiation('x');
+        const yi = new ExplicitInstantiation('y');
+        const qi = new ExplicitInstantiation('q');
+        const ui = new ExplicitInstantiation('u');
         assertNearestCommonDescendants(
             h, [xi, yi, qi], [ui],
             'Expected the ncd of X, Y and Q to be U');

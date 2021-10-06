@@ -5,7 +5,7 @@
  */
 
 import {TypeDefinition} from './type_definition';
-import {TypeInstantiation} from './type_instantiation';
+import {GenericInstantiation, TypeInstantiation} from './type_instantiation';
 import {removeDuplicates} from './utils';
 import {NotFinalized} from './exceptions';
 
@@ -205,6 +205,10 @@ export class TypeHierarchy {
    * relationships within this type hierarchy.
    */
   typeFulfillsType(a: TypeInstantiation, b: TypeInstantiation): boolean {
+    if (a instanceof GenericInstantiation ||
+        b instanceof GenericInstantiation) {
+      return true;
+    }
     return this.typeDefsMap.get(a.name).hasAncestor(b);
   }
 

@@ -5,7 +5,10 @@
  */
 
 import {TypeHierarchy} from '../src/type_hierarchy';
-import {ExplicitInstantiation} from '../src/type_instantiation';
+import {
+  ExplicitInstantiation,
+  GenericInstantiation
+} from '../src/type_instantiation';
 import {assert} from 'chai';
 
 suite('Subtyping', function() {
@@ -121,4 +124,39 @@ suite('Subtyping', function() {
           'Expected coparent types to not fulfill each other');
     });
   });
+
+  suite('basic generic subtyping', function() {
+    test('generics fulfill all types', function() {
+      const h = new TypeHierarchy();
+      h.addTypeDef('t');
+      const t = new ExplicitInstantiation('t');
+      const g = new GenericInstantiation('g');
+
+      assert.isTrue(
+          h.typeFulfillsType(g, t),
+          'Expected the generic type to fulfill the explicit type');
+    });
+
+    test('all types fulfill generics', function() {
+      const h = new TypeHierarchy();
+      h.addTypeDef('t');
+      const t = new ExplicitInstantiation('t');
+      const g = new GenericInstantiation('g');
+
+      assert.isTrue(
+          h.typeFulfillsType(t, g),
+          'Expected the explicit type to fulfill the generic type');
+    });
+
+    test('generics fulfill each other', function() {
+      const h = new TypeHierarchy();
+      h.addTypeDef('t');
+      const g1 = new GenericInstantiation('g1');
+      const g2 = new GenericInstantiation('g2');
+
+      assert.isTrue(
+          h.typeFulfillsType(g1, g2),
+          'Expected the generic types to fulfill each other');
+    });
+  })
 })

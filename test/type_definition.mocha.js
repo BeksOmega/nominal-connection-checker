@@ -7,7 +7,7 @@
 import {IncompatibleType} from '../src/exceptions';
 import {TypeDefinition} from '../src/type_definition';
 import {TypeHierarchy} from '../src/type_hierarchy';
-import {TypeInstantiation} from '../src/type_instantiation';
+import {ExplicitInstantiation} from '../src/type_instantiation';
 import {assert} from 'chai';
 
 suite('TypeDefinition', function() {
@@ -16,7 +16,7 @@ suite('TypeDefinition', function() {
     const t = h.addTypeDef('t');
 
     assert.isTrue(
-        t.hasAncestor(new TypeInstantiation('t')),
+        t.hasAncestor(new ExplicitInstantiation('t')),
         'Expected the type definition to be an ancestor of itself');
   });
 
@@ -25,7 +25,7 @@ suite('TypeDefinition', function() {
     const t = h.addTypeDef('t');
 
     assert.isTrue(
-        t.hasDescendant(new TypeInstantiation('t')),
+        t.hasDescendant(new ExplicitInstantiation('t')),
         'Expected the type definition to be a descendant of itself');
   });
 
@@ -34,8 +34,8 @@ suite('TypeDefinition', function() {
       const h = new TypeHierarchy();
       const cd = h.addTypeDef('c');
       const pd = h.addTypeDef('p');
-      const ci = new TypeInstantiation('c');
-      const pi = new TypeInstantiation('p');
+      const ci = new ExplicitInstantiation('c');
+      const pi = new ExplicitInstantiation('p');
 
       cd.addParent(pi);
 
@@ -52,7 +52,7 @@ suite('TypeDefinition', function() {
     test('if the parent does not exist, an error is thrown', function() {
       const h = new TypeHierarchy();
       const cd = h.addTypeDef('c');
-      const pi = new TypeInstantiation('p');
+      const pi = new ExplicitInstantiation('p');
 
       assert.throws(
           () => cd.addParent(pi),
@@ -65,9 +65,9 @@ suite('TypeDefinition', function() {
       const h = new TypeHierarchy();
       const cd = h.addTypeDef('c');
       const pd = h.addTypeDef('p');
-      const pi1 = new TypeInstantiation('p');
-      const pi2 = new TypeInstantiation('p');
-      const ci = new TypeInstantiation('c')
+      const pi1 = new ExplicitInstantiation('p');
+      const pi2 = new ExplicitInstantiation('p');
+      const ci = new ExplicitInstantiation('c')
       cd.addParent(pi1);
 
       cd.addParent(pi2);
@@ -87,9 +87,9 @@ suite('TypeDefinition', function() {
       const td = h.addTypeDef('t');
       const pd = h.addTypeDef('p');
       const gpd = h.addTypeDef('gp');
-      const ti = new TypeInstantiation('t');
-      const pi = new TypeInstantiation('p');
-      const gpi = new TypeInstantiation('gp');
+      const ti = new ExplicitInstantiation('t');
+      const pi = new ExplicitInstantiation('p');
+      const gpi = new ExplicitInstantiation('gp');
       pd.addParent(gpi);
 
       td.addParent(pi);
@@ -114,9 +114,9 @@ suite('TypeDefinition', function() {
           const td = h.addTypeDef('t');
           const cd = h.addTypeDef('c');
           const pd = h.addTypeDef('p');
-          const ti = new TypeInstantiation('t');
-          const ci = new TypeInstantiation('c');
-          const pi = new TypeInstantiation('p');
+          const ti = new ExplicitInstantiation('t');
+          const ci = new ExplicitInstantiation('c');
+          const pi = new ExplicitInstantiation('p');
           cd.addParent(ti);
 
           td.addParent(pi);
@@ -136,10 +136,10 @@ suite('TypeDefinition', function() {
           const p1d = h.addTypeDef('p1');
           const p2d = h.addTypeDef('p2');
           const gpd = h.addTypeDef('gp');
-          const ti = new TypeInstantiation('t');
-          const p1i = new TypeInstantiation('p1');
-          const p2i = new TypeInstantiation('p2');
-          const gpi = new TypeInstantiation('gp');
+          const ti = new ExplicitInstantiation('t');
+          const p1i = new ExplicitInstantiation('p1');
+          const p2i = new ExplicitInstantiation('p2');
+          const gpi = new ExplicitInstantiation('gp');
           p1d.addParent(gpi);
           p2d.addParent(gpi);
           td.addParent(p1i);
@@ -164,10 +164,10 @@ suite('TypeDefinition', function() {
           const c1d = h.addTypeDef('c1');
           const c2d = h.addTypeDef('c2');
           const gcd = h.addTypeDef('gc');
-          const ti = new TypeInstantiation('t');
-          const c1i = new TypeInstantiation('c1');
-          const c2i = new TypeInstantiation('c2');
-          const gci = new TypeInstantiation('gc');
+          const ti = new ExplicitInstantiation('t');
+          const c1i = new ExplicitInstantiation('c1');
+          const c2i = new ExplicitInstantiation('c2');
+          const gci = new ExplicitInstantiation('gc');
           gcd.addParent(c1i);
           gcd.addParent(c2i);
           c1d.addParent(ti);

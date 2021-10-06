@@ -5,7 +5,7 @@
  */
 
 import {TypeDefinition} from './type_definition';
-import {TypeInstantiation} from './type_instantiation';
+import {ExplicitInstantiation, GenericInstantiation, TypeInstantiation} from './type_instantiation';
 import {removeDuplicates} from './utils';
 import {NotFinalized} from './exceptions';
 
@@ -205,6 +205,10 @@ export class TypeHierarchy {
    * relationships within this type hierarchy.
    */
   typeFulfillsType(a: TypeInstantiation, b: TypeInstantiation): boolean {
+    if (a instanceof GenericInstantiation ||
+        b instanceof GenericInstantiation) {
+      return true;
+    }
     return this.typeDefsMap.get(a.name).hasAncestor(b);
   }
 
@@ -212,7 +216,10 @@ export class TypeHierarchy {
       ...types: TypeInstantiation[]
   ): TypeInstantiation[] {
     if (!this.finalized) throw new NotFinalized();
-    if (types.length < 2) return types;
+    if (types.length == 0) return [];
+    types = types.filter(t => t instanceof ExplicitInstantiation);
+    if (types.length == 0) return [new GenericInstantiation()];
+    if (types.length == 1) return types;
 
     return types.reduce(
         (ncas, type) =>
@@ -225,7 +232,10 @@ export class TypeHierarchy {
       ...types: TypeInstantiation[]
   ): TypeInstantiation[] {
     if (!this.finalized) throw new NotFinalized();
-    if (types.length < 2) return types;
+    if (types.length == 0) return [];
+    types = types.filter(t => t instanceof ExplicitInstantiation);
+    if (types.length == 0) return [new GenericInstantiation()];
+    if (types.length == 1) return types;
 
     return types.reduce(
       (ncds, type) =>

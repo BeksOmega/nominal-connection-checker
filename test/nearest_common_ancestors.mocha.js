@@ -5,28 +5,31 @@
  */
 
 import {TypeHierarchy} from '../src/type_hierarchy';
-import {TypeInstantiation} from '../src/type_instantiation';
+import {
+  ExplicitInstantiation,
+  GenericInstantiation
+} from '../src/type_instantiation';
 import {assert} from 'chai';
 import {NotFinalized} from '../src/exceptions';
 
 suite('Nearest common ancestors', function() {
-  suite('basic explicit nearest common ancestors', function() {
-    /**
-     * Asserts that the nearest common ancestors of the types ts are the
-     * ancestors eas.
-     * @param {!TypeHierarchy} h The hierarchy to use to find the nearest common
-     *     ancestors.
-     * @param {!Array<TypeInstantiation>} ts The types to find the nearest
-     *     common ancestors of.
-     * @param {!Array<!TypeInstantiation>} eas The expected ancestors.
-     * @param {string} msg The message to include in the assertion.
-     */
-    function assertNearestCommonAncestors(h, ts, eas, msg) {
-      const aas = h.getNearestCommonAncestors(...ts);
-      assert.equal(aas.length, eas.length, msg);
-      assert.isTrue(aas.every((aa, i) => aa.equals(eas[i])), msg);
-    }
+  /**
+   * Asserts that the nearest common ancestors of the types ts are the
+   * ancestors eas.
+   * @param {!TypeHierarchy} h The hierarchy to use to find the nearest common
+   *     ancestors.
+   * @param {!Array<ExplicitInstantiation>} ts The types to find the nearest
+   *     common ancestors of.
+   * @param {!Array<!ExplicitInstantiation>} eas The expected ancestors.
+   * @param {string} msg The message to include in the assertion.
+   */
+  function assertNearestCommonAncestors(h, ts, eas, msg) {
+    const aas = h.getNearestCommonAncestors(...ts);
+    assert.equal(aas.length, eas.length, msg);
+    assert.isTrue(aas.every((aa, i) => aa.equals(eas[i])), msg);
+  }
 
+  suite('basic explicit nearest common ancestors', function() {
     test('not being finalized throws errors', function() {
       const h = new TypeHierarchy();
 
@@ -49,7 +52,7 @@ suite('Nearest common ancestors', function() {
       const h = new TypeHierarchy();
       h.addTypeDef('t');
       h.finalize();
-      const ti = new TypeInstantiation('t');
+      const ti = new ExplicitInstantiation('t');
 
       assertNearestCommonAncestors(
           h, [ti], [ti], 'Expected the nca of one type to be itself');
@@ -59,8 +62,8 @@ suite('Nearest common ancestors', function() {
       const h = new TypeHierarchy();
       h.addTypeDef('a');
       h.addTypeDef('b');
-      const ai = new TypeInstantiation('a');
-      const bi = new TypeInstantiation('b');
+      const ai = new ExplicitInstantiation('a');
+      const bi = new ExplicitInstantiation('b');
       h.finalize();
 
       assert.isEmpty(
@@ -71,8 +74,8 @@ suite('Nearest common ancestors', function() {
     test('nca of a type and itself is itself', function() {
       const h = new TypeHierarchy();
       h.addTypeDef('t');
-      const ti1 = new TypeInstantiation('t');
-      const ti2 = new TypeInstantiation('t');
+      const ti1 = new ExplicitInstantiation('t');
+      const ti2 = new ExplicitInstantiation('t');
       h.finalize();
 
       assertNearestCommonAncestors(
@@ -84,8 +87,8 @@ suite('Nearest common ancestors', function() {
       const h = new TypeHierarchy();
       const td = h.addTypeDef('t');
       h.addTypeDef('p');
-      const ti = new TypeInstantiation('t');
-      const pi = new TypeInstantiation('p');
+      const ti = new ExplicitInstantiation('t');
+      const pi = new ExplicitInstantiation('p');
       td.addParent(pi);
       h.finalize();
 
@@ -99,9 +102,9 @@ suite('Nearest common ancestors', function() {
       const td = h.addTypeDef('t');
       const pd = h.addTypeDef('p');
       h.addTypeDef('gp');
-      const ti = new TypeInstantiation('t');
-      const pi = new TypeInstantiation('p');
-      const gpi = new TypeInstantiation('gp');
+      const ti = new ExplicitInstantiation('t');
+      const pi = new ExplicitInstantiation('p');
+      const gpi = new ExplicitInstantiation('gp');
       pd.addParent(gpi);
       td.addParent(pi);
       h.finalize();
@@ -117,9 +120,9 @@ suite('Nearest common ancestors', function() {
           const td = h.addTypeDef('t');
           const pd = h.addTypeDef('p');
           h.addTypeDef('gp');
-          const ti = new TypeInstantiation('t');
-          const pi = new TypeInstantiation('p');
-          const gpi = new TypeInstantiation('gp');
+          const ti = new ExplicitInstantiation('t');
+          const pi = new ExplicitInstantiation('p');
+          const gpi = new ExplicitInstantiation('gp');
           pd.addParent(gpi);
           td.addParent(pi);
           h.finalize();
@@ -134,9 +137,9 @@ suite('Nearest common ancestors', function() {
       const ad = h.addTypeDef('a');
       const bd = h.addTypeDef('b');
       h.addTypeDef('p');
-      const ai = new TypeInstantiation('a');
-      const bi = new TypeInstantiation('b');
-      const pi = new TypeInstantiation('p');
+      const ai = new ExplicitInstantiation('a');
+      const bi = new ExplicitInstantiation('b');
+      const pi = new ExplicitInstantiation('p');
       ad.addParent(pi);
       bd.addParent(pi);
       h.finalize();
@@ -152,10 +155,10 @@ suite('Nearest common ancestors', function() {
       const bd = h.addTypeDef('b');
       const cd = h.addTypeDef('c');
       h.addTypeDef('p');
-      const ai = new TypeInstantiation('a');
-      const bi = new TypeInstantiation('b');
-      const ci = new TypeInstantiation('c');
-      const pi = new TypeInstantiation('p');
+      const ai = new ExplicitInstantiation('a');
+      const bi = new ExplicitInstantiation('b');
+      const ci = new ExplicitInstantiation('c');
+      const pi = new ExplicitInstantiation('p');
       ad.addParent(pi);
       bd.addParent(pi);
       cd.addParent(pi);
@@ -173,11 +176,11 @@ suite('Nearest common ancestors', function() {
       const pbd = h.addTypeDef('pb');
       const cad = h.addTypeDef('ca');
       const cbd = h.addTypeDef('cb');
-      const gpi = new TypeInstantiation('gp');
-      const pai = new TypeInstantiation('pa');
-      const pbi = new TypeInstantiation('pb');
-      const cai = new TypeInstantiation('ca');
-      const cbi = new TypeInstantiation('cb');
+      const gpi = new ExplicitInstantiation('gp');
+      const pai = new ExplicitInstantiation('pa');
+      const pbi = new ExplicitInstantiation('pb');
+      const cai = new ExplicitInstantiation('ca');
+      const cbi = new ExplicitInstantiation('cb');
       pad.addParent(gpi);
       pbd.addParent(gpi);
       cad.addParent(pai);
@@ -195,10 +198,10 @@ suite('Nearest common ancestors', function() {
       const pad = h.addTypeDef('pa');
       const pbd = h.addTypeDef('pb');
       const cd = h.addTypeDef('c');
-      const gpi = new TypeInstantiation('gp');
-      const pai = new TypeInstantiation('pa');
-      const pbi = new TypeInstantiation('pb');
-      const ci = new TypeInstantiation('c');
+      const gpi = new ExplicitInstantiation('gp');
+      const pai = new ExplicitInstantiation('pa');
+      const pbi = new ExplicitInstantiation('pb');
+      const ci = new ExplicitInstantiation('c');
       pad.addParent(gpi);
       pbd.addParent(gpi);
       cd.addParent(pai);
@@ -216,10 +219,10 @@ suite('Nearest common ancestors', function() {
           h.addTypeDef('pb');
           const cad = h.addTypeDef('ca');
           const cbd = h.addTypeDef('cb');
-          const pai = new TypeInstantiation('pa');
-          const pbi = new TypeInstantiation('pb');
-          const cai = new TypeInstantiation('ca');
-          const cbi = new TypeInstantiation('cb');
+          const pai = new ExplicitInstantiation('pa');
+          const pbi = new ExplicitInstantiation('pb');
+          const cai = new ExplicitInstantiation('ca');
+          const cbi = new ExplicitInstantiation('cb');
           cad.addParent(pai);
           cad.addParent(pbi);
           cbd.addParent(pai);
@@ -240,12 +243,12 @@ suite('Nearest common ancestors', function() {
           h.addTypeDef('pd');
           const cad = h.addTypeDef('ca');
           const cbd = h.addTypeDef('cb');
-          const pai = new TypeInstantiation('pa');
-          const pbi = new TypeInstantiation('pb');
-          const pci = new TypeInstantiation('pc');
-          const pdi = new TypeInstantiation('pd');
-          const cai = new TypeInstantiation('ca');
-          const cbi = new TypeInstantiation('cb');
+          const pai = new ExplicitInstantiation('pa');
+          const pbi = new ExplicitInstantiation('pb');
+          const pci = new ExplicitInstantiation('pc');
+          const pdi = new ExplicitInstantiation('pd');
+          const cai = new ExplicitInstantiation('ca');
+          const cbi = new ExplicitInstantiation('cb');
           cad.addParent(pai);
           cad.addParent(pbi);
           cad.addParent(pci);
@@ -270,14 +273,14 @@ suite('Nearest common ancestors', function() {
           const cad = h.addTypeDef('ca');
           const cbd = h.addTypeDef('cb');
           const ccd = h.addTypeDef('cc');
-          const pai = new TypeInstantiation('pa');
-          const pbi = new TypeInstantiation('pb');
-          const pci = new TypeInstantiation('pc');
-          const pdi = new TypeInstantiation('pd');
-          const pei = new TypeInstantiation('pe');
-          const cai = new TypeInstantiation('ca');
-          const cbi = new TypeInstantiation('cb');
-          const cci = new TypeInstantiation('cc');
+          const pai = new ExplicitInstantiation('pa');
+          const pbi = new ExplicitInstantiation('pb');
+          const pci = new ExplicitInstantiation('pc');
+          const pdi = new ExplicitInstantiation('pd');
+          const pei = new ExplicitInstantiation('pe');
+          const cai = new ExplicitInstantiation('ca');
+          const cbi = new ExplicitInstantiation('cb');
+          const cci = new ExplicitInstantiation('cc');
           cad.addParent(pai);
           cad.addParent(pbi);
           cad.addParent(pci);
@@ -318,11 +321,11 @@ suite('Nearest common ancestors', function() {
         const xd = h.addTypeDef('x');
         const yd = h.addTypeDef('y');
         const zd = h.addTypeDef('z');
-        const qi = new TypeInstantiation('q');
-        const ui = new TypeInstantiation('u');
-        const vi = new TypeInstantiation('v');
-        const wi = new TypeInstantiation('w');
-        const zi = new TypeInstantiation('z');
+        const qi = new ExplicitInstantiation('q');
+        const ui = new ExplicitInstantiation('u');
+        const vi = new ExplicitInstantiation('v');
+        const wi = new ExplicitInstantiation('w');
+        const zi = new ExplicitInstantiation('z');
 
         qd.addParent(ui);
         vd.addParent(ui);
@@ -342,10 +345,10 @@ suite('Nearest common ancestors', function() {
 
       test('ncas of X and Y are Z and U', function() {
         const h = createHierarchy();
-        const xi = new TypeInstantiation('x');
-        const yi = new TypeInstantiation('y');
-        const zi = new TypeInstantiation('z');
-        const ui = new TypeInstantiation('u');
+        const xi = new ExplicitInstantiation('x');
+        const yi = new ExplicitInstantiation('y');
+        const zi = new ExplicitInstantiation('z');
+        const ui = new ExplicitInstantiation('u');
         assertNearestCommonAncestors(
             h, [xi, yi], [ui, zi],
             'Expected the ncas of X and Y to be Z and U');
@@ -353,9 +356,9 @@ suite('Nearest common ancestors', function() {
 
       test('nca of X, Y, and Z is Z', function() {
         const h = createHierarchy();
-        const xi = new TypeInstantiation('x');
-        const yi = new TypeInstantiation('y');
-        const zi = new TypeInstantiation('z');
+        const xi = new ExplicitInstantiation('x');
+        const yi = new ExplicitInstantiation('y');
+        const zi = new ExplicitInstantiation('z');
         assertNearestCommonAncestors(
             h, [xi, yi, zi], [zi],
             'Expected the nca of X, Y and Z to be Z');
@@ -363,9 +366,9 @@ suite('Nearest common ancestors', function() {
 
       test('nca of X, Y, and W is W', function() {
         const h = createHierarchy();
-        const xi = new TypeInstantiation('x');
-        const yi = new TypeInstantiation('y');
-        const wi = new TypeInstantiation('w');
+        const xi = new ExplicitInstantiation('x');
+        const yi = new ExplicitInstantiation('y');
+        const wi = new ExplicitInstantiation('w');
         assertNearestCommonAncestors(
             h, [xi, yi, wi], [wi],
             'Expected the nca of X, Y and W to be W');
@@ -373,11 +376,11 @@ suite('Nearest common ancestors', function() {
 
       test('ncas of X, Y, and V are W and U', function() {
         const h = createHierarchy();
-        const xi = new TypeInstantiation('x');
-        const yi = new TypeInstantiation('y');
-        const vi = new TypeInstantiation('v');
-        const wi = new TypeInstantiation('w');
-        const ui = new TypeInstantiation('u');
+        const xi = new ExplicitInstantiation('x');
+        const yi = new ExplicitInstantiation('y');
+        const vi = new ExplicitInstantiation('v');
+        const wi = new ExplicitInstantiation('w');
+        const ui = new ExplicitInstantiation('u');
         assertNearestCommonAncestors(
             h, [xi, yi, vi], [ui, wi],
             'Expected the ncas of X, Y and V to be W and U');
@@ -385,14 +388,44 @@ suite('Nearest common ancestors', function() {
 
       test('nca of X, Y, and Q is U', function() {
         const h = createHierarchy();
-        const xi = new TypeInstantiation('x');
-        const yi = new TypeInstantiation('y');
-        const qi = new TypeInstantiation('q');
-        const ui = new TypeInstantiation('u');
+        const xi = new ExplicitInstantiation('x');
+        const yi = new ExplicitInstantiation('y');
+        const qi = new ExplicitInstantiation('q');
+        const ui = new ExplicitInstantiation('u');
         assertNearestCommonAncestors(
             h, [xi, yi, qi], [ui],
             'Expected the nca of X, Y and Q to be U');
       });
+    });
+  });
+
+  suite('basic generic nearest common ancestors', function() {
+    test('nca of only generics is a generic', function() {
+      const h = new TypeHierarchy();
+      h.finalize();
+      const g1 = new GenericInstantiation('g1');
+      const g2 = new GenericInstantiation('g2');
+      const g3 = new GenericInstantiation('g3');
+      const g = new GenericInstantiation();
+
+      assertNearestCommonAncestors(
+          h, [g1, g2, g3], [g],
+          'Expected the nca of only generics to be a generic');
+    });
+
+    test('generics are otherwise ignored', function() {
+      const h = new TypeHierarchy();
+      const td = h.addTypeDef('t');
+      h.addTypeDef('p');
+      const ti = new ExplicitInstantiation('t');
+      const pi = new ExplicitInstantiation('p');
+      const gi = new GenericInstantiation('g');
+      td.addParent(pi);
+      h.finalize();
+
+      assertNearestCommonAncestors(
+          h, [ti, pi, gi], [pi],
+          'Expected generics to be ignored when included with explicits');
     });
   });
 });

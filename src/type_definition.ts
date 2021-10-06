@@ -6,7 +6,7 @@
 
 import {ParameterDefinition} from './parameter_definition';
 import {TypeHierarchy} from './type_hierarchy';
-import {TypeInstantiation} from './type_instantiation';
+import {ExplicitInstantiation, TypeInstantiation} from './type_instantiation';
 import {IncompatibleType} from './exceptions';
 
 export class TypeDefinition {
@@ -92,7 +92,7 @@ export class TypeDefinition {
         p => this.hierarchy.getTypeDef(p.name).addDescendant(t));
   }
 
-  createInstance(): TypeInstantiation {
-    return new TypeInstantiation(this.name);
+  createInstance(): ExplicitInstantiation{
+    return new ExplicitInstantiation(this.name);
   }
 }

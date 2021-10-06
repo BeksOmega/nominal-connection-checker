@@ -4,22 +4,25 @@
  * SPDX-License-Identifier: MIT
  */
 
-import {TypeInstantiation} from '../src/type_instantiation';
+import {
+  ExplicitInstantiation,
+  GenericInstantiation
+} from '../src/type_instantiation';
 import {assert} from 'chai';
 
 suite('TypeStructure', function() {
   suite('equals is exactly equal', function() {
     test('identical names are equal', function() {
-      const a = new TypeInstantiation('test');
-      const b = new TypeInstantiation('test');
+      const a = new ExplicitInstantiation('test');
+      const b = new ExplicitInstantiation('test');
 
       assert.isTrue(
           a.equals(b), 'Expected identical TypeInstantiations to be equal');
     });
 
     test('different names are not equal', function() {
-      const a = new TypeInstantiation('test');
-      const b = new TypeInstantiation('test2');
+      const a = new ExplicitInstantiation('test');
+      const b = new ExplicitInstantiation('test2');
 
       assert.isFalse(
           a.equals(b),
@@ -27,8 +30,8 @@ suite('TypeStructure', function() {
     });
 
     test('differently cased names are not equal', function() {
-      const a = new TypeInstantiation('test');
-      const b = new TypeInstantiation('TEST');
+      const a = new ExplicitInstantiation('test');
+      const b = new ExplicitInstantiation('TEST');
 
       assert.isFalse(
           a.equals(b),
@@ -36,8 +39,8 @@ suite('TypeStructure', function() {
     });
 
     test('identical generics are equal', function() {
-      const a = new TypeInstantiation('test', true);
-      const b = new TypeInstantiation('test', true);
+      const a = new GenericInstantiation('test');
+      const b = new GenericInstantiation('test');
 
       assert.isTrue(
           a.equals(b),
@@ -45,8 +48,8 @@ suite('TypeStructure', function() {
     });
 
     test('different generics are not equal', function() {
-      const a = new TypeInstantiation('test', true);
-      const b = new TypeInstantiation('test2', true);
+      const a = new GenericInstantiation('test');
+      const b = new GenericInstantiation('test2');
 
       assert.isFalse(
           a.equals(b),
@@ -54,8 +57,8 @@ suite('TypeStructure', function() {
     });
 
     test('differently cased generics are not equal', function() {
-      const a = new TypeInstantiation('test', true);
-      const b = new TypeInstantiation('TEST', true);
+      const a = new GenericInstantiation('test');
+      const b = new GenericInstantiation('TEST');
 
       assert.isFalse(
           a.equals(b),
@@ -63,8 +66,8 @@ suite('TypeStructure', function() {
     });
 
     test('generics and non-generics are not equal', function() {
-      const a = new TypeInstantiation('test', true);
-      const b = new TypeInstantiation('test', false);
+      const a = new GenericInstantiation('test');
+      const b = new ExplicitInstantiation('test');
 
       assert.isFalse(
           a.equals(b),
@@ -72,12 +75,12 @@ suite('TypeStructure', function() {
     });
 
     test('identical params are equal', function() {
-      const p1A = new TypeInstantiation('p1');
-      const p1B = new TypeInstantiation('p1');
-      const p2A = new TypeInstantiation('p2');
-      const p2B = new TypeInstantiation('p2');
-      const a = new TypeInstantiation('test', false, [p1A, p2A]);
-      const b = new TypeInstantiation('test', false, [p1B, p2B]);
+      const p1A = new ExplicitInstantiation('p1');
+      const p1B = new ExplicitInstantiation('p1');
+      const p2A = new ExplicitInstantiation('p2');
+      const p2B = new ExplicitInstantiation('p2');
+      const a = new ExplicitInstantiation('test', [p1A, p2A]);
+      const b = new ExplicitInstantiation('test', [p1B, p2B]);
 
       assert.isTrue(
           a.equals(b),
@@ -85,11 +88,11 @@ suite('TypeStructure', function() {
     });
 
     test('different param counts are not equal', function() {
-      const p1A = new TypeInstantiation('p1');
-      const p1B = new TypeInstantiation('p1');
-      const p2A = new TypeInstantiation('p2');
-      const a = new TypeInstantiation('test', false, [p1A, p2A]);
-      const b = new TypeInstantiation('test', false, [p1B]);
+      const p1A = new ExplicitInstantiation('p1');
+      const p1B = new ExplicitInstantiation('p1');
+      const p2A = new ExplicitInstantiation('p2');
+      const a = new ExplicitInstantiation('test', [p1A, p2A]);
+      const b = new ExplicitInstantiation('test', [p1B]);
 
       assert.isFalse(
           a.equals(b),
@@ -99,22 +102,22 @@ suite('TypeStructure', function() {
 
   suite('cloning', function() {
     test('cloning a simple explicit type', function() {
-      const t = new TypeInstantiation('test');
+      const t = new ExplicitInstantiation('test');
       const c = t.clone();
 
       assert.deepEqual(c, t, 'Expected the clone to deeply equal the original');
     });
 
     test('cloning a generic type', function() {
-      const t = new TypeInstantiation('test', true);
+      const t = new GenericInstantiation('test');
       const c = t.clone();
 
       assert.deepEqual(c, t, 'Expected the clone to deeply equal the original');
     });
 
     test('cloning a parameterized type', function() {
-      const p = new TypeInstantiation('parameter');
-      const t = new TypeInstantiation('test', false, [p]);
+      const p = new ExplicitInstantiation('parameter');
+      const t = new ExplicitInstantiation('test', [p]);
       const c = t.clone();
 
       assert.deepEqual(c, t, 'Expected the clone to deeply equal the original');
@@ -123,15 +126,15 @@ suite('TypeStructure', function() {
 
   suite('having params', function() {
     test('having params', function() {
-      const p = new TypeInstantiation('p');
-      const t = new TypeInstantiation('test', false, [p]);
+      const p = new ExplicitInstantiation('p');
+      const t = new ExplicitInstantiation('test', [p]);
 
       assert.isTrue(
           t.hasParams, 'Expected the TypeInstantiation to have params');
     });
 
     test('not having params', function() {
-      const t = new TypeInstantiation('test');
+      const t = new ExplicitInstantiation('test');
 
       assert.isFalse(
           t.hasParams, 'Expected the TypeInstantiation to not have params');

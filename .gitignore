@@ -24,3 +24,6 @@ gh-pages/examples
 
 # stryker temp files
 .stryker-tmp
+
+# config files
+.eslintrc.json

@@ -21,6 +21,9 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
+        run: |
+             echo "::remove-matcher owner=eslint-compact::"
+             echo "::remove-matcher owner=eslint-stylish::"
 
       - name: Npm Install
         run: npm install

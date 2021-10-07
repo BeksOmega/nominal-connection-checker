@@ -92,7 +92,7 @@ export class TypeDefinition {
         p => this.hierarchy.getTypeDef(p.name).addDescendant(t));
   }
 
-  createInstance(): ExplicitInstantiation{
+  createInstance(): ExplicitInstantiation {
     return new ExplicitInstantiation(this.name);
   }
 }

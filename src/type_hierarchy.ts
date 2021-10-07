@@ -143,11 +143,11 @@ export class TypeHierarchy {
         map.set(t2.name, [t1.createInstance()]);
       } else {
         map.set(
-          t2.name,
-          getDirectRelatives(t1)
-              .flatMap(pi => getNearestCommonsOfPair(pi, t2.createInstance()))
-              .filter(removeDuplicates())
-              .filter(removeNonNearestRelatives));
+            t2.name,
+            getDirectRelatives(t1)
+                .flatMap(pi => getNearestCommonsOfPair(pi, t2.createInstance()))
+                .filter(removeDuplicates())
+                .filter(removeNonNearestRelatives));
       }
     });
     return map;
@@ -178,7 +178,7 @@ export class TypeHierarchy {
    * returns the type definition.
    */
   addTypeDef(n: string): TypeDefinition {
-    const d = new TypeDefinition(this, n)
+    const d = new TypeDefinition(this, n);
     this.typeDefsMap.set(n, d);
     return d;
   }

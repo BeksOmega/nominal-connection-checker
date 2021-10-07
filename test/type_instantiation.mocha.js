@@ -6,7 +6,7 @@
 
 import {
   ExplicitInstantiation,
-  GenericInstantiation
+  GenericInstantiation,
 } from '../src/type_instantiation';
 import {assert} from 'chai';
 

@@ -196,6 +196,7 @@ suite('Nearest common descendants', function() {
       const h = new TypeHierarchy();
       const cd = h.addTypeDef('c');
       const pad = h.addTypeDef('pa');
+      h.addTypeDef('pb');
       h.addTypeDef('gpa');
       const ci = new ExplicitInstantiation('c');
       const pai = new ExplicitInstantiation('pa');

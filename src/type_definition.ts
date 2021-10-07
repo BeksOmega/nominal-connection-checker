@@ -24,23 +24,23 @@ export class TypeDefinition {
     this.descendants_.push(this.createInstance());
   }
 
-  public get parents() {
+  get parents() {
     return (this.parents_ as readonly TypeInstantiation[]);
   }
 
-  public get children() {
+  get children() {
     return (this.children_ as readonly TypeInstantiation[]);
   }
 
-  public get ancestors() {
+  get ancestors() {
     return (this.ancestors_ as readonly TypeInstantiation[]);
   }
 
-  public get descendants() {
+  get descendants() {
     return (this.descendants_ as readonly TypeInstantiation[]);
   }
 
-  public get params() {
+  get params() {
     return (this.params_ as readonly ParameterDefinition[]);
   }
 

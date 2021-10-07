@@ -5,7 +5,6 @@
  */
 
 import {IncompatibleType} from '../src/exceptions';
-import {TypeDefinition} from '../src/type_definition';
 import {TypeHierarchy} from '../src/type_hierarchy';
 import {ExplicitInstantiation} from '../src/type_instantiation';
 import {assert} from 'chai';
@@ -67,7 +66,7 @@ suite('TypeDefinition', function() {
       const pd = h.addTypeDef('p');
       const pi1 = new ExplicitInstantiation('p');
       const pi2 = new ExplicitInstantiation('p');
-      const ci = new ExplicitInstantiation('c')
+      const ci = new ExplicitInstantiation('c');
       cd.addParent(pi1);
 
       cd.addParent(pi2);

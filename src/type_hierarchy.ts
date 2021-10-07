@@ -238,10 +238,10 @@ export class TypeHierarchy {
     if (types.length == 1) return types;
 
     return types.reduce(
-      (ncds, type) =>
-        ncds.flatMap(ncd => this.getNearestCommonDescendantsOfPair(type, ncd))
-          .filter(removeDuplicates()),
-      [types[0]]);
+        (ncds, type) =>
+          ncds.flatMap(ncd => this.getNearestCommonDescendantsOfPair(type, ncd))
+              .filter(removeDuplicates()),
+        [types[0]]);
   }
 
   /**

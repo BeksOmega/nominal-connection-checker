@@ -14,5 +14,5 @@ export function removeDuplicates(): (el: unknown) => boolean {
     if (hash.has(el)) return false;
     hash.add(el);
     return true;
-  }
+  };
 }

@@ -38,14 +38,14 @@ export class ExplicitInstantiation implements TypeInstantiation {
    */
   clone(): TypeInstantiation {
     return new ExplicitInstantiation(
-      this.name, this.params.map(p => p.clone()));
+        this.name, this.params.map(p => p.clone()));
   }
 }
 
 export class GenericInstantiation implements TypeInstantiation {
   readonly name: string;
 
-  constructor(name = "") {
+  constructor(name = '') {
     this.name = name;
   }
 

@@ -7,7 +7,7 @@
 import {TypeHierarchy} from '../src/type_hierarchy';
 import {
   ExplicitInstantiation,
-  GenericInstantiation
+  GenericInstantiation,
 } from '../src/type_instantiation';
 import {assert} from 'chai';
 import {NotFinalized} from '../src/exceptions';
@@ -18,9 +18,9 @@ suite('Nearest common descendants', function() {
    * ancestors eds.
    * @param {!TypeHierarchy} h The hierarchy to use to find the nearest common
    *     descendants.
-   * @param {!Array<ExplicitInstantiation>} ts The types to find the nearest
+   * @param {!Array<TypeInstantiation>} ts The types to find the nearest
    *     common descendants of.
-   * @param {!Array<!ExplicitInstantiation>} eds The expected descendants.
+   * @param {!Array<!TypeInstantiation>} eds The expected descendants.
    * @param {string} msg The message to include in the assertion.
    */
   function assertNearestCommonDescendants(h, ts, eds, msg) {
@@ -196,7 +196,7 @@ suite('Nearest common descendants', function() {
       const h = new TypeHierarchy();
       const cd = h.addTypeDef('c');
       const pad = h.addTypeDef('pa');
-      const pbd = h.addTypeDef('pb');
+      h.addTypeDef('pb');
       h.addTypeDef('gpa');
       const ci = new ExplicitInstantiation('c');
       const pai = new ExplicitInstantiation('pa');
@@ -257,12 +257,11 @@ suite('Nearest common descendants', function() {
 
           assertNearestCommonDescendants(
               h, [pai, pbi], [cbi, cci],
-              'Expected the ncds two parents with some sharedildrenparents to be the shared children');
+              'Expected the ncds two parents with some shared children to be the shared children');
         });
 
     test('ncds of three parents with some shared children is the child',
         function() {
-
           const h = new TypeHierarchy();
           const cad = h.addTypeDef('ca');
           const cbd = h.addTypeDef('cb');

@@ -7,7 +7,7 @@
 import {TypeHierarchy} from '../src/type_hierarchy';
 import {
   ExplicitInstantiation,
-  GenericInstantiation
+  GenericInstantiation,
 } from '../src/type_instantiation';
 import {assert} from 'chai';
 
@@ -95,7 +95,7 @@ suite('Subtyping', function() {
 
     test('siblings do not fulfill each other', function() {
       const h = new TypeHierarchy();
-      h.addTypeDef('p')
+      h.addTypeDef('p');
       const ad = h.addTypeDef('a');
       const bd = h.addTypeDef('b');
       const pi = new ExplicitInstantiation('p');
@@ -111,7 +111,7 @@ suite('Subtyping', function() {
 
     test('coparents do not fulfill each other', function() {
       const h = new TypeHierarchy();
-      const cd = h.addTypeDef('c')
+      const cd = h.addTypeDef('c');
       h.addTypeDef('a');
       h.addTypeDef('b');
       const ai = new ExplicitInstantiation('a');
@@ -158,5 +158,5 @@ suite('Subtyping', function() {
           h.typeFulfillsType(g1, g2),
           'Expected the generic types to fulfill each other');
     });
-  })
-})
+  });
+});

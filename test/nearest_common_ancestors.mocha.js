@@ -7,7 +7,7 @@
 import {TypeHierarchy} from '../src/type_hierarchy';
 import {
   ExplicitInstantiation,
-  GenericInstantiation
+  GenericInstantiation,
 } from '../src/type_instantiation';
 import {assert} from 'chai';
 import {NotFinalized} from '../src/exceptions';
@@ -18,9 +18,9 @@ suite('Nearest common ancestors', function() {
    * ancestors eas.
    * @param {!TypeHierarchy} h The hierarchy to use to find the nearest common
    *     ancestors.
-   * @param {!Array<ExplicitInstantiation>} ts The types to find the nearest
+   * @param {!Array<TypeInstantiation>} ts The types to find the nearest
    *     common ancestors of.
-   * @param {!Array<!ExplicitInstantiation>} eas The expected ancestors.
+   * @param {!Array<!TypeInstantiation>} eas The expected ancestors.
    * @param {string} msg The message to include in the assertion.
    */
   function assertNearestCommonAncestors(h, ts, eas, msg) {

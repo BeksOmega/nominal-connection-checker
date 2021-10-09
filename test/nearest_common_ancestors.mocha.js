@@ -413,18 +413,31 @@ suite('Nearest common ancestors', function() {
           'Expected the nca of only generics to be a generic');
     });
 
-    test('generics are otherwise ignored', function() {
+    test('nca of a generic and a type is the type', function() {
+      const h = new TypeHierarchy();
+      h.addTypeDef('t');
+      const ti = new ExplicitInstantiation('t');
+      const gi = new GenericInstantiation('gi');
+      h.finalize();
+
+      assertNearestCommonAncestors(
+          h, [ti, gi], [ti],
+          'Expected generics to be ignored when included with explicits');
+    });
+
+    test('ncas of generics and types are the ncas of the types', function() {
       const h = new TypeHierarchy();
       const td = h.addTypeDef('t');
       h.addTypeDef('p');
       const ti = new ExplicitInstantiation('t');
       const pi = new ExplicitInstantiation('p');
-      const gi = new GenericInstantiation('g');
+      const g1i = new GenericInstantiation('g1');
+      const g2i = new GenericInstantiation('g2');
       td.addParent(pi);
       h.finalize();
 
       assertNearestCommonAncestors(
-          h, [ti, pi, gi], [pi],
+          h, [ti, g1i, pi, g2i], [pi],
           'Expected generics to be ignored when included with explicits');
     });
   });

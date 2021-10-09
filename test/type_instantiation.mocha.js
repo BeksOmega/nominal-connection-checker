@@ -10,7 +10,13 @@ import {
 } from '../src/type_instantiation';
 import {assert} from 'chai';
 
-suite('TypeStructure', function() {
+suite('TypeInstantiation', function() {
+  test('default name of a generic is ""', function() {
+    const g = new GenericInstantiation();
+    assert.strictEqual(
+        g.name, '', 'Expected the default name of a generic to be ""');
+  });
+
   suite('equals is exactly equal', function() {
     test('identical names are equal', function() {
       const a = new ExplicitInstantiation('test');

@@ -396,7 +396,7 @@ suite('Nearest common descendants', function() {
   });
 
   suite('basic generic nearest common descendants', function() {
-    test('nca of only generics is a generic', function() {
+    test('ncd of only generics is a default generic', function() {
       const h = new TypeHierarchy();
       h.finalize();
       const g1 = new GenericInstantiation('g1');
@@ -409,7 +409,19 @@ suite('Nearest common descendants', function() {
           'Expected the ncd of only generics to be a generic');
     });
 
-    test('generics are otherwise ignored', function() {
+    test('nca of a generic and a type is the type', function() {
+      const h = new TypeHierarchy();
+      h.addTypeDef('t');
+      const ti = new ExplicitInstantiation('t');
+      const gi = new GenericInstantiation('gi');
+      h.finalize();
+
+      assertNearestCommonDescendants(
+          h, [ti, gi], [ti],
+          'Expected generics to be ignored when included with explicits');
+    });
+
+    test('ncds of generics and types are the ncds of the types', function() {
       const h = new TypeHierarchy();
       h.addTypeDef('t');
       const cd = h.addTypeDef('c');

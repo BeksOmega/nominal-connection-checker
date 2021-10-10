@@ -43,14 +43,14 @@ export class ExplicitInstantiation implements TypeInstantiation {
 }
 
 export class GenericInstantiation implements TypeInstantiation {
-  readonly name: string;
+  readonly isConstrained: boolean;
 
   constructor(
-      name = '',
-      boundsType: BoundsType = undefined,
-      bounds: readonly TypeInstantiation[] = []
+      readonly name = '',
+      readonly boundsType: BoundsType = undefined,
+      readonly bounds: readonly ExplicitInstantiation[] = []
   ) {
-    this.name = name;
+    this.isConstrained = !!bounds.length;
   }
 
   /**

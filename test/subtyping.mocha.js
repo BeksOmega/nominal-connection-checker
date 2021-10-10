@@ -359,7 +359,7 @@ suite('Subtyping', function() {
             const gi = new GenericInstantiation(
                 'g', BoundsType.MORE_GENERAL_THAN, [ti]);
 
-            assert.isTrue(
+            assert.isFalse(
                 h.typeFulfillsType(ui, gi),
                 'Expected an unrelated type to not fulfill a generic with a lower bound');
           });
@@ -375,6 +375,7 @@ suite('Subtyping', function() {
                 'g', BoundsType.MORE_SPECIFIC_THAN, [ti]);
             const gi2 = new GenericInstantiation(
                 'g', BoundsType.MORE_SPECIFIC_THAN, [ti]);
+            h.finalize();
 
             assert.isTrue(
                 h.typeFulfillsType(gi1, gi2),
@@ -393,6 +394,7 @@ suite('Subtyping', function() {
             const gi2 = new GenericInstantiation(
                 'g', BoundsType.MORE_SPECIFIC_THAN, [pi]);
             td.addParent(pi);
+            h.finalize();
 
             assert.isTrue(
                 h.typeFulfillsType(gi1, gi2),
@@ -413,6 +415,7 @@ suite('Subtyping', function() {
                 'g', BoundsType.MORE_SPECIFIC_THAN, [p2i]);
             td.addParent(p1i);
             td.addParent(p2i);
+            h.finalize();
 
             assert.isTrue(
                 h.typeFulfillsType(gi1, gi2),
@@ -430,6 +433,7 @@ suite('Subtyping', function() {
                 'g', BoundsType.MORE_SPECIFIC_THAN, [t1i]);
             const gi2 = new GenericInstantiation(
                 'g', BoundsType.MORE_SPECIFIC_THAN, [t2i]);
+            h.finalize();
 
             assert.isFalse(
                 h.typeFulfillsType(gi1, gi2),
@@ -455,6 +459,7 @@ suite('Subtyping', function() {
         mammald.addParent(animali);
         batd.addParent(mammali);
         batd.addParent(flieri);
+        h.finalize();
 
         assert.isTrue(
             h.typeFulfillsType(t, g),
@@ -480,6 +485,7 @@ suite('Subtyping', function() {
         mammald.addParent(animali);
         batd.addParent(mammali);
         batd.addParent(flieri);
+        h.finalize();
 
         assert.isTrue(
             h.typeFulfillsType(t, g),
@@ -495,6 +501,7 @@ suite('Subtyping', function() {
                 'g', BoundsType.MORE_GENERAL_THAN, [ti]);
             const gi2 = new GenericInstantiation(
                 'g', BoundsType.MORE_GENERAL_THAN, [ti]);
+            h.finalize();
 
             assert.isTrue(
                 h.typeFulfillsType(gi1, gi2),
@@ -513,6 +520,7 @@ suite('Subtyping', function() {
             const gi2 = new GenericInstantiation(
                 'g', BoundsType.MORE_GENERAL_THAN, [pi]);
             td.addParent(pi);
+            h.finalize();
 
             assert.isTrue(
                 h.typeFulfillsType(gi1, gi2),
@@ -525,8 +533,8 @@ suite('Subtyping', function() {
             const t1d = h.addTypeDef('t1');
             const t2d = h.addTypeDef('t2');
             h.addTypeDef('p');
-            const t1i = new ExplicitInstantiation('t1i');
-            const t2i = new ExplicitInstantiation('t2i');
+            const t1i = new ExplicitInstantiation('t1');
+            const t2i = new ExplicitInstantiation('t2');
             const pi = new ExplicitInstantiation('p');
             const gi1 = new GenericInstantiation(
                 'g', BoundsType.MORE_GENERAL_THAN, [t1i]);
@@ -534,6 +542,7 @@ suite('Subtyping', function() {
                 'g', BoundsType.MORE_GENERAL_THAN, [t2i]);
             t1d.addParent(pi);
             t2d.addParent(pi);
+            h.finalize();
 
             assert.isTrue(
                 h.typeFulfillsType(gi1, gi2),
@@ -551,6 +560,7 @@ suite('Subtyping', function() {
                 'g', BoundsType.MORE_GENERAL_THAN, [t1i]);
             const gi2 = new GenericInstantiation(
                 'g', BoundsType.MORE_GENERAL_THAN, [t2i]);
+            h.finalize();
 
             assert.isFalse(
                 h.typeFulfillsType(gi1, gi2),
@@ -569,6 +579,7 @@ suite('Subtyping', function() {
             const gi2 = new GenericInstantiation(
                 'g', BoundsType.MORE_SPECIFIC_THAN, [pi]);
             td.addParent(pi);
+            h.finalize();
 
             assert.isTrue(
                 h.typeFulfillsType(gi1, gi2),
@@ -590,6 +601,7 @@ suite('Subtyping', function() {
                 'g', BoundsType.MORE_SPECIFIC_THAN, [p1i, p2i]);
             td.addParent(p1i);
             td.addParent(p2i);
+            h.finalize();
 
             assert.isTrue(
                 h.typeFulfillsType(gi1, gi2),
@@ -611,6 +623,7 @@ suite('Subtyping', function() {
                 'g', BoundsType.MORE_SPECIFIC_THAN, [pi]);
             t1d.addParent(pi);
             t2d.addParent(pi);
+            h.finalize();
 
             assert.isTrue(
                 h.typeFulfillsType(gi1, gi2),
@@ -631,6 +644,7 @@ suite('Subtyping', function() {
             const gi2 = new GenericInstantiation(
                 'g', BoundsType.MORE_SPECIFIC_THAN, [p1i, p2i]);
             td.addParent(p1i);
+            h.finalize();
 
             assert.isFalse(
                 h.typeFulfillsType(gi1, gi2),
@@ -651,6 +665,7 @@ suite('Subtyping', function() {
             const gi2 = new GenericInstantiation(
                 'g', BoundsType.MORE_SPECIFIC_THAN, [pi]);
             t1d.addParent(pi);
+            h.finalize();
 
             assert.isFalse(
                 h.typeFulfillsType(gi1, gi2),

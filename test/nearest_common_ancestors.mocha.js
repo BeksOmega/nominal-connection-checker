@@ -6,11 +6,12 @@
 
 import {TypeHierarchy} from '../src/type_hierarchy';
 import {
+  BoundsType,
   ExplicitInstantiation,
   GenericInstantiation,
 } from '../src/type_instantiation';
 import {assert} from 'chai';
-import {NotFinalized} from '../src/exceptions';
+import {IncompatibleType, NotFinalized} from '../src/exceptions';
 
 suite('Nearest common ancestors', function() {
   /**
@@ -28,6 +29,48 @@ suite('Nearest common ancestors', function() {
     assert.equal(aas.length, eas.length, msg);
     assert.isTrue(aas.every((aa, i) => aa.equals(eas[i])), msg);
   }
+
+  test('invalid type throws', function() {
+    const h = new TypeHierarchy();
+    const ti1 = new ExplicitInstantiation('t');
+    const ti2 = new ExplicitInstantiation('t');
+    h.finalize();
+
+    assert.throws(
+        () => h.getNearestCommonAncestors(ti1, ti2),
+        /The type instance .* is incompatible with the given TypeHierarchy/,
+        IncompatibleType);
+  });
+
+  test('invalid upper bound throws', function() {
+    const h = new TypeHierarchy();
+    h.addTypeDef('t');
+    const ti = new ExplicitInstantiation('t');
+    const ui = new ExplicitInstantiation('u');
+    const gi = new GenericInstantiation(
+        'g', BoundsType.MORE_SPECIFIC_THAN, [ui]);
+    h.finalize();
+
+    assert.throws(
+        () => h.getNearestCommonAncestors(ti, gi),
+        /The type instance .* is incompatible with the given TypeHierarchy/,
+        IncompatibleType);
+  });
+
+  test('invalid lower bound throws', function() {
+    const h = new TypeHierarchy();
+    h.addTypeDef('t');
+    const ti = new ExplicitInstantiation('t');
+    const ui = new ExplicitInstantiation('u');
+    const gi = new GenericInstantiation(
+        'g', BoundsType.MORE_GENERAL_THAN, [ui]);
+    h.finalize();
+
+    assert.throws(
+        () => h.getNearestCommonAncestors(ti, gi),
+        /The type instance .* is incompatible with the given TypeHierarchy/,
+        IncompatibleType);
+  });
 
   suite('basic explicit nearest common ancestors', function() {
     test('not being finalized throws errors', function() {

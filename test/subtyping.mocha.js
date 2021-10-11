@@ -5,14 +5,50 @@
  */
 
 import {TypeHierarchy} from '../src/type_hierarchy';
-import {
-  ExplicitInstantiation,
-  GenericInstantiation,
-  BoundsType,
-} from '../src/type_instantiation';
+import {ExplicitInstantiation, GenericInstantiation, BoundsType} from '../src/type_instantiation';
+import {IncompatibleType} from '../src/exceptions';
 import {assert} from 'chai';
 
 suite('Subtyping', function() {
+  test('invalid type throws', function() {
+    const h = new TypeHierarchy();
+    const ti1 = new ExplicitInstantiation('t');
+    const ti2 = new ExplicitInstantiation('t');
+
+    assert.throws(
+        () => h.typeFulfillsType(ti1, ti2),
+        /The type instance .* is incompatible with the given TypeHierarchy/,
+        IncompatibleType);
+  });
+
+  test('invalid upper bound throws', function() {
+    const h = new TypeHierarchy();
+    h.addTypeDef('t');
+    const ti = new ExplicitInstantiation('t');
+    const ui = new ExplicitInstantiation('u');
+    const gi = new GenericInstantiation(
+        'g', BoundsType.MORE_SPECIFIC_THAN, [ui]);
+
+    assert.throws(
+        () => h.typeFulfillsType(ti, gi),
+        /The type instance .* is incompatible with the given TypeHierarchy/,
+        IncompatibleType);
+  });
+
+  test('invalid lower bound throws', function() {
+    const h = new TypeHierarchy();
+    h.addTypeDef('t');
+    const ti = new ExplicitInstantiation('t');
+    const ui = new ExplicitInstantiation('u');
+    const gi = new GenericInstantiation(
+        'g', BoundsType.MORE_GENERAL_THAN, [ui]);
+
+    assert.throws(
+        () => h.typeFulfillsType(ti, gi),
+        /The type instance .* is incompatible with the given TypeHierarchy/,
+        IncompatibleType);
+  });
+
   suite('basic explicit subtyping', function() {
     test('every type fulfills itself', function() {
       const h = new TypeHierarchy();

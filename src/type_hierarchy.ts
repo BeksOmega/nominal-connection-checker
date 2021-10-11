@@ -7,7 +7,7 @@
 import {TypeDefinition} from './type_definition';
 import {BoundsType, ExplicitInstantiation, GenericInstantiation, TypeInstantiation} from './type_instantiation';
 import {removeDuplicates} from './utils';
-import {NotFinalized} from './exceptions';
+import {IncompatibleType, NotFinalized} from './exceptions';
 
 export class TypeHierarchy {
   /**
@@ -197,6 +197,12 @@ export class TypeHierarchy {
    * the correct number of parameters, etc). False otherwise.
    */
   typeIsCompatible(t: TypeInstantiation): boolean {
+    if (t instanceof GenericInstantiation) {
+      if (t.isConstrained) {
+        return t.bounds.every(bound => this.typeIsCompatible(bound));
+      }
+      return true;
+    }
     return this.typeDefsMap.has(t.name);
   }
 
@@ -205,6 +211,9 @@ export class TypeHierarchy {
    * relationships within this type hierarchy.
    */
   typeFulfillsType(a: TypeInstantiation, b: TypeInstantiation): boolean {
+    if (!this.typeIsCompatible(a)) throw new IncompatibleType(a);
+    if (!this.typeIsCompatible(b)) throw new IncompatibleType(b);
+
     if (a instanceof GenericInstantiation && !a.isConstrained ||
         b instanceof GenericInstantiation && !b.isConstrained) {
       return true;
@@ -260,6 +269,10 @@ export class TypeHierarchy {
       ...types: TypeInstantiation[]
   ): TypeInstantiation[] {
     if (!this.finalized) throw new NotFinalized();
+    types.forEach(t => {
+      if (!this.typeIsCompatible(t)) throw new IncompatibleType(t);
+    });
+
     if (types.length == 0) return [];
     types = types.filter(t => t instanceof ExplicitInstantiation);
     if (types.length == 0) return [new GenericInstantiation()];
@@ -276,6 +289,10 @@ export class TypeHierarchy {
       ...types: TypeInstantiation[]
   ): TypeInstantiation[] {
     if (!this.finalized) throw new NotFinalized();
+    types.forEach(t => {
+      if (!this.typeIsCompatible(t)) throw new IncompatibleType(t);
+    });
+
     if (types.length == 0) return [];
     types = types.filter(t => t instanceof ExplicitInstantiation);
     if (types.length == 0) return [new GenericInstantiation()];

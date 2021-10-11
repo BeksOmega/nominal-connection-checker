@@ -197,6 +197,12 @@ export class TypeHierarchy {
    * the correct number of parameters, etc). False otherwise.
    */
   typeIsCompatible(t: TypeInstantiation): boolean {
+    if (t instanceof GenericInstantiation) {
+      if (t.isConstrained) {
+        return t.bounds.every(bound => this.typeIsCompatible(bound));
+      }
+      return true;
+    }
     return this.typeDefsMap.has(t.name);
   }
 

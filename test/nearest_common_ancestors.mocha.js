@@ -77,6 +77,7 @@ suite('Nearest common ancestors', function() {
     td.addParent(pi);
     cd.addParent(ti);
     const gi = new GenericInstantiation('g', [pi], [ci]);
+    h.finalize();
 
     assert.throws(
         () => h.getNearestCommonAncestors(ti, gi),

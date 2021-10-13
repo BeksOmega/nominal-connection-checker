@@ -14,6 +14,7 @@ suite('Subtyping', function() {
     const h = new TypeHierarchy();
     const ti1 = new ExplicitInstantiation('t');
     const ti2 = new ExplicitInstantiation('t');
+    h.finalize();
 
     assert.throws(
         () => h.typeFulfillsType(ti1, ti2),
@@ -27,6 +28,7 @@ suite('Subtyping', function() {
     const ti = new ExplicitInstantiation('t');
     const ui = new ExplicitInstantiation('u');
     const gi = new GenericInstantiation('g', [], [ui]);
+    h.finalize();
 
     assert.throws(
         () => h.typeFulfillsType(ti, gi),
@@ -40,6 +42,7 @@ suite('Subtyping', function() {
     const ti = new ExplicitInstantiation('t');
     const ui = new ExplicitInstantiation('u');
     const gi = new GenericInstantiation('g', [ui]);
+    h.finalize();
 
     assert.throws(
         () => h.typeFulfillsType(ti, gi),
@@ -58,6 +61,7 @@ suite('Subtyping', function() {
     td.addParent(pi);
     cd.addParent(ti);
     const gi = new GenericInstantiation('g', [pi], [ci]);
+    h.finalize();
 
     assert.throws(
         () => h.typeFulfillsType(ti, gi),
@@ -415,6 +419,7 @@ suite('Subtyping', function() {
             td.addParent(pi);
             cd.addParent(ti);
             const gi = new GenericInstantiation('g', [ci], [pi]);
+            h.finalize();
 
             assert.isTrue(
                 h.typeFulfillsType(ti, gi),
@@ -436,6 +441,7 @@ suite('Subtyping', function() {
             ud.addParent(pi);
             cd.addParent(ti);
             const gi = new GenericInstantiation('g', [ci], [pi]);
+            h.finalize();
 
             assert.isFalse(
                 h.typeFulfillsType(ui, gi),
@@ -447,7 +453,7 @@ suite('Subtyping', function() {
             const h = new TypeHierarchy();
             h.addTypeDef('p');
             const td = h.addTypeDef('t');
-            const ud = h.addTypeDef('u');
+            h.addTypeDef('u');
             const cd = h.addTypeDef('c');
             const pi = new ExplicitInstantiation('p');
             const ti = new ExplicitInstantiation('t');
@@ -457,6 +463,7 @@ suite('Subtyping', function() {
             cd.addParent(ti);
             cd.addParent(ui);
             const gi = new GenericInstantiation('g', [ci], [pi]);
+            h.finalize();
 
             assert.isFalse(
                 h.typeFulfillsType(ui, gi),
@@ -673,7 +680,7 @@ suite('Subtyping', function() {
             const p1i = new ExplicitInstantiation('p1');
             const p2i = new ExplicitInstantiation('p2');
             const gi1 = new GenericInstantiation('g', [ti]);
-            const gi2 = new GenericInstantiation('g', [p1i, p2i]);
+            const gi2 = new GenericInstantiation('g', [], [p1i, p2i]);
             td.addParent(p1i);
             td.addParent(p2i);
             h.finalize();
@@ -762,6 +769,7 @@ suite('Subtyping', function() {
             gcd.addParent(ci);
             const gi1 = new GenericInstantiation('g', [gci1], [gpi1]);
             const gi2 = new GenericInstantiation('g', [gci2], [gpi2]);
+            h.finalize();
 
             assert.isTrue(
                 h.typeFulfillsType(gi1, gi2),
@@ -787,6 +795,7 @@ suite('Subtyping', function() {
             gcd.addParent(ci);
             const gi = new GenericInstantiation('g', [gci], [gpi]);
             const hi = new GenericInstantiation('h', [ci], [pi]);
+            h.finalize();
 
             assert.isTrue(
                 h.typeFulfillsType(gi, hi),
@@ -812,6 +821,7 @@ suite('Subtyping', function() {
             gcd.addParent(ci);
             const gi = new GenericInstantiation('g', [ci], [gpi]);
             const hi = new GenericInstantiation('h', [gci], [pi]);
+            h.finalize();
 
             assert.isTrue(
                 h.typeFulfillsType(gi, hi),
@@ -837,6 +847,7 @@ suite('Subtyping', function() {
             gcd.addParent(ci);
             const gi = new GenericInstantiation('g', [gci], [ci]);
             const hi = new GenericInstantiation('h', [pi], [gpi]);
+            h.finalize();
 
             assert.isFalse(
                 h.typeFulfillsType(gi, hi),

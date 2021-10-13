@@ -5,7 +5,7 @@
  */
 
 import {TypeDefinition} from './type_definition';
-import {BoundsType, ExplicitInstantiation, GenericInstantiation, TypeInstantiation} from './type_instantiation';
+import {ExplicitInstantiation, GenericInstantiation, TypeInstantiation} from './type_instantiation';
 import {removeDuplicates} from './utils';
 import {IncompatibleType, NotFinalized} from './exceptions';
 
@@ -198,10 +198,21 @@ export class TypeHierarchy {
    */
   typeIsCompatible(t: TypeInstantiation): boolean {
     if (t instanceof GenericInstantiation) {
-      if (t.isConstrained) {
-        return t.bounds.every(bound => this.typeIsCompatible(bound));
+      if (t.lowerBounds.length &&
+          !t.lowerBounds.every(b => this.typeIsCompatible(b))) {
+        return false;
       }
-      return true;
+      if (t.upperBounds.length &&
+        !t.upperBounds.every(b => this.typeIsCompatible(b))) {
+        return false;
+      }
+      if (!t.lowerBounds.length || !t.upperBounds.length) {
+        return true;
+      }
+      const ncas = this.getNearestCommonAncestors(...t.lowerBounds);
+      const ncds = this.getNearestCommonDescendants(...t.upperBounds);
+      return ncds.some(
+          ncd => ncas.some(nca => this.typeFulfillsType(nca, ncd)));
     }
     return this.typeDefsMap.has(t.name);
   }
@@ -239,30 +250,24 @@ export class TypeHierarchy {
       a: GenericInstantiation,
       b: GenericInstantiation
   ): boolean {
-    if (a.boundsType == BoundsType.MORE_GENERAL_THAN &&
-      b.boundsType == BoundsType.MORE_GENERAL_THAN) {
-      return !!this.getNearestCommonAncestors(...a.bounds, ...b.bounds).length;
-    }
-    if (a.boundsType == BoundsType.MORE_SPECIFIC_THAN &&
-        b.boundsType == BoundsType.MORE_SPECIFIC_THAN) {
-      return !!this.getNearestCommonDescendants(...a.bounds, ...b.bounds)
-          .length;
-    }
-    const l = a.boundsType == BoundsType.MORE_GENERAL_THAN ? a : b;
-    const h = l == a ? b : a;
-    const ncas = this.getNearestCommonAncestors(...l.bounds);
-    const ncds = this.getNearestCommonDescendants(...h.bounds);
-    return ncds.some(ncd => ncas.some(nca => this.typeFulfillsType(nca, ncd)));
+    const ncas = this.getNearestCommonAncestors(
+        ...a.lowerBounds, ...b.lowerBounds);
+    const ncds = this.getNearestCommonDescendants(
+        ...a.upperBounds, ...b.upperBounds);
+    return (!!ncds.length && !a.lowerBounds.length && !b.lowerBounds.length) ||
+        (!!ncas.length && !a.upperBounds.length && !b.upperBounds.length) ||
+        ncds.some(ncd => ncas.some(nca => this.typeFulfillsType(nca, ncd)));
   }
 
   private explicitFulfillsConstrainedGeneric(
       e: ExplicitInstantiation,
       g: GenericInstantiation,
   ): boolean {
-    if (g.boundsType == BoundsType.MORE_SPECIFIC_THAN) {
-      return g.bounds.every(b => this.typeFulfillsType(e, b));
-    }
-    return g.bounds.every(b => this.typeFulfillsType(b, e));
+    const lCompat = !g.lowerBounds.length ||
+        g.lowerBounds.every(b => this.typeFulfillsType(b, e));
+    const uCompat = !g.upperBounds.length ||
+      g.upperBounds.every(b => this.typeFulfillsType(e, b));
+    return lCompat && uCompat;
   }
 
   getNearestCommonAncestors(

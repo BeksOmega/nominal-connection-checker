@@ -221,7 +221,7 @@ suite('TypeInstantiation', function() {
     test('not having constraints', function() {
       const a = new GenericInstantiation('test', [], []);
 
-      assert.isTrue(a.isConstrained, 'Expected the type to not be constrained');
+      assert.isFalse(a.isConstrained, 'Expected the type to not be constrained');
     });
   });
 });

@@ -13,6 +13,7 @@ suite('TypeInstance compatibility', function() {
     const h = new TypeHierarchy();
     h.addTypeDef('t');
     const ti = new ExplicitInstantiation('t');
+    h.finalize();
 
     assert.isTrue(
         h.typeIsCompatible(ti), 'Expected a type that exists to be compatible');
@@ -21,6 +22,7 @@ suite('TypeInstance compatibility', function() {
   test('types that do not exist are not compatible', function() {
     const h = new TypeHierarchy();
     const ti = new ExplicitInstantiation('t');
+    h.finalize();
 
     assert.isFalse(
         h.typeIsCompatible(ti),
@@ -30,6 +32,7 @@ suite('TypeInstance compatibility', function() {
   test('unconstrained generics are always compatible', function() {
     const h = new TypeHierarchy();
     const gi = new GenericInstantiation('g');
+    h.finalize();
 
     assert.isTrue(
         h.typeIsCompatible(gi),
@@ -41,6 +44,7 @@ suite('TypeInstance compatibility', function() {
     h.addTypeDef('t');
     const ti = new ExplicitInstantiation('t');
     const gi = new GenericInstantiation('g', [], [ti]);
+    h.finalize();
 
     assert.isTrue(
         h.typeIsCompatible(gi),
@@ -51,6 +55,7 @@ suite('TypeInstance compatibility', function() {
     const h = new TypeHierarchy();
     const ti = new ExplicitInstantiation('t');
     const gi = new GenericInstantiation('g', [], [ti]);
+    h.finalize();
 
     assert.isFalse(
         h.typeIsCompatible(gi),
@@ -62,6 +67,7 @@ suite('TypeInstance compatibility', function() {
     h.addTypeDef('t');
     const ti = new ExplicitInstantiation('t');
     const gi = new GenericInstantiation('g', [ti]);
+    h.finalize();
 
     assert.isTrue(
         h.typeIsCompatible(gi),
@@ -72,6 +78,7 @@ suite('TypeInstance compatibility', function() {
     const h = new TypeHierarchy();
     const ti = new ExplicitInstantiation('t');
     const gi = new GenericInstantiation('g', [ti]);
+    h.finalize();
 
     assert.isFalse(
         h.typeIsCompatible(gi),
@@ -90,6 +97,7 @@ suite('TypeInstance compatibility', function() {
         td.addParent(pi);
         cd.addParent(ti);
         const gi = new GenericInstantiation('g', [ci], [pi]);
+        h.finalize();
 
         assert.isTrue(
             h.typeIsCompatible(gi),
@@ -108,6 +116,7 @@ suite('TypeInstance compatibility', function() {
         td.addParent(pi);
         cd.addParent(ti);
         const gi = new GenericInstantiation('g', [pi], [ci]);
+        h.finalize();
 
         assert.isFalse(
             h.typeIsCompatible(gi),

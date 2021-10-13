@@ -198,17 +198,9 @@ export class TypeHierarchy {
    */
   typeIsCompatible(t: TypeInstantiation): boolean {
     if (t instanceof GenericInstantiation) {
-      if (t.lowerBounds.length &&
-          !t.lowerBounds.every(b => this.typeIsCompatible(b))) {
-        return false;
-      }
-      if (t.upperBounds.length &&
-        !t.upperBounds.every(b => this.typeIsCompatible(b))) {
-        return false;
-      }
-      if (!t.lowerBounds.length || !t.upperBounds.length) {
-        return true;
-      }
+      if (!t.lowerBounds.every(b => this.typeIsCompatible(b))) return false;
+      if (!t.upperBounds.every(b => this.typeIsCompatible(b))) return false;
+      if (!t.hasLowerBound || !t.hasUpperBound) return true;
       const ncas = this.getNearestCommonAncestors(...t.lowerBounds);
       const ncds = this.getNearestCommonDescendants(...t.upperBounds);
       return ncds.some(
@@ -254,8 +246,10 @@ export class TypeHierarchy {
         ...a.lowerBounds, ...b.lowerBounds);
     const ncds = this.getNearestCommonDescendants(
         ...a.upperBounds, ...b.upperBounds);
-    return (!!ncds.length && !a.lowerBounds.length && !b.lowerBounds.length) ||
-        (!!ncas.length && !a.upperBounds.length && !b.upperBounds.length) ||
+    const lowersUnify = !!ncas.length;
+    const uppersUnify = !!ncds.length;
+    return (uppersUnify && !a.hasLowerBound && !b.hasLowerBound) ||
+        (lowersUnify && !a.hasUpperBound && !b.hasUpperBound) ||
         ncds.some(ncd => ncas.some(nca => this.typeFulfillsType(nca, ncd)));
   }
 
@@ -263,10 +257,10 @@ export class TypeHierarchy {
       e: ExplicitInstantiation,
       g: GenericInstantiation,
   ): boolean {
-    const lCompat = !g.lowerBounds.length ||
+    const lCompat = !g.hasLowerBound ||
         g.lowerBounds.every(b => this.typeFulfillsType(b, e));
-    const uCompat = !g.upperBounds.length ||
-      g.upperBounds.every(b => this.typeFulfillsType(e, b));
+    const uCompat = !g.hasUpperBound ||
+        g.upperBounds.every(b => this.typeFulfillsType(e, b));
     return lCompat && uCompat;
   }
 

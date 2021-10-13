@@ -44,6 +44,8 @@ export class ExplicitInstantiation implements TypeInstantiation {
 
 export class GenericInstantiation implements TypeInstantiation {
   readonly isConstrained: boolean;
+  readonly hasLowerBound: boolean;
+  readonly hasUpperBound: boolean;
 
   constructor(
       readonly name = '',
@@ -51,6 +53,8 @@ export class GenericInstantiation implements TypeInstantiation {
       readonly upperBounds: readonly ExplicitInstantiation[] = []
   ) {
     this.isConstrained = !!lowerBounds.length || !!upperBounds.length;
+    this.hasLowerBound = !!lowerBounds.length;
+    this.hasUpperBound = !!upperBounds.length;
   }
 
   /**

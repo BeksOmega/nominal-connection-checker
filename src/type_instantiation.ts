@@ -44,13 +44,17 @@ export class ExplicitInstantiation implements TypeInstantiation {
 
 export class GenericInstantiation implements TypeInstantiation {
   readonly isConstrained: boolean;
+  readonly hasLowerBound: boolean;
+  readonly hasUpperBound: boolean;
 
   constructor(
       readonly name = '',
-      readonly boundsType: BoundsType = undefined,
-      readonly bounds: readonly ExplicitInstantiation[] = []
+      readonly lowerBounds: readonly ExplicitInstantiation[] = [],
+      readonly upperBounds: readonly ExplicitInstantiation[] = []
   ) {
-    this.isConstrained = !!bounds.length;
+    this.isConstrained = !!lowerBounds.length || !!upperBounds.length;
+    this.hasLowerBound = !!lowerBounds.length;
+    this.hasUpperBound = !!upperBounds.length;
   }
 
   /**
@@ -58,7 +62,12 @@ export class GenericInstantiation implements TypeInstantiation {
    * instance. Otherwise false.
    */
   equals(b: TypeInstantiation): boolean {
-    return b instanceof GenericInstantiation && this.name === b.name;
+    return b instanceof GenericInstantiation &&
+        this.name === b.name &&
+        this.lowerBounds.length == b.lowerBounds.length &&
+        this.upperBounds.length == b.upperBounds.length &&
+        this.lowerBounds.every((l, i) => l.equals(b.lowerBounds[i])) &&
+        this.upperBounds.every((u, i) => u.equals(b.upperBounds[i]));
   }
 
   /**
@@ -66,11 +75,7 @@ export class GenericInstantiation implements TypeInstantiation {
    * instance.
    */
   clone(): TypeInstantiation {
-    return new GenericInstantiation(this.name);
+    return new GenericInstantiation(
+        this.name, [...this.lowerBounds], [...this.upperBounds]);
   }
-}
-
-export enum BoundsType {
-  MORE_SPECIFIC_THAN,
-  MORE_GENERAL_THAN
 }

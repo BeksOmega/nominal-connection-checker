@@ -43,8 +43,7 @@ suite('Nearest common ancestors', function() {
     h.addTypeDef('t');
     const ti = new ExplicitInstantiation('t');
     const ui = new ExplicitInstantiation('u');
-    const gi = new GenericInstantiation(
-        'g', BoundsType.MORE_SPECIFIC_THAN, [ui]);
+    const gi = new GenericInstantiation('g', [], [ui]);
     h.finalize();
 
     assert.throws(
@@ -58,8 +57,26 @@ suite('Nearest common ancestors', function() {
     h.addTypeDef('t');
     const ti = new ExplicitInstantiation('t');
     const ui = new ExplicitInstantiation('u');
-    const gi = new GenericInstantiation(
-        'g', BoundsType.MORE_GENERAL_THAN, [ui]);
+    const gi = new GenericInstantiation('g', [ui]);
+    h.finalize();
+
+    assert.throws(
+        () => h.getNearestCommonAncestors(ti, gi),
+        /The type instance .* is incompatible with the given TypeHierarchy/,
+        IncompatibleType);
+  });
+
+  test('lower bound higher than upper bound throws', function() {
+    const h = new TypeHierarchy();
+    h.addTypeDef('p');
+    const td = h.addTypeDef('t');
+    const cd = h.addTypeDef('c');
+    const pi = new ExplicitInstantiation('p');
+    const ti = new ExplicitInstantiation('t');
+    const ci = new ExplicitInstantiation('c');
+    td.addParent(pi);
+    cd.addParent(ti);
+    const gi = new GenericInstantiation('g', [pi], [ci]);
     h.finalize();
 
     assert.throws(

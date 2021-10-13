@@ -5,7 +5,7 @@
  */
 
 import {TypeHierarchy} from '../src/type_hierarchy';
-import {ExplicitInstantiation, GenericInstantiation, BoundsType} from '../src/type_instantiation';
+import {ExplicitInstantiation, GenericInstantiation} from '../src/type_instantiation';
 import {IncompatibleType} from '../src/exceptions';
 import {assert} from 'chai';
 
@@ -14,6 +14,7 @@ suite('Subtyping', function() {
     const h = new TypeHierarchy();
     const ti1 = new ExplicitInstantiation('t');
     const ti2 = new ExplicitInstantiation('t');
+    h.finalize();
 
     assert.throws(
         () => h.typeFulfillsType(ti1, ti2),
@@ -26,8 +27,8 @@ suite('Subtyping', function() {
     h.addTypeDef('t');
     const ti = new ExplicitInstantiation('t');
     const ui = new ExplicitInstantiation('u');
-    const gi = new GenericInstantiation(
-        'g', BoundsType.MORE_SPECIFIC_THAN, [ui]);
+    const gi = new GenericInstantiation('g', [], [ui]);
+    h.finalize();
 
     assert.throws(
         () => h.typeFulfillsType(ti, gi),
@@ -40,8 +41,27 @@ suite('Subtyping', function() {
     h.addTypeDef('t');
     const ti = new ExplicitInstantiation('t');
     const ui = new ExplicitInstantiation('u');
-    const gi = new GenericInstantiation(
-        'g', BoundsType.MORE_GENERAL_THAN, [ui]);
+    const gi = new GenericInstantiation('g', [ui]);
+    h.finalize();
+
+    assert.throws(
+        () => h.typeFulfillsType(ti, gi),
+        /The type instance .* is incompatible with the given TypeHierarchy/,
+        IncompatibleType);
+  });
+
+  test('lower bound higher than upper bound throws', function() {
+    const h = new TypeHierarchy();
+    h.addTypeDef('p');
+    const td = h.addTypeDef('t');
+    const cd = h.addTypeDef('c');
+    const pi = new ExplicitInstantiation('p');
+    const ti = new ExplicitInstantiation('t');
+    const ci = new ExplicitInstantiation('c');
+    td.addParent(pi);
+    cd.addParent(ti);
+    const gi = new GenericInstantiation('g', [pi], [ci]);
+    h.finalize();
 
     assert.throws(
         () => h.typeFulfillsType(ti, gi),
@@ -203,8 +223,7 @@ suite('Subtyping', function() {
       h.addTypeDef('t');
       const ti = new ExplicitInstantiation('t');
       const gi = new GenericInstantiation('g');
-      const ci = new GenericInstantiation(
-          'c', BoundsType.MORE_SPECIFIC_THAN, [ti]);
+      const ci = new GenericInstantiation('c', [], [ti]);
 
       assert.isTrue(
           h.typeFulfillsType(gi, ci),
@@ -216,8 +235,7 @@ suite('Subtyping', function() {
         const h = new TypeHierarchy();
         h.addTypeDef('t');
         const ti = new ExplicitInstantiation('t');
-        const gi = new GenericInstantiation(
-            'g', BoundsType.MORE_SPECIFIC_THAN, [ti]);
+        const gi = new GenericInstantiation('g', [], [ti]);
 
         assert.isTrue(
             h.typeFulfillsType(ti, gi),
@@ -230,8 +248,7 @@ suite('Subtyping', function() {
         h.addTypeDef('p');
         const ti = new ExplicitInstantiation('t');
         const pi = new ExplicitInstantiation('p');
-        const gi = new GenericInstantiation(
-            'g', BoundsType.MORE_SPECIFIC_THAN, [pi]);
+        const gi = new GenericInstantiation('g', [], [pi]);
         td.addParent(pi);
 
         assert.isTrue(
@@ -248,8 +265,7 @@ suite('Subtyping', function() {
             const ti = new ExplicitInstantiation('t');
             const p1i = new ExplicitInstantiation('p1');
             const p2i = new ExplicitInstantiation('p2');
-            const gi = new GenericInstantiation(
-                'g', BoundsType.MORE_SPECIFIC_THAN, [p1i, p2i]);
+            const gi = new GenericInstantiation('g', [], [p1i, p2i]);
             td.addParent(p1i);
             td.addParent(p2i);
 
@@ -267,8 +283,7 @@ suite('Subtyping', function() {
             const ti = new ExplicitInstantiation('t');
             const p1i = new ExplicitInstantiation('p1');
             const p2i = new ExplicitInstantiation('p2');
-            const gi = new GenericInstantiation(
-                'g', BoundsType.MORE_SPECIFIC_THAN, [p1i, p2i]);
+            const gi = new GenericInstantiation('g', [], [p1i, p2i]);
             td.addParent(p1i);
 
             assert.isFalse(
@@ -282,8 +297,7 @@ suite('Subtyping', function() {
         h.addTypeDef('p');
         const ti = new ExplicitInstantiation('t');
         const pi = new ExplicitInstantiation('p');
-        const gi = new GenericInstantiation(
-            'g', BoundsType.MORE_SPECIFIC_THAN, [ti]);
+        const gi = new GenericInstantiation('g', [], [ti]);
         td.addParent(pi);
 
         assert.isFalse(
@@ -298,8 +312,7 @@ suite('Subtyping', function() {
             h.addTypeDef('u');
             const ti = new ExplicitInstantiation('t');
             const ui = new ExplicitInstantiation('u');
-            const gi = new GenericInstantiation(
-                'g', BoundsType.MORE_SPECIFIC_THAN, [ti]);
+            const gi = new GenericInstantiation('g', [], [ti]);
 
             assert.isFalse(
                 h.typeFulfillsType(ui, gi),
@@ -310,8 +323,7 @@ suite('Subtyping', function() {
         const h = new TypeHierarchy();
         h.addTypeDef('t');
         const ti = new ExplicitInstantiation('t');
-        const gi = new GenericInstantiation(
-            'g', BoundsType.MORE_GENERAL_THAN, [ti]);
+        const gi = new GenericInstantiation('g', [ti]);
 
         assert.isTrue(
             h.typeFulfillsType(ti, gi),
@@ -324,8 +336,7 @@ suite('Subtyping', function() {
         h.addTypeDef('p');
         const ti = new ExplicitInstantiation('t');
         const pi = new ExplicitInstantiation('p');
-        const gi = new GenericInstantiation(
-            'g', BoundsType.MORE_GENERAL_THAN, [ti]);
+        const gi = new GenericInstantiation('g', [ti]);
         td.addParent(pi);
 
         assert.isTrue(
@@ -342,8 +353,7 @@ suite('Subtyping', function() {
             const t1i = new ExplicitInstantiation('t1');
             const t2i = new ExplicitInstantiation('t2');
             const pi = new ExplicitInstantiation('p');
-            const gi = new GenericInstantiation(
-                'g', BoundsType.MORE_GENERAL_THAN, [t1i, t2i]);
+            const gi = new GenericInstantiation('g', [t1i, t2i]);
             t1d.addParent(pi);
             t2d.addParent(pi);
 
@@ -361,8 +371,7 @@ suite('Subtyping', function() {
             const t1i = new ExplicitInstantiation('t1');
             const t2i = new ExplicitInstantiation('t2');
             const pi = new ExplicitInstantiation('p');
-            const gi = new GenericInstantiation(
-                'g', BoundsType.MORE_GENERAL_THAN, [t1i, t2i]);
+            const gi = new GenericInstantiation('g', [t1i, t2i]);
             t1d.addParent(pi);
 
             assert.isFalse(
@@ -376,8 +385,7 @@ suite('Subtyping', function() {
         h.addTypeDef('p');
         const ti = new ExplicitInstantiation('t');
         const pi = new ExplicitInstantiation('p');
-        const gi = new GenericInstantiation(
-            'g', BoundsType.MORE_GENERAL_THAN, [pi]);
+        const gi = new GenericInstantiation('g', [pi]);
         td.addParent(pi);
 
         assert.isFalse(
@@ -392,12 +400,74 @@ suite('Subtyping', function() {
             h.addTypeDef('u');
             const ti = new ExplicitInstantiation('t');
             const ui = new ExplicitInstantiation('u');
-            const gi = new GenericInstantiation(
-                'g', BoundsType.MORE_GENERAL_THAN, [ti]);
+            const gi = new GenericInstantiation('g', [ti]);
 
             assert.isFalse(
                 h.typeFulfillsType(ui, gi),
                 'Expected an unrelated type to not fulfill a generic with a lower bound');
+          });
+
+      test('middling types fulfill generics with upper and lower bounds',
+          function() {
+            const h = new TypeHierarchy();
+            h.addTypeDef('p');
+            const td = h.addTypeDef('t');
+            const cd = h.addTypeDef('c');
+            const pi = new ExplicitInstantiation('p');
+            const ti = new ExplicitInstantiation('t');
+            const ci = new ExplicitInstantiation('c');
+            td.addParent(pi);
+            cd.addParent(ti);
+            const gi = new GenericInstantiation('g', [ci], [pi]);
+            h.finalize();
+
+            assert.isTrue(
+                h.typeFulfillsType(ti, gi),
+                'Expected a middling type to fulfill a generic with an upper and lower bound');
+          });
+
+      test('types that only fulfill the upper bound do not fulfill generics with upper and lower bounds',
+          function() {
+            const h = new TypeHierarchy();
+            h.addTypeDef('p');
+            const td = h.addTypeDef('t');
+            const ud = h.addTypeDef('u');
+            const cd = h.addTypeDef('c');
+            const pi = new ExplicitInstantiation('p');
+            const ti = new ExplicitInstantiation('t');
+            const ui = new ExplicitInstantiation('u');
+            const ci = new ExplicitInstantiation('c');
+            td.addParent(pi);
+            ud.addParent(pi);
+            cd.addParent(ti);
+            const gi = new GenericInstantiation('g', [ci], [pi]);
+            h.finalize();
+
+            assert.isFalse(
+                h.typeFulfillsType(ui, gi),
+                'Expected a type that only fulfills the lower bound to not fulfill a genreic with an upper and lower bound');
+          });
+
+      test('types that only fulfill the lower bound do not fulfill generics with upper and lower bounds',
+          function() {
+            const h = new TypeHierarchy();
+            h.addTypeDef('p');
+            const td = h.addTypeDef('t');
+            h.addTypeDef('u');
+            const cd = h.addTypeDef('c');
+            const pi = new ExplicitInstantiation('p');
+            const ti = new ExplicitInstantiation('t');
+            const ui = new ExplicitInstantiation('u');
+            const ci = new ExplicitInstantiation('c');
+            td.addParent(pi);
+            cd.addParent(ti);
+            cd.addParent(ui);
+            const gi = new GenericInstantiation('g', [ci], [pi]);
+            h.finalize();
+
+            assert.isFalse(
+                h.typeFulfillsType(ui, gi),
+                'Expected a type that only fulfills the lower bound to not fulfill a genreic with an upper and lower bound');
           });
     });
 
@@ -407,10 +477,8 @@ suite('Subtyping', function() {
             const h = new TypeHierarchy();
             h.addTypeDef('t');
             const ti = new ExplicitInstantiation('t');
-            const gi1 = new GenericInstantiation(
-                'g', BoundsType.MORE_SPECIFIC_THAN, [ti]);
-            const gi2 = new GenericInstantiation(
-                'g', BoundsType.MORE_SPECIFIC_THAN, [ti]);
+            const gi1 = new GenericInstantiation('g', [], [ti]);
+            const gi2 = new GenericInstantiation('g', [], [ti]);
             h.finalize();
 
             assert.isTrue(
@@ -425,10 +493,8 @@ suite('Subtyping', function() {
             h.addTypeDef('p');
             const ti = new ExplicitInstantiation('t');
             const pi = new ExplicitInstantiation('p');
-            const gi1 = new GenericInstantiation(
-                'g', BoundsType.MORE_SPECIFIC_THAN, [ti]);
-            const gi2 = new GenericInstantiation(
-                'g', BoundsType.MORE_SPECIFIC_THAN, [pi]);
+            const gi1 = new GenericInstantiation('g', [], [ti]);
+            const gi2 = new GenericInstantiation('g', [], [pi]);
             td.addParent(pi);
             h.finalize();
 
@@ -445,10 +511,8 @@ suite('Subtyping', function() {
             h.addTypeDef('p2');
             const p1i = new ExplicitInstantiation('p1');
             const p2i = new ExplicitInstantiation('p2');
-            const gi1 = new GenericInstantiation(
-                'g', BoundsType.MORE_SPECIFIC_THAN, [p1i]);
-            const gi2 = new GenericInstantiation(
-                'g', BoundsType.MORE_SPECIFIC_THAN, [p2i]);
+            const gi1 = new GenericInstantiation('g', [], [p1i]);
+            const gi2 = new GenericInstantiation('g', [], [p2i]);
             td.addParent(p1i);
             td.addParent(p2i);
             h.finalize();
@@ -465,10 +529,8 @@ suite('Subtyping', function() {
             h.addTypeDef('t2');
             const t1i = new ExplicitInstantiation('t1');
             const t2i = new ExplicitInstantiation('t2');
-            const gi1 = new GenericInstantiation(
-                'g', BoundsType.MORE_SPECIFIC_THAN, [t1i]);
-            const gi2 = new GenericInstantiation(
-                'g', BoundsType.MORE_SPECIFIC_THAN, [t2i]);
+            const gi1 = new GenericInstantiation('g', [], [t1i]);
+            const gi2 = new GenericInstantiation('g', [], [t2i]);
             h.finalize();
 
             assert.isFalse(
@@ -486,10 +548,8 @@ suite('Subtyping', function() {
         const animali = new ExplicitInstantiation('Animal');
         const flieri = new ExplicitInstantiation('Flier');
         const mammali = new ExplicitInstantiation('Mammal');
-        const t = new GenericInstantiation(
-            't', BoundsType.MORE_SPECIFIC_THAN, [animali, flieri]);
-        const g = new GenericInstantiation(
-            'g', BoundsType.MORE_SPECIFIC_THAN, [mammali]);
+        const t = new GenericInstantiation('t', [], [animali, flieri]);
+        const g = new GenericInstantiation('g', [], [mammali]);
         birdd.addParent(animali);
         birdd.addParent(flieri);
         mammald.addParent(animali);
@@ -512,10 +572,8 @@ suite('Subtyping', function() {
         const animali = new ExplicitInstantiation('Animal');
         const flieri = new ExplicitInstantiation('Flier');
         const mammali = new ExplicitInstantiation('Mammal');
-        const t = new GenericInstantiation(
-            't', BoundsType.MORE_SPECIFIC_THAN, [mammali]);
-        const g = new GenericInstantiation(
-            'g', BoundsType.MORE_SPECIFIC_THAN, [animali, flieri]);
+        const t = new GenericInstantiation('t', [], [mammali]);
+        const g = new GenericInstantiation('g', [], [animali, flieri]);
         birdd.addParent(animali);
         birdd.addParent(flieri);
         mammald.addParent(animali);
@@ -533,10 +591,8 @@ suite('Subtyping', function() {
             const h = new TypeHierarchy();
             h.addTypeDef('t');
             const ti = new ExplicitInstantiation('t');
-            const gi1 = new GenericInstantiation(
-                'g', BoundsType.MORE_GENERAL_THAN, [ti]);
-            const gi2 = new GenericInstantiation(
-                'g', BoundsType.MORE_GENERAL_THAN, [ti]);
+            const gi1 = new GenericInstantiation('g', [ti]);
+            const gi2 = new GenericInstantiation('g', [ti]);
             h.finalize();
 
             assert.isTrue(
@@ -551,10 +607,8 @@ suite('Subtyping', function() {
             h.addTypeDef('p');
             const ti = new ExplicitInstantiation('t');
             const pi = new ExplicitInstantiation('p');
-            const gi1 = new GenericInstantiation(
-                'g', BoundsType.MORE_GENERAL_THAN, [ti]);
-            const gi2 = new GenericInstantiation(
-                'g', BoundsType.MORE_GENERAL_THAN, [pi]);
+            const gi1 = new GenericInstantiation('g', [ti]);
+            const gi2 = new GenericInstantiation('g', [pi]);
             td.addParent(pi);
             h.finalize();
 
@@ -572,10 +626,8 @@ suite('Subtyping', function() {
             const t1i = new ExplicitInstantiation('t1');
             const t2i = new ExplicitInstantiation('t2');
             const pi = new ExplicitInstantiation('p');
-            const gi1 = new GenericInstantiation(
-                'g', BoundsType.MORE_GENERAL_THAN, [t1i]);
-            const gi2 = new GenericInstantiation(
-                'g', BoundsType.MORE_GENERAL_THAN, [t2i]);
+            const gi1 = new GenericInstantiation('g', [t1i]);
+            const gi2 = new GenericInstantiation('g', [t2i]);
             t1d.addParent(pi);
             t2d.addParent(pi);
             h.finalize();
@@ -592,10 +644,8 @@ suite('Subtyping', function() {
             h.addTypeDef('t2');
             const t1i = new ExplicitInstantiation('t1');
             const t2i = new ExplicitInstantiation('t2');
-            const gi1 = new GenericInstantiation(
-                'g', BoundsType.MORE_GENERAL_THAN, [t1i]);
-            const gi2 = new GenericInstantiation(
-                'g', BoundsType.MORE_GENERAL_THAN, [t2i]);
+            const gi1 = new GenericInstantiation('g', [t1i]);
+            const gi2 = new GenericInstantiation('g', [t2i]);
             h.finalize();
 
             assert.isFalse(
@@ -610,10 +660,8 @@ suite('Subtyping', function() {
             h.addTypeDef('p');
             const ti = new ExplicitInstantiation('t');
             const pi = new ExplicitInstantiation('p');
-            const gi1 = new GenericInstantiation(
-                'g', BoundsType.MORE_GENERAL_THAN, [ti]);
-            const gi2 = new GenericInstantiation(
-                'g', BoundsType.MORE_SPECIFIC_THAN, [pi]);
+            const gi1 = new GenericInstantiation('g', [ti]);
+            const gi2 = new GenericInstantiation('g', [pi]);
             td.addParent(pi);
             h.finalize();
 
@@ -631,10 +679,8 @@ suite('Subtyping', function() {
             const ti = new ExplicitInstantiation('t');
             const p1i = new ExplicitInstantiation('p1');
             const p2i = new ExplicitInstantiation('p2');
-            const gi1 = new GenericInstantiation(
-                'g', BoundsType.MORE_GENERAL_THAN, [ti]);
-            const gi2 = new GenericInstantiation(
-                'g', BoundsType.MORE_SPECIFIC_THAN, [p1i, p2i]);
+            const gi1 = new GenericInstantiation('g', [ti]);
+            const gi2 = new GenericInstantiation('g', [], [p1i, p2i]);
             td.addParent(p1i);
             td.addParent(p2i);
             h.finalize();
@@ -653,10 +699,8 @@ suite('Subtyping', function() {
             const t1i = new ExplicitInstantiation('t1');
             const t2i = new ExplicitInstantiation('t2');
             const pi = new ExplicitInstantiation('p');
-            const gi1 = new GenericInstantiation(
-                'g', BoundsType.MORE_GENERAL_THAN, [t1i, t2i]);
-            const gi2 = new GenericInstantiation(
-                'g', BoundsType.MORE_SPECIFIC_THAN, [pi]);
+            const gi1 = new GenericInstantiation('g', [t1i, t2i]);
+            const gi2 = new GenericInstantiation('g', [], [pi]);
             t1d.addParent(pi);
             t2d.addParent(pi);
             h.finalize();
@@ -675,10 +719,8 @@ suite('Subtyping', function() {
             const ti = new ExplicitInstantiation('t');
             const p1i = new ExplicitInstantiation('p1');
             const p2i = new ExplicitInstantiation('p2');
-            const gi1 = new GenericInstantiation(
-                'g', BoundsType.MORE_GENERAL_THAN, [ti]);
-            const gi2 = new GenericInstantiation(
-                'g', BoundsType.MORE_SPECIFIC_THAN, [p1i, p2i]);
+            const gi1 = new GenericInstantiation('g', [ti]);
+            const gi2 = new GenericInstantiation('g', [], [p1i, p2i]);
             td.addParent(p1i);
             h.finalize();
 
@@ -696,16 +738,120 @@ suite('Subtyping', function() {
             const t1i = new ExplicitInstantiation('t1');
             const t2i = new ExplicitInstantiation('t2');
             const pi = new ExplicitInstantiation('p');
-            const gi1 = new GenericInstantiation(
-                'g', BoundsType.MORE_GENERAL_THAN, [t1i, t2i]);
-            const gi2 = new GenericInstantiation(
-                'g', BoundsType.MORE_SPECIFIC_THAN, [pi]);
+            const gi1 = new GenericInstantiation('g', [t1i, t2i]);
+            const gi2 = new GenericInstantiation('g', [], [pi]);
             t1d.addParent(pi);
             h.finalize();
 
             assert.isFalse(
                 h.typeFulfillsType(gi1, gi2),
                 'Expected a generic an upper bound incompatible with one of the lower bounds to not fulfill the generic');
+          });
+
+      test('generics with identical upper and lower bounds fulfill each other',
+          function() {
+            const h = new TypeHierarchy();
+            h.addTypeDef('gp');
+            const pd = h.addTypeDef('p');
+            const td = h.addTypeDef('t');
+            const cd = h.addTypeDef('c');
+            const gcd = h.addTypeDef('gc');
+            const gpi1 = new ExplicitInstantiation('gp');
+            const gpi2 = new ExplicitInstantiation('gp');
+            const pi = new ExplicitInstantiation('p');
+            const ti = new ExplicitInstantiation('t');
+            const ci = new ExplicitInstantiation('c');
+            const gci1 = new ExplicitInstantiation('gc');
+            const gci2 = new ExplicitInstantiation('gc');
+            pd.addParent(gpi1);
+            td.addParent(pi);
+            cd.addParent(ti);
+            gcd.addParent(ci);
+            const gi1 = new GenericInstantiation('g', [gci1], [gpi1]);
+            const gi2 = new GenericInstantiation('g', [gci2], [gpi2]);
+            h.finalize();
+
+            assert.isTrue(
+                h.typeFulfillsType(gi1, gi2),
+                'Expected generics with identical upper and lower bounds to fulfill each other');
+          });
+
+      test('generics with upper and lower bounds where one encloses the other fulfill each other',
+          function() {
+            const h = new TypeHierarchy();
+            h.addTypeDef('gp');
+            const pd = h.addTypeDef('p');
+            const td = h.addTypeDef('t');
+            const cd = h.addTypeDef('c');
+            const gcd = h.addTypeDef('gc');
+            const gpi = new ExplicitInstantiation('gp');
+            const pi = new ExplicitInstantiation('p');
+            const ti = new ExplicitInstantiation('t');
+            const ci = new ExplicitInstantiation('c');
+            const gci = new ExplicitInstantiation('gc');
+            pd.addParent(gpi);
+            td.addParent(pi);
+            cd.addParent(ti);
+            gcd.addParent(ci);
+            const gi = new GenericInstantiation('g', [gci], [gpi]);
+            const hi = new GenericInstantiation('h', [ci], [pi]);
+            h.finalize();
+
+            assert.isTrue(
+                h.typeFulfillsType(gi, hi),
+                'Expected generics with upper ad lower bounds where one encloses the other to fulfill each other');
+          });
+
+      test('generics with upper and lower bounds that intersect fulfill each other',
+          function() {
+            const h = new TypeHierarchy();
+            h.addTypeDef('gp');
+            const pd = h.addTypeDef('p');
+            const td = h.addTypeDef('t');
+            const cd = h.addTypeDef('c');
+            const gcd = h.addTypeDef('gc');
+            const gpi = new ExplicitInstantiation('gp');
+            const pi = new ExplicitInstantiation('p');
+            const ti = new ExplicitInstantiation('t');
+            const ci = new ExplicitInstantiation('c');
+            const gci = new ExplicitInstantiation('gc');
+            pd.addParent(gpi);
+            td.addParent(pi);
+            cd.addParent(ti);
+            gcd.addParent(ci);
+            const gi = new GenericInstantiation('g', [ci], [gpi]);
+            const hi = new GenericInstantiation('h', [gci], [pi]);
+            h.finalize();
+
+            assert.isTrue(
+                h.typeFulfillsType(gi, hi),
+                'Expected generics with upper and lower bounds that intersect to fulfill each other');
+          });
+
+      test('generic with upper and lower bounds that do not intersect do not fulfill each other',
+          function() {
+            const h = new TypeHierarchy();
+            h.addTypeDef('gp');
+            const pd = h.addTypeDef('p');
+            const td = h.addTypeDef('t');
+            const cd = h.addTypeDef('c');
+            const gcd = h.addTypeDef('gc');
+            const gpi = new ExplicitInstantiation('gp');
+            const pi = new ExplicitInstantiation('p');
+            const ti = new ExplicitInstantiation('t');
+            const ci = new ExplicitInstantiation('c');
+            const gci = new ExplicitInstantiation('gc');
+            pd.addParent(gpi);
+            td.addParent(pi);
+            cd.addParent(ti);
+            gcd.addParent(ci);
+            const gi = new GenericInstantiation('g', [gci], [ci]);
+            const hi = new GenericInstantiation('h', [pi], [gpi]);
+            h.finalize();
+
+            assert.isFalse(
+                h.typeFulfillsType(gi, hi),
+                'Expected generics with upper and lower bounds that do not intersect to not fulfill each other');
           });
     });
   });

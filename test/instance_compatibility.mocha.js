@@ -5,7 +5,7 @@
  */
 
 import {TypeHierarchy} from '../src/type_hierarchy';
-import {BoundsType, ExplicitInstantiation, GenericInstantiation} from '../src/type_instantiation';
+import {ExplicitInstantiation, GenericInstantiation} from '../src/type_instantiation';
 import {assert} from 'chai';
 
 suite('TypeInstance compatibility', function() {

@@ -43,8 +43,7 @@ suite('Nearest common descendants', function() {
     h.addTypeDef('t');
     const ti = new ExplicitInstantiation('t');
     const ui = new ExplicitInstantiation('u');
-    const gi = new GenericInstantiation(
-        'g', BoundsType.MORE_SPECIFIC_THAN, [ui]);
+    const gi = new GenericInstantiation('g', [], [ui]);
     h.finalize();
 
     assert.throws(
@@ -58,8 +57,7 @@ suite('Nearest common descendants', function() {
     h.addTypeDef('t');
     const ti = new ExplicitInstantiation('t');
     const ui = new ExplicitInstantiation('u');
-    const gi = new GenericInstantiation(
-        'g', BoundsType.MORE_GENERAL_THAN, [ui]);
+    const gi = new GenericInstantiation('g', [ui]);
     h.finalize();
 
     assert.throws(

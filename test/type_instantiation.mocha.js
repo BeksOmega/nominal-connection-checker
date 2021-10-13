@@ -104,6 +104,45 @@ suite('TypeInstantiation', function() {
           a.equals(b),
           'Expected TypeInstantiations with different numbers of parameters to not be equal');
     });
+
+    test('identical constraints are equal', function() {
+      const x1 = new ExplicitInstantiation('x');
+      const y1 = new ExplicitInstantiation('y');
+      const x2 = new ExplicitInstantiation('x');
+      const y2 = new ExplicitInstantiation('y');
+      const a = new GenericInstantiation('test', [x1], [y1]);
+      const b = new GenericInstantiation('test', [x2], [y2]);
+
+      assert.isTrue(
+          a.equals(b),
+          'Expected generics with identical constraints to be equal');
+    });
+
+    test('different upper bounds are not equal', function() {
+      const x1 = new ExplicitInstantiation('x');
+      const y = new ExplicitInstantiation('y');
+      const x2 = new ExplicitInstantiation('x');
+      const z = new ExplicitInstantiation('z');
+      const a = new GenericInstantiation('test', [x1], [y]);
+      const b = new GenericInstantiation('test', [x2], [z]);
+
+      assert.isFalse(
+          a.equals(b),
+          'Expected generics different upper bounds to not be equal');
+    });
+
+    test('different lower bounds are not equal', function() {
+      const x = new ExplicitInstantiation('x');
+      const y1 = new ExplicitInstantiation('y');
+      const z = new ExplicitInstantiation('z');
+      const y2 = new ExplicitInstantiation('y');
+      const a = new GenericInstantiation('test', [x], [y1]);
+      const b = new GenericInstantiation('test', [z], [y2]);
+
+      assert.isFalse(
+          a.equals(b),
+          'Expected geenerics with different lower bounds to not be equal');
+    });
   });
 
   suite('cloning', function() {
@@ -128,6 +167,15 @@ suite('TypeInstantiation', function() {
 
       assert.deepEqual(c, t, 'Expected the clone to deeply equal the original');
     });
+
+    test('cloning a constrained generic', function() {
+      const x = new ExplicitInstantiation('x');
+      const y = new ExplicitInstantiation('y');
+      const a = new GenericInstantiation('test', [x], [y]);
+      const b = a.clone();
+
+      assert.deepEqual(b, a, 'Expected the clone to deeply equal the original');
+    });
   });
 
   suite('having params', function() {
@@ -144,6 +192,36 @@ suite('TypeInstantiation', function() {
 
       assert.isFalse(
           t.hasParams, 'Expected the TypeInstantiation to not have params');
+    });
+  });
+
+  suite('having constraints', function() {
+    test('having upper and lower bounds', function() {
+      const x = new ExplicitInstantiation('x');
+      const y = new ExplicitInstantiation('y');
+      const a = new GenericInstantiation('test', [x], [y]);
+
+      assert.isTrue(a.isConstrained, 'Expected the type to be constrained');
+    });
+
+    test('having upper bounds', function() {
+      const y = new ExplicitInstantiation('y');
+      const a = new GenericInstantiation('test', [], [y]);
+
+      assert.isTrue(a.isConstrained, 'Expected the type to be constrained');
+    });
+
+    test('having lower bounds', function() {
+      const x = new ExplicitInstantiation('x');
+      const a = new GenericInstantiation('test', [x], []);
+
+      assert.isTrue(a.isConstrained, 'Expected the type to be constrained');
+    });
+
+    test('not having constraints', function() {
+      const a = new GenericInstantiation('test', [], []);
+
+      assert.isTrue(a.isConstrained, 'Expected the type to not be constrained');
     });
   });
 });

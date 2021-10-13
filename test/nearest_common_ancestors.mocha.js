@@ -68,6 +68,24 @@ suite('Nearest common ancestors', function() {
         IncompatibleType);
   });
 
+  test('lower bound higher than upper bound throws', function() {
+    const h = new TypeHierarchy();
+    h.addTypeDef('p');
+    const td = h.addTypeDef('t');
+    const cd = h.addTypeDef('c');
+    const pi = new ExplicitInstantiation('p');
+    const ti = new ExplicitInstantiation('t');
+    const ci = new ExplicitInstantiation('c');
+    td.addParent(pi);
+    cd.addParent(ti);
+    const gi = new GenericInstantiation('g', [pi], [ci]);
+
+    assert.throws(
+        () => h.getNearestCommonAncestors(ti, gi),
+        /The type instance .* is incompatible with the given TypeHierarchy/,
+        IncompatibleType);
+  });
+
   suite('basic explicit nearest common ancestors', function() {
     test('not being finalized throws errors', function() {
       const h = new TypeHierarchy();

@@ -40,8 +40,7 @@ suite('TypeInstance compatibility', function() {
     const h = new TypeHierarchy();
     h.addTypeDef('t');
     const ti = new ExplicitInstantiation('t');
-    const gi = new GenericInstantiation(
-        'g', BoundsType.MORE_SPECIFIC_THAN, [ti]);
+    const gi = new GenericInstantiation('g', [], [ti]);
 
     assert.isTrue(
         h.typeIsCompatible(gi),
@@ -51,8 +50,7 @@ suite('TypeInstance compatibility', function() {
   test('upper bounds that do not exist are not compatible', function() {
     const h = new TypeHierarchy();
     const ti = new ExplicitInstantiation('t');
-    const gi = new GenericInstantiation(
-        'g', BoundsType.MORE_SPECIFIC_THAN, [ti]);
+    const gi = new GenericInstantiation('g', [], [ti]);
 
     assert.isFalse(
         h.typeIsCompatible(gi),
@@ -63,8 +61,7 @@ suite('TypeInstance compatibility', function() {
     const h = new TypeHierarchy();
     h.addTypeDef('t');
     const ti = new ExplicitInstantiation('t');
-    const gi = new GenericInstantiation(
-        'g', BoundsType.MORE_GENERAL_THAN, [ti]);
+    const gi = new GenericInstantiation('g', [ti]);
 
     assert.isTrue(
         h.typeIsCompatible(gi),
@@ -74,11 +71,46 @@ suite('TypeInstance compatibility', function() {
   test('lower bounds that do not exist are not compatible', function() {
     const h = new TypeHierarchy();
     const ti = new ExplicitInstantiation('t');
-    const gi = new GenericInstantiation(
-        'g', BoundsType.MORE_GENERAL_THAN, [ti]);
+    const gi = new GenericInstantiation('g', [ti]);
 
     assert.isFalse(
         h.typeIsCompatible(gi),
         'Expected a lower bound that does not exists to not be compatible');
   });
+
+  test('generics with upper and lower bounds where lower is lower than upper are compatible',
+      function() {
+        const h = new TypeHierarchy();
+        h.addTypeDef('p');
+        const td = h.addTypeDef('t');
+        const cd = h.addTypeDef('c');
+        const pi = new ExplicitInstantiation('p');
+        const ti = new ExplicitInstantiation('t');
+        const ci = new ExplicitInstantiation('c');
+        td.addParent(pi);
+        cd.addParent(ti);
+        const gi = new GenericInstantiation('g', [ci], [pi]);
+
+        assert.isTrue(
+            h.typeIsCompatible(gi),
+            'Expected a type with upper and lower bounds where the lower is lower than upper to be compatible');
+      });
+
+  test('generics with upper and lower bounds where lower is higher than upper are not compatible',
+      function() {
+        const h = new TypeHierarchy();
+        h.addTypeDef('p');
+        const td = h.addTypeDef('t');
+        const cd = h.addTypeDef('c');
+        const pi = new ExplicitInstantiation('p');
+        const ti = new ExplicitInstantiation('t');
+        const ci = new ExplicitInstantiation('c');
+        td.addParent(pi);
+        cd.addParent(ti);
+        const gi = new GenericInstantiation('g', [pi], [ci]);
+
+        assert.isFalse(
+            h.typeIsCompatible(gi),
+            'Expected a type with upper and lower bounds where the lower is higher than upper to not be compatible');
+      });
 });

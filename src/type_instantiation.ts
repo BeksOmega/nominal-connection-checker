@@ -47,10 +47,10 @@ export class GenericInstantiation implements TypeInstantiation {
 
   constructor(
       readonly name = '',
-      readonly boundsType: BoundsType = undefined,
-      readonly bounds: readonly ExplicitInstantiation[] = []
+      readonly lowerBounds: readonly ExplicitInstantiation[] = [],
+      readonly upperBounds: readonly ExplicitInstantiation[] = []
   ) {
-    this.isConstrained = !!bounds.length;
+    this.isConstrained = !!lowerBounds.length || !!upperBounds.length;
   }
 
   /**
@@ -68,9 +68,4 @@ export class GenericInstantiation implements TypeInstantiation {
   clone(): TypeInstantiation {
     return new GenericInstantiation(this.name);
   }
-}
-
-export enum BoundsType {
-  MORE_SPECIFIC_THAN,
-  MORE_GENERAL_THAN
 }

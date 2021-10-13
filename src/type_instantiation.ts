@@ -64,6 +64,8 @@ export class GenericInstantiation implements TypeInstantiation {
   equals(b: TypeInstantiation): boolean {
     return b instanceof GenericInstantiation &&
         this.name === b.name &&
+        this.lowerBounds.length == b.lowerBounds.length &&
+        this.upperBounds.length == b.upperBounds.length &&
         this.lowerBounds.every((l, i) => l.equals(b.lowerBounds[i])) &&
         this.upperBounds.every((u, i) => u.equals(b.upperBounds[i]));
   }

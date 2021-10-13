@@ -131,6 +131,18 @@ suite('TypeInstantiation', function() {
           'Expected generics different upper bounds to not be equal');
     });
 
+    test('different numbers of upper bounds are not equal', function() {
+      const x1 = new ExplicitInstantiation('x');
+      const y = new ExplicitInstantiation('y');
+      const x2 = new ExplicitInstantiation('x');
+      const a = new GenericInstantiation('test', [x1], []);
+      const b = new GenericInstantiation('test', [x2], [y]);
+
+      assert.isFalse(
+          a.equals(b),
+          'Expected generics different numbers of upper bounds to not be equal');
+    });
+
     test('different lower bounds are not equal', function() {
       const x = new ExplicitInstantiation('x');
       const y1 = new ExplicitInstantiation('y');
@@ -141,7 +153,19 @@ suite('TypeInstantiation', function() {
 
       assert.isFalse(
           a.equals(b),
-          'Expected geenerics with different lower bounds to not be equal');
+          'Expected generics with different lower bounds to not be equal');
+    });
+
+    test('different numbers of lower bounds are not equal', function() {
+      const x = new ExplicitInstantiation('x');
+      const y1 = new ExplicitInstantiation('y');
+      const y2 = new ExplicitInstantiation('y');
+      const a = new GenericInstantiation('test', [], [y1]);
+      const b = new GenericInstantiation('test', [x], [y2]);
+
+      assert.isFalse(
+          a.equals(b),
+          'Expected generics with different numbers of lower bounds to not be equal');
     });
   });
 
@@ -202,6 +226,8 @@ suite('TypeInstantiation', function() {
       const a = new GenericInstantiation('test', [x], [y]);
 
       assert.isTrue(a.isConstrained, 'Expected the type to be constrained');
+      assert.isTrue(a.hasLowerBound, 'Expected the type to have a lower bound');
+      assert.isTrue(a.hasUpperBound, 'Expected the type to have a upper bound');
     });
 
     test('having upper bounds', function() {
@@ -209,6 +235,8 @@ suite('TypeInstantiation', function() {
       const a = new GenericInstantiation('test', [], [y]);
 
       assert.isTrue(a.isConstrained, 'Expected the type to be constrained');
+      assert.isFalse(a.hasLowerBound, 'Expected the type to not have a lower bound');
+      assert.isTrue(a.hasUpperBound, 'Expected the type to have a upper bound');
     });
 
     test('having lower bounds', function() {
@@ -216,12 +244,16 @@ suite('TypeInstantiation', function() {
       const a = new GenericInstantiation('test', [x], []);
 
       assert.isTrue(a.isConstrained, 'Expected the type to be constrained');
+      assert.isTrue(a.hasLowerBound, 'Expected the type to have a lower bound');
+      assert.isFalse(a.hasUpperBound, 'Expected the type to not have a upper bound');
     });
 
     test('not having constraints', function() {
       const a = new GenericInstantiation('test', [], []);
 
       assert.isFalse(a.isConstrained, 'Expected the type to not be constrained');
+      assert.isFalse(a.hasLowerBound, 'Expected the type to not have a lower bound');
+      assert.isFalse(a.hasUpperBound, 'Expected the type to not have a upper bound');
     });
   });
 });

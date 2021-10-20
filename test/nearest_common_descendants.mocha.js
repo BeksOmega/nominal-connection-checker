@@ -898,6 +898,89 @@ suite('Nearest common descendants', function() {
                 h, [lg, mg, ug], [eg],
                 'Expected the ncd of a lower bound generic, a middling upper bound type, and an upper bound generic to be a constrained generic with a lower bound of the lower type and an upper bound of the middling type');
           });
+
+      test('upper bounds which unify to multiple types result in multiple upper bound types', function() {
+        const h = new TypeHierarchy();
+        h.addTypeDef('a');
+        h.addTypeDef('b');
+        const cd = h.addTypeDef('c');
+        const dd = h.addTypeDef('d');
+        const ai = new ExplicitInstantiation('a');
+        const bi = new ExplicitInstantiation('b');
+        const ci = new ExplicitInstantiation('c');
+        const di = new ExplicitInstantiation('d');
+        cd.addParent(ai);
+        cd.addParent(bi);
+        dd.addParent(ai);
+        dd.addParent(bi);
+        const cg = new GenericInstantiation('g', [], [ai]);
+        const dg = new GenericInstantiation('g', [], [bi]);
+        h.finalize();
+
+        const egs = [
+          new GenericInstantiation('', [], [ci]),
+          new GenericInstantiation('', [], [di]),
+        ];
+        assertNearestCommonDescendants(
+            h, [cg, dg], egs,
+            'Expected that when upper bounds unify to multiple types it results in multiple upper bound types');
+      });
+
+      test('lower bounds which unify to multiple types result in multiple lower bound types', function() {
+        const h = new TypeHierarchy();
+        h.addTypeDef('a');
+        h.addTypeDef('b');
+        const cd = h.addTypeDef('c');
+        const dd = h.addTypeDef('d');
+        const ai = new ExplicitInstantiation('a');
+        const bi = new ExplicitInstantiation('b');
+        const ci = new ExplicitInstantiation('c');
+        const di = new ExplicitInstantiation('d');
+        cd.addParent(ai);
+        cd.addParent(bi);
+        dd.addParent(ai);
+        dd.addParent(bi);
+        const cg = new GenericInstantiation('g', [ai]);
+        const dg = new GenericInstantiation('g', [bi]);
+        h.finalize();
+
+        const egs = [
+          new GenericInstantiation('', [ci]),
+          new GenericInstantiation('', [di]),
+        ];
+        assertNearestCommonDescendants(
+            h, [cg, dg], egs,
+            'Expected that when lower bounds unify to multiple types it results in multiple lower bound types');
+      });
+
+      test('upper and lower bounds which unify to multiple types result in multiple upper and lower bound types', function() {
+        const h = new TypeHierarchy();
+        h.addTypeDef('a');
+        h.addTypeDef('b');
+        const cd = h.addTypeDef('c');
+        const dd = h.addTypeDef('d');
+        const ai = new ExplicitInstantiation('a');
+        const bi = new ExplicitInstantiation('b');
+        const ci = new ExplicitInstantiation('c');
+        const di = new ExplicitInstantiation('d');
+        cd.addParent(ai);
+        cd.addParent(bi);
+        dd.addParent(ai);
+        dd.addParent(bi);
+        const cg = new GenericInstantiation('g', [ai], [ai]);
+        const dg = new GenericInstantiation('g', [bi], [bi]);
+        h.finalize();
+
+        const egs = [
+          new GenericInstantiation('', [ci], [ci]),
+          new GenericInstantiation('', [ci], [di]),
+          new GenericInstantiation('', [di], [ci]),
+          new GenericInstantiation('', [di], [di]),
+        ];
+        assertNearestCommonDescendants(
+            h, [cg, dg], egs,
+            'Expected that when upper and lower bounds unify to multiple types it results in multiple upper and lower bound types');
+      });
     });
   });
 });

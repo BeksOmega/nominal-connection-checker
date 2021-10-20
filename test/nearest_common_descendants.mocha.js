@@ -22,8 +22,6 @@ suite('Nearest common descendants', function() {
    */
   function assertNearestCommonDescendants(h, ts, eds, msg) {
     const ads = h.getNearestCommonDescendants(...ts);
-    console.log(ads[0]);
-    console.log(eds[0]);
     assert.equal(ads.length, eds.length, msg);
     assert.isTrue(ads.every((ad, i) => ad.equals(eds[i])), msg);
   }

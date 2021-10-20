@@ -22,10 +22,6 @@ suite('Nearest common ancestors', function() {
    */
   function assertNearestCommonAncestors(h, ts, eas, msg) {
     const aas = h.getNearestCommonAncestors(...ts);
-    // console.log(aas[0]);
-    // console.log(eas[0]);
-    // console.log(aas, aas[0].lowerBounds, aas[0].upperBounds);
-    // console.log(eas, eas[0].lowerBounds, eas[0].upperBounds);
     assert.equal(aas.length, eas.length, msg);
     assert.isTrue(aas.every((aa, i) => aa.equals(eas[i])), msg);
   }

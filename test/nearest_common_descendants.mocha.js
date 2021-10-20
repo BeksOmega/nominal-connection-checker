@@ -22,6 +22,8 @@ suite('Nearest common descendants', function() {
    */
   function assertNearestCommonDescendants(h, ts, eds, msg) {
     const ads = h.getNearestCommonDescendants(...ts);
+    console.log(ads[0]);
+    console.log(eds[0]);
     assert.equal(ads.length, eds.length, msg);
     assert.isTrue(ads.every((ad, i) => ad.equals(eds[i])), msg);
   }
@@ -504,8 +506,9 @@ suite('Nearest common descendants', function() {
             const ug = new GenericInstantiation('g', [], [t]);
             h.finalize();
 
+            const eg = new GenericInstantiation('', [], [t]);
             assertNearestCommonDescendants(
-                h, [g, ug], [ug],
+                h, [g, ug], [eg],
                 'Expected the ncd of a generic and an upper bound generic to be the upper bound generic');
           });
 
@@ -518,8 +521,9 @@ suite('Nearest common descendants', function() {
             const lg = new GenericInstantiation('g', [t]);
             h.finalize();
 
+            const eg = new GenericInstantiation('', [t]);
             assertNearestCommonDescendants(
-                h, [g, lg], [lg],
+                h, [g, lg], [eg],
                 'Expected the ncd of a generic and a lower bound generic to be the lower bound generic');
           });
     });
@@ -536,7 +540,7 @@ suite('Nearest common descendants', function() {
             cd.addParent(ti);
             h.finalize();
 
-            const ed = new GenericInstantiation('g', [], [ci]);
+            const ed = new GenericInstantiation('', [], [ci]);
             assertNearestCommonDescendants(
                 h, [ci, ug], [ed],
                 'Expected the ncd of an upper bound generic and a subtype to be an upper bound generic with the subtype');
@@ -553,8 +557,9 @@ suite('Nearest common descendants', function() {
             td.addParent(pi);
             h.finalize();
 
+            const eg = new GenericInstantiation('', [], [ti]);
             assertNearestCommonDescendants(
-                h, [pi, ug], [ug],
+                h, [pi, ug], [eg],
                 'Expected the ncd of an upper bound generic and a supertype to be the upper bound generic');
           });
 
@@ -572,7 +577,7 @@ suite('Nearest common descendants', function() {
             cd.addParent(bi);
             h.finalize();
 
-            const eg = new GenericInstantiation('g', [], [ci]);
+            const eg = new GenericInstantiation('', [], [ci]);
             assertNearestCommonDescendants(
                 h, [bi, ug], [eg],
                 'Expected the ncd of an upper bound generic and a coparent to be an upper bound generic with the child');
@@ -603,7 +608,7 @@ suite('Nearest common descendants', function() {
             cd.addParent(ti);
             h.finalize();
 
-            const ed = new GenericInstantiation('g', [ci]);
+            const ed = new GenericInstantiation('', [ci]);
             assertNearestCommonDescendants(
                 h, [ci, lg], [ed],
                 'Expected the ncd of a lower bound generic and a subtype to be a lower bound generic with the subtype');
@@ -620,8 +625,9 @@ suite('Nearest common descendants', function() {
             td.addParent(pi);
             h.finalize();
 
+            const eg = new GenericInstantiation('', [ti]);
             assertNearestCommonDescendants(
-                h, [pi, lg], [lg],
+                h, [pi, lg], [eg],
                 'Expected the ncd of a lower bound generic and a supertype to be the lower bound generic');
           });
 
@@ -639,7 +645,7 @@ suite('Nearest common descendants', function() {
             cd.addParent(bi);
             h.finalize();
 
-            const eg = new GenericInstantiation('g', [ci]);
+            const eg = new GenericInstantiation('', [ci]);
             assertNearestCommonDescendants(
                 h, [bi, lg], [eg],
                 'Expected the ncd of a lower bound generic and a coparent to be a lower bound generic with the child');
@@ -674,7 +680,7 @@ suite('Nearest common descendants', function() {
             cd.addParent(ti);
             h.finalize();
 
-            const eg = new GenericInstantiation('g', [ci], [ti]);
+            const eg = new GenericInstantiation('', [ci], [ti]);
             assertNearestCommonDescendants(
                 h, [lg, ti, ug], [eg],
                 'Expected the ncd of a lower bound generic, a middling type, and an upper bound generic to be a constrained generic with a lower bound of the lower type and an upper bound of the middling type');
@@ -694,8 +700,9 @@ suite('Nearest common descendants', function() {
             cd.addParent(ti);
             h.finalize();
 
+            const eg = new GenericInstantiation('', [], [ci]);
             assertNearestCommonDescendants(
-                h, [tg, cg], [cg],
+                h, [tg, cg], [eg],
                 'Expected the ncd of an upper bound generic and an upper bound generic with a subtype to be the second upper bound generic');
           });
 
@@ -711,8 +718,9 @@ suite('Nearest common descendants', function() {
             td.addParent(pi);
             h.finalize();
 
+            const eg = new GenericInstantiation('', [], [ti]);
             assertNearestCommonDescendants(
-                h, [tg, pg], [tg],
+                h, [tg, pg], [eg],
                 'Expected the ncd of an upper bound generic and an upper bound generic with a supertype to be the first upper bound generic');
           });
 
@@ -731,7 +739,7 @@ suite('Nearest common descendants', function() {
             cd.addParent(bi);
             h.finalize();
 
-            const eg = new GenericInstantiation('g', [], [ci]);
+            const eg = new GenericInstantiation('', [], [ci]);
             assertNearestCommonDescendants(
                 h, [ag, bg], [eg],
                 'Expected the ncd of an upper bound generic and an upper bound generic with a comparent to be an upper bound generic with the child');
@@ -765,8 +773,9 @@ suite('Nearest common descendants', function() {
             cd.addParent(ti);
             h.finalize();
 
+            const eg = new GenericInstantiation('', [ci]);
             assertNearestCommonDescendants(
-                h, [tg, cg], [cg],
+                h, [tg, cg], [eg],
                 'Expected the ncd of a lower bound generic and a lower bound generic with a subtype to be the second lower bound generic');
           });
 
@@ -782,8 +791,9 @@ suite('Nearest common descendants', function() {
             td.addParent(pi);
             h.finalize();
 
+            const eg = new GenericInstantiation('', [ti]);
             assertNearestCommonDescendants(
-                h, [tg, pg], [tg],
+                h, [tg, pg], [eg],
                 'Expected the ncd of a lower bound generic and lower bound generic with a supertype to be the first lower bound generic');
           });
 
@@ -802,7 +812,7 @@ suite('Nearest common descendants', function() {
             cd.addParent(bi);
             h.finalize();
 
-            const eg = new GenericInstantiation('g', [ci]);
+            const eg = new GenericInstantiation('', [ci]);
             assertNearestCommonDescendants(
                 h, [ag, bg], [eg],
                 'Expected the ncd of a lower bound generic and a lower bound generic witha comparent is a lower bound generic with teh child');
@@ -839,7 +849,7 @@ suite('Nearest common descendants', function() {
             cd.addParent(ti);
             h.finalize();
 
-            const eg = new GenericInstantiation('g', [ci], [pi]);
+            const eg = new GenericInstantiation('', [ci], [pi]);
             assertNearestCommonDescendants(
                 h, [lg, ug], [eg],
                 'Expected the ncd of an upper bound generic and a lower bound generic to be a generic with both bounds');
@@ -861,7 +871,7 @@ suite('Nearest common descendants', function() {
             cd.addParent(ti);
             h.finalize();
 
-            const eg = new GenericInstantiation('g', [ci], [pi]);
+            const eg = new GenericInstantiation('', [ci], [pi]);
             assertNearestCommonDescendants(
                 h, [lg, mg, ug], [eg],
                 'Expected the ncd of a lower bound generic, a middling lower bound type, and an upper bound generic is a constrained generic with a lower bound of the lower type and an upper bound of the upper type');
@@ -883,7 +893,7 @@ suite('Nearest common descendants', function() {
             cd.addParent(ti);
             h.finalize();
 
-            const eg = new GenericInstantiation('g', [ci], [ti]);
+            const eg = new GenericInstantiation('', [ci], [ti]);
             assertNearestCommonDescendants(
                 h, [lg, mg, ug], [eg],
                 'Expected the ncd of a lower bound generic, a middling upper bound type, and an upper bound generic to be a constrained generic with a lower bound of the lower type and an upper bound of the middling type');

@@ -267,24 +267,32 @@ export class TypeHierarchy {
   getNearestCommonAncestors(
       ...types: TypeInstantiation[]
   ): TypeInstantiation[] {
-    if (!this.finalized) throw new NotFinalized();
-    types.forEach(t => {
-      if (!this.typeIsCompatible(t)) throw new IncompatibleType(t);
-    });
-
-    if (types.length == 0) return [];
-    types = types.filter(t => t instanceof ExplicitInstantiation);
-    if (types.length == 0) return [new GenericInstantiation()];
-    if (types.length == 1) return types;
-
-    return types.reduce(
-        (ncas, type) =>
-          ncas.flatMap(nca => this.getNearestCommonAncestorsOfPair(type, nca))
-              .filter(removeDuplicates()),
-        [types[0]]);
+    return this.getNearestCommon(
+        this.getNearestCommonAncestors.bind(this),
+        this.getNearestCommonAncestorsOfPair.bind(this),
+        ...types);
   }
 
   getNearestCommonDescendants(
+      ...types: TypeInstantiation[]
+  ): TypeInstantiation[] {
+    return this.getNearestCommon(
+        this.getNearestCommonDescendants.bind(this),
+        this.getNearestCommonDescendantsOfPair.bind(this),
+        ...types);
+  }
+
+  /**
+   * Returns the nearest common ancestors/descendants of the given types,
+   * depending on what functions are passed to getNC and getNCOfPair.
+   * @param getNC Returns the nearest common ancestors/descendants of the types.
+   * @param getNCOfPair Returns the nearest common ancestors/descendants of the
+   *     pair of types.
+   * @param types The types to find the nearest common ancestors/descendants of.
+   */
+  private getNearestCommon(
+      getNC: (...types) => TypeInstantiation[],
+      getNCOfPair: (a, b) => ExplicitInstantiation[],
       ...types: TypeInstantiation[]
   ): TypeInstantiation[] {
     if (!this.finalized) throw new NotFinalized();
@@ -293,15 +301,87 @@ export class TypeHierarchy {
     });
 
     if (types.length == 0) return [];
-    types = types.filter(t => t instanceof ExplicitInstantiation);
+    types = types.filter(t =>
+      t instanceof ExplicitInstantiation ||
+      t instanceof GenericInstantiation && t.isConstrained);
     if (types.length == 0) return [new GenericInstantiation()];
-    if (types.length == 1) return types;
 
+    if (types.some(t => t instanceof GenericInstantiation)) {
+      return this.getNearestCommonWithGenerics(getNC, ...types);
+    }
+    return this.getNearestCommonOfExplicits(
+        getNCOfPair, ...types as ExplicitInstantiation[]);
+  }
+
+  /**
+   * Returns the nearest common ancestors/descendants of the given type list,
+   * which will include some constrained generic types.
+   * @param getNC Returns the nearest common ancestors/descendants of the types.
+   * @param types The types to find the nearest common ancestors/descendants of.
+   */
+  private getNearestCommonWithGenerics(
+      getNC: (...types) => TypeInstantiation[],
+      ...types: TypeInstantiation[]
+  ): GenericInstantiation[] {
+    const lcs = getNC(...this.getLowerBounds(...types)) as ExplicitInstantiation[];
+    const ucs = getNC(...this.getUpperBounds(...types)) as ExplicitInstantiation[];
+    if (!lcs.length) return ucs.map(uc => new GenericInstantiation('', [], [uc]));
+    if (!ucs.length) return lcs.map(lc => new GenericInstantiation('', [lc]));
+    return lcs.flatMap(lc => ucs.map(uc =>
+      new GenericInstantiation('', [lc], [uc])));
+  }
+
+  /**
+   * Returns the nearest common ancestors/descendants of the given type list,
+   * which only includes explicit types.
+   * @param getNCOfPair Returns the nearest common ancestors/descendants of the
+   *     pair of types.
+   * @param types The types to find the nearest common ancestors/descendants of.
+   */
+  private getNearestCommonOfExplicits(
+      getNCOfPair: (a, b) => ExplicitInstantiation[],
+      ...types: ExplicitInstantiation[]
+  ): ExplicitInstantiation[] {
     return types.reduce(
-        (ncds, type) =>
-          ncds.flatMap(ncd => this.getNearestCommonDescendantsOfPair(type, ncd))
-              .filter(removeDuplicates()),
+        (ncs, type) =>
+          ncs.flatMap(nc => getNCOfPair(type, nc)).filter(removeDuplicates()),
         [types[0]]);
+  }
+
+  /**
+   * Returns the lower bounds of the given set of types. If none of the types
+   * are lower bound generics, this returns an empty array. Otherwise it returns
+   * an array of all of the lower bounds, and any explicit types.
+   */
+  private getLowerBounds(
+      ...types: TypeInstantiation[]
+  ): ExplicitInstantiation[] {
+    if (types.some(t => t instanceof GenericInstantiation && t.hasLowerBound)) {
+      return types.reduce((bs, t) => {
+        if (t instanceof ExplicitInstantiation) return [...bs, t];
+        if (t instanceof GenericInstantiation) return [...bs, ...(t.lowerBounds)];
+        return bs;
+      }, []);
+    }
+    return [];
+  }
+
+  /**
+   * Returns the upper bounds of the given set of types. If none of the types
+   * are upper bound generics, this returns an empty array. Otherwise it returns
+   * an array of all of the upper bounds, and any explicit types.
+   */
+  private getUpperBounds(
+      ...types: TypeInstantiation[]
+  ): ExplicitInstantiation[] {
+    if (types.some(t => t instanceof GenericInstantiation && t.hasUpperBound)) {
+      return types.reduce((bs, t) => {
+        if (t instanceof ExplicitInstantiation) return [...bs, t];
+        if (t instanceof GenericInstantiation) return [...bs, ...t.upperBounds];
+        return bs;
+      }, []);
+    }
+    return [];
   }
 
   /**
@@ -309,7 +389,7 @@ export class TypeHierarchy {
    * in the nearestCommonAncestors array.
    */
   private getNearestCommonAncestorsOfPair(
-      a: TypeInstantiation, b: TypeInstantiation) {
+      a: ExplicitInstantiation, b: ExplicitInstantiation) {
     return this.nearestCommonAncestors.get(a.name).get(b.name);
   }
 
@@ -318,7 +398,7 @@ export class TypeHierarchy {
    * in the nearestCommonDescendants array.
    */
   private getNearestCommonDescendantsOfPair(
-      a: TypeInstantiation, b: TypeInstantiation) {
+      a: ExplicitInstantiation, b: ExplicitInstantiation) {
     return this.nearestCommonDescendants.get(a.name).get(b.name);
   }
 }

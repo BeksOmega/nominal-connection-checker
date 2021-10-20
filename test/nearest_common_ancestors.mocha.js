@@ -22,6 +22,10 @@ suite('Nearest common ancestors', function() {
    */
   function assertNearestCommonAncestors(h, ts, eas, msg) {
     const aas = h.getNearestCommonAncestors(...ts);
+    // console.log(aas[0]);
+    // console.log(eas[0]);
+    // console.log(aas, aas[0].lowerBounds, aas[0].upperBounds);
+    // console.log(eas, eas[0].lowerBounds, eas[0].upperBounds);
     assert.equal(aas.length, eas.length, msg);
     assert.isTrue(aas.every((aa, i) => aa.equals(eas[i])), msg);
   }
@@ -509,8 +513,9 @@ suite('Nearest common ancestors', function() {
             const ug = new GenericInstantiation('g', [], [t]);
             h.finalize();
 
+            const eg = new GenericInstantiation('', [], [t]);
             assertNearestCommonAncestors(
-                h, [g, ug], [ug],
+                h, [g, ug], [eg],
                 'Expected the nca of a generic and an upper bound generic to be the upper bound generic');
           });
 
@@ -523,8 +528,9 @@ suite('Nearest common ancestors', function() {
             const lg = new GenericInstantiation('g', [t]);
             h.finalize();
 
+            const eg = new GenericInstantiation('', [t]);
             assertNearestCommonAncestors(
-                h, [g, lg], [lg],
+                h, [g, lg], [eg],
                 'Expected the nca of a generic and a lower bound generic to be the lower bound generic');
           });
     });
@@ -541,8 +547,9 @@ suite('Nearest common ancestors', function() {
             cd.addParent(ti);
             h.finalize();
 
+            const eg = new GenericInstantiation('', [], [ti]);
             assertNearestCommonAncestors(
-                h, [ci, ug], [ug],
+                h, [ci, ug], [eg],
                 'Expected the nca of an upper bound generic and a subtype to be the upper bound generic');
           });
 
@@ -557,7 +564,7 @@ suite('Nearest common ancestors', function() {
             td.addParent(pi);
             h.finalize();
 
-            const eg = new GenericInstantiation('g', [], [pi]);
+            const eg = new GenericInstantiation('', [], [pi]);
             assertNearestCommonAncestors(
                 h, [pi, ug], [eg],
                 'Expected the nca of an upper bound generic and a supertype to be an upper bound generic with the supertype');
@@ -577,7 +584,7 @@ suite('Nearest common ancestors', function() {
             bd.addParent(pi);
             h.finalize();
 
-            const eg = new GenericInstantiation('g', [], [pi]);
+            const eg = new GenericInstantiation('', [], [pi]);
             assertNearestCommonAncestors(
                 h, [bi, ug], [eg],
                 'Expected the nca of an upper bound generic and a sibling to be an upper bound generic with the parent');
@@ -608,8 +615,9 @@ suite('Nearest common ancestors', function() {
             cd.addParent(ti);
             h.finalize();
 
+            const eg = new GenericInstantiation('', [ti]);
             assertNearestCommonAncestors(
-                h, [ci, lg], [lg],
+                h, [ci, lg], [eg],
                 'Expected the nca of a lower bound generic and a subtype to be the lower bound generic');
           });
 
@@ -624,7 +632,7 @@ suite('Nearest common ancestors', function() {
             td.addParent(pi);
             h.finalize();
 
-            const eg = new GenericInstantiation('g', [pi]);
+            const eg = new GenericInstantiation('', [pi]);
             assertNearestCommonAncestors(
                 h, [pi, lg], [eg],
                 'Expected the nca of lower bound generic and a supertype to be a lower bound generic with the supertype');
@@ -644,7 +652,7 @@ suite('Nearest common ancestors', function() {
             bd.addParent(pi);
             h.finalize();
 
-            const eg = new GenericInstantiation('g', [pi]);
+            const eg = new GenericInstantiation('', [pi]);
             assertNearestCommonAncestors(
                 h, [bi, lg], [eg],
                 'Expected the nca of a lower bound generic and a sibling to be a lower bound generic with the parent');
@@ -679,7 +687,7 @@ suite('Nearest common ancestors', function() {
             cd.addParent(ti);
             h.finalize();
 
-            const eg = new GenericInstantiation('g', [ti], [pi]);
+            const eg = new GenericInstantiation('', [ti], [pi]);
             assertNearestCommonAncestors(
                 h, [lg, ti, ug], [eg],
                 'Expected the nca of a lower bound generic, a middling type, and an upper bound generic to be a constrained generic with a lower bound of the middling type and an upper bound of the upper type');
@@ -699,8 +707,9 @@ suite('Nearest common ancestors', function() {
             cd.addParent(ti);
             h.finalize();
 
+            const eg = new GenericInstantiation('', [], [ti]);
             assertNearestCommonAncestors(
-                h, [tg, cg], [cg],
+                h, [tg, cg], [eg],
                 'Expected the nca of an upper bound generic and an upper bound generic with a subtype to be the first generic');
           });
 
@@ -716,8 +725,9 @@ suite('Nearest common ancestors', function() {
             td.addParent(pi);
             h.finalize();
 
+            const eg = new GenericInstantiation('', [], [pi]);
             assertNearestCommonAncestors(
-                h, [tg, pg], [pg],
+                h, [tg, pg], [eg],
                 'Expected the nca of an upper bound generic and an upper bound generic with a supertype to be the second upper bound generic');
           });
 
@@ -736,7 +746,7 @@ suite('Nearest common ancestors', function() {
             bd.addParent(pi);
             h.finalize();
 
-            const eg = new GenericInstantiation('g', [], [pi]);
+            const eg = new GenericInstantiation('', [], [pi]);
             assertNearestCommonAncestors(
                 h, [ag, bg], [eg],
                 'Expected the nca of an upper bound generic and an upper bound generic with a sibling sibling to be an upper bound generic with the parent');
@@ -770,8 +780,9 @@ suite('Nearest common ancestors', function() {
             cd.addParent(ti);
             h.finalize();
 
+            const eg = new GenericInstantiation('', [ti]);
             assertNearestCommonAncestors(
-                h, [tg, cg], [tg],
+                h, [tg, cg], [eg],
                 'Expected the nca of a lower bound generic and a lower bound generic with a subtype to be the first genneric');
           });
 
@@ -787,8 +798,9 @@ suite('Nearest common ancestors', function() {
             td.addParent(pi);
             h.finalize();
 
+            const eg = new GenericInstantiation('', [pi]);
             assertNearestCommonAncestors(
-                h, [tg, pg], [pg],
+                h, [tg, pg], [eg],
                 'Expected the nca of lower bound generic and a generic with a supertype to be the second lower bound generic');
           });
 
@@ -807,7 +819,7 @@ suite('Nearest common ancestors', function() {
             bd.addParent(pi);
             h.finalize();
 
-            const eg = new GenericInstantiation('g', [pi]);
+            const eg = new GenericInstantiation('', [pi]);
             assertNearestCommonAncestors(
                 h, [ag, bg], [eg],
                 'Expected the nca of a lower bound generic and lower bound generic with a sibling to be a lower bound generic with the parent');
@@ -844,7 +856,7 @@ suite('Nearest common ancestors', function() {
             cd.addParent(ti);
             h.finalize();
 
-            const eg = new GenericInstantiation('g', [ci], [pi]);
+            const eg = new GenericInstantiation('', [ci], [pi]);
             assertNearestCommonAncestors(
                 h, [lg, ug], [eg],
                 'Expected the nca of an upper bound generic and a lower bound generic to be a generic with both bounds');
@@ -866,7 +878,7 @@ suite('Nearest common ancestors', function() {
             cd.addParent(ti);
             h.finalize();
 
-            const eg = new GenericInstantiation('g', [ti], [pi]);
+            const eg = new GenericInstantiation('', [ti], [pi]);
             assertNearestCommonAncestors(
                 h, [lg, mg, ug], [eg],
                 'Expected the nca of a lower bound generic, a middling lower bound type, and an upper bound generic to be a constrained generic with a lower bound of the middling type and an upper bound of the upper type');
@@ -888,7 +900,7 @@ suite('Nearest common ancestors', function() {
             cd.addParent(ti);
             h.finalize();
 
-            const eg = new GenericInstantiation('g', [ci], [pi]);
+            const eg = new GenericInstantiation('', [ci], [pi]);
             assertNearestCommonAncestors(
                 h, [lg, mg, ug], [eg],
                 'Expected the nca of a lower bound generic, a middling upper bound type, and an upper bound generic to be a constrained generic with a lower bound of the lower type and an upper bound of the upper type');

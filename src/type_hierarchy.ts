@@ -8,6 +8,7 @@ import {TypeDefinition} from './type_definition';
 import {ExplicitInstantiation, GenericInstantiation, TypeInstantiation} from './type_instantiation';
 import {removeDuplicates} from './utils';
 import {IncompatibleType, NotFinalized} from './exceptions';
+import {ParameterDefinition} from "./parameter_definition";
 
 export class TypeHierarchy {
   /**
@@ -174,11 +175,11 @@ export class TypeHierarchy {
   }
 
   /**
-   * Adds a new type definition with the given name to this type hierarchy, and
-   * returns the type definition.
+   * Adds a new type definition with the given name (and optional parameter
+   * definitions) to this type hierarchy, and returns the type definition.
    */
-  addTypeDef(n: string): TypeDefinition {
-    const d = new TypeDefinition(this, n);
+  addTypeDef(n: string, ps: ParameterDefinition[] = []): TypeDefinition {
+    const d = new TypeDefinition(this, n, ps);
     this.typeDefsMap.set(n, d);
     return d;
   }

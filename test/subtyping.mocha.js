@@ -4,9 +4,10 @@
  * SPDX-License-Identifier: MIT
  */
 
-import {TypeHierarchy} from '../src/type_hierarchy';
 import {ExplicitInstantiation, GenericInstantiation} from '../src/type_instantiation';
 import {IncompatibleType} from '../src/exceptions';
+import {ParameterDefinition, Variance} from '../src/parameter_definition';
+import {TypeHierarchy} from '../src/type_hierarchy';
 import {assert} from 'chai';
 
 suite('Subtyping', function() {
@@ -853,6 +854,588 @@ suite('Subtyping', function() {
                 h.typeFulfillsType(gi, hi),
                 'Expected generics with upper and lower bounds that do not intersect to not fulfill each other');
           });
+    });
+  });
+
+  suite.only('explicit parameterized subtyping', function() {
+    suite('covariant types', function() {
+      test('unrelated outers do not fulfill types', function() {
+        const h = new TypeHierarchy();
+        const pa = new ParameterDefinition('a', Variance.CO);
+        h.addTypeDef('x', [pa]);
+        h.addTypeDef('y', [pa]);
+        h.addTypeDef('z');
+        const zi = new ExplicitInstantiation('z');
+        const xi = new ExplicitInstantiation('x', [zi]);
+        const yi = new ExplicitInstantiation('y', [zi]);
+        h.finalize();
+
+        assert.isFalse(
+            h.typeFulfillsType(xi, yi),
+            'Expected an unrelated outer type to not fulfill the type');
+      });
+
+      test('supertype outers do not fulfill types', function() {
+        const h = new TypeHierarchy();
+        const pa = new ParameterDefinition('a', Variance.CO);
+        h.addTypeDef('x', [pa]);
+        const yd = h.addTypeDef('y', [pa]);
+        h.addTypeDef('z');
+        const zi = new ExplicitInstantiation('z');
+        const ga = new GenericInstantiation('a');
+        const gx = new ExplicitInstantiation('x', [ga]);
+        const xi = new ExplicitInstantiation('x', [zi]);
+        const yi = new ExplicitInstantiation('y', [zi]);
+        yd.addParent(gx);
+
+        assert.isFalse(
+            h.typeFulfillsType(xi, yi),
+            'Expected a supertype outer type to not fulfill the type');
+      });
+
+      test('unrelated inners do not fulfill types', function() {
+        const h = new TypeHierarchy();
+        const pa = new ParameterDefinition('a', Variance.CO);
+        h.addTypeDef('x', [pa]);
+        h.addTypeDef('y');
+        h.addTypeDef('z');
+        const zi = new ExplicitInstantiation('z');
+        const yi = new ExplicitInstantiation('y');
+        const xi1 = new ExplicitInstantiation('x', [zi]);
+        const xi2 = new ExplicitInstantiation('x', [yi]);
+        h.finalize();
+
+        assert.isFalse(
+            h.typeFulfillsType(xi1, xi2),
+            'Expected an unrelated inner type to not fulfill the type');
+      });
+
+      test('even a single unrelated inner does not fulfill the type', function() {
+        const h = new TypeHierarchy();
+        const pa = new ParameterDefinition('a', Variance.CO);
+        const pb = new ParameterDefinition('b', Variance.CO);
+        const pc = new ParameterDefinition('c', Variance.CO);
+        h.addTypeDef('x', [pa, pb, pc]);
+        h.addTypeDef('y');
+        h.addTypeDef('z');
+        const zi = new ExplicitInstantiation('z');
+        const yi = new ExplicitInstantiation('y');
+        const xi1 = new ExplicitInstantiation('x', [zi, yi, zi]);
+        const xi2 = new ExplicitInstantiation('x', [zi, zi, zi]);
+        h.finalize();
+
+        assert.isFalse(
+            h.typeFulfillsType(xi1, xi2),
+            'Expected an unrelated inner type to not fulfill the type');
+      });
+
+      suite('identical outer types', function() {
+        test('identical inner fulfills type', function() {
+          const h = new TypeHierarchy();
+          const pa = new ParameterDefinition('a', Variance.CO);
+          h.addTypeDef('x', [pa]);
+          h.addTypeDef('y');
+          const yi1 = new ExplicitInstantiation('y');
+          const yi2 = new ExplicitInstantiation('y');
+          const xi1 = new ExplicitInstantiation('x', [yi1]);
+          const xi2 = new ExplicitInstantiation('x', [yi2]);
+          h.finalize();
+
+          assert.isTrue(
+              h.typeFulfillsType(xi1, xi2),
+              'Expected an identical inner type to fulfill the type');
+        });
+
+        test('subtype inner fulfills type', function() {
+          const h = new TypeHierarchy();
+          const pa = new ParameterDefinition('a', Variance.CO);
+          h.addTypeDef('x', [pa]);
+          const td = h.addTypeDef('t');
+          h.addTypeDef('p');
+          const ti = new ExplicitInstantiation('t');
+          const pi = new ExplicitInstantiation('p');
+          const xi1 = new ExplicitInstantiation('x', [ti]);
+          const xi2 = new ExplicitInstantiation('x', [pi]);
+          td.addParent(pi);
+          h.finalize();
+
+          assert.isTrue(
+              h.typeFulfillsType(xi1, xi2),
+              'Expected an subtype inner type to fulfill the type');
+        });
+
+        test('supertype inner does not fulfill type', function() {
+          const h = new TypeHierarchy();
+          const pa = new ParameterDefinition('a', Variance.CO);
+          h.addTypeDef('x', [pa]);
+          const td = h.addTypeDef('t');
+          h.addTypeDef('p');
+          const ti = new ExplicitInstantiation('t');
+          const pi = new ExplicitInstantiation('p');
+          const xi1 = new ExplicitInstantiation('x', [pi]);
+          const xi2 = new ExplicitInstantiation('x', [ti]);
+          td.addParent(pi);
+          h.finalize();
+
+          assert.isFalse(
+              h.typeFulfillsType(xi1, xi2),
+              'Expected an supertype inner type to not fulfill the type');
+        });
+      });
+
+      suite('subtype outer types', function() {
+        test('identical inner fulfills type', function() {
+          const h = new TypeHierarchy();
+          const pa = new ParameterDefinition('a', Variance.CO);
+          h.addTypeDef('x', [pa]);
+          const yd = h.addTypeDef('y', [pa]);
+          h.addTypeDef('z');
+          const ga = new GenericInstantiation('a');
+          const zi1 = new ExplicitInstantiation('z');
+          const zi2 = new ExplicitInstantiation('z');
+          const gx = new ExplicitInstantiation('x', [ga]);
+          const yi = new ExplicitInstantiation('y', [zi2]);
+          const xi = new ExplicitInstantiation('x', [zi1]);
+          yd.addParent(gx);
+          h.finalize();
+
+          assert.isTrue(
+              h.typeFulfillsType(yi, xi),
+              'Expected an identical inner type to fulfill the type');
+        });
+
+        test('subtype inner fulfills type', function() {
+          const h = new TypeHierarchy();
+          const pa = new ParameterDefinition('a', Variance.CO);
+          h.addTypeDef('x', [pa]);
+          const yd = h.addTypeDef('y', [pa]);
+          const td = h.addTypeDef('t');
+          h.addTypeDef('p');
+          const ga = new GenericInstantiation('a');
+          const ti = new ExplicitInstantiation('t');
+          const pi = new ExplicitInstantiation('p');
+          const gx = new ExplicitInstantiation('x', [ga]);
+          const yi = new ExplicitInstantiation('y', [ti]);
+          const xi = new ExplicitInstantiation('x', [pi]);
+          td.addParent(pi);
+          yd.addParent(gx);
+          h.finalize();
+
+          assert.isTrue(
+              h.typeFulfillsType(yi, xi),
+              'Expected an subtype inner type to fulfill the type');
+        });
+
+        test('supertype inner does not fulfill type', function() {
+          const h = new TypeHierarchy();
+          const pa = new ParameterDefinition('a', Variance.CO);
+          h.addTypeDef('x', [pa]);
+          const yd = h.addTypeDef('y', [pa]);
+          const td = h.addTypeDef('t');
+          h.addTypeDef('p');
+          const ga = new GenericInstantiation('a');
+          const ti = new ExplicitInstantiation('t');
+          const pi = new ExplicitInstantiation('p');
+          const gx = new ExplicitInstantiation('x', [ga]);
+          const yi = new ExplicitInstantiation('y', [pi]);
+          const xi = new ExplicitInstantiation('x', [ti]);
+          td.addParent(pi);
+          yd.addParent(gx);
+          h.finalize();
+
+          assert.isFalse(
+              h.typeFulfillsType(yi, xi),
+              'Expected an supertype inner type to not fulfill the type');
+        });
+      });
+    });
+
+    suite('contravariant types', function() {
+      test('unrelated outers do not fulfill types', function() {
+        const h = new TypeHierarchy();
+        const pa = new ParameterDefinition('a', Variance.CONTRA);
+        h.addTypeDef('x', [pa]);
+        h.addTypeDef('y', [pa]);
+        h.addTypeDef('z');
+        const zi = new ExplicitInstantiation('z');
+        const xi = new ExplicitInstantiation('x', [zi]);
+        const yi = new ExplicitInstantiation('y', [zi]);
+        h.finalize();
+
+        assert.isFalse(
+            h.typeFulfillsType(xi, yi),
+            'Expected an unrelated outer type to not fulfill the type');
+      });
+
+      test('supertype outers do not fulfill types', function() {
+        const h = new TypeHierarchy();
+        const pa = new ParameterDefinition('a', Variance.CONTRA);
+        h.addTypeDef('x', [pa]);
+        const yd = h.addTypeDef('y', [pa]);
+        h.addTypeDef('z');
+        const zi = new ExplicitInstantiation('z');
+        const ga = new GenericInstantiation('a');
+        const gx = new ExplicitInstantiation('x', [ga]);
+        const xi = new ExplicitInstantiation('x', [zi]);
+        const yi = new ExplicitInstantiation('y', [zi]);
+        yd.addParent(gx);
+
+        assert.isFalse(
+            h.typeFulfillsType(xi, yi),
+            'Expected a supertype outer type to not fulfill the type');
+      });
+
+      test('unrelated inners do not fulfill types', function() {
+        const h = new TypeHierarchy();
+        const pa = new ParameterDefinition('a', Variance.CONTRA);
+        h.addTypeDef('x', [pa]);
+        h.addTypeDef('y');
+        h.addTypeDef('z');
+        const zi = new ExplicitInstantiation('z');
+        const yi = new ExplicitInstantiation('y');
+        const xi1 = new ExplicitInstantiation('x', [zi]);
+        const xi2 = new ExplicitInstantiation('x', [yi]);
+        h.finalize();
+
+        assert.isFalse(
+            h.typeFulfillsType(xi1, xi2),
+            'Expected an unrelated inner type to not fulfill the type');
+      });
+
+      test('even a single unrelated inner does not fulfill the type', function() {
+        const h = new TypeHierarchy();
+        const pa = new ParameterDefinition('a', Variance.CONTRA);
+        const pb = new ParameterDefinition('b', Variance.CONTRA);
+        const pc = new ParameterDefinition('c', Variance.CONTRA);
+        h.addTypeDef('x', [pa, pb, pc]);
+        h.addTypeDef('y');
+        h.addTypeDef('z');
+        const zi = new ExplicitInstantiation('z');
+        const yi = new ExplicitInstantiation('y');
+        const xi1 = new ExplicitInstantiation('x', [zi, yi, zi]);
+        const xi2 = new ExplicitInstantiation('x', [zi, zi, zi]);
+        h.finalize();
+
+        assert.isFalse(
+            h.typeFulfillsType(xi1, xi2),
+            'Expected an unrelated inner type to not fulfill the type');
+      });
+
+      suite('identical outer types', function() {
+        test('identical inner fulfills type', function() {
+          const h = new TypeHierarchy();
+          const pa = new ParameterDefinition('a', Variance.CONTRA);
+          h.addTypeDef('x', [pa]);
+          h.addTypeDef('y');
+          const yi1 = new ExplicitInstantiation('y');
+          const yi2 = new ExplicitInstantiation('y');
+          const xi1 = new ExplicitInstantiation('x', [yi1]);
+          const xi2 = new ExplicitInstantiation('x', [yi2]);
+          h.finalize();
+
+          assert.isTrue(
+              h.typeFulfillsType(xi1, xi2),
+              'Expected an identical inner type to fulfill the type');
+        });
+
+        test('subtype inner does not fulfill types', function() {
+          const h = new TypeHierarchy();
+          const pa = new ParameterDefinition('a', Variance.CONTRA);
+          h.addTypeDef('x', [pa]);
+          const td = h.addTypeDef('t');
+          h.addTypeDef('p');
+          const ti = new ExplicitInstantiation('t');
+          const pi = new ExplicitInstantiation('p');
+          const xi1 = new ExplicitInstantiation('x', [ti]);
+          const xi2 = new ExplicitInstantiation('x', [pi]);
+          td.addParent(pi);
+          h.finalize();
+
+          assert.isFalse(
+              h.typeFulfillsType(xi1, xi2),
+              'Expected an subtype inner type to not fulfill the type');
+        });
+
+        test('supertype inner fulfills type', function() {
+          const h = new TypeHierarchy();
+          const pa = new ParameterDefinition('a', Variance.CONTRA);
+          h.addTypeDef('x', [pa]);
+          const td = h.addTypeDef('t');
+          h.addTypeDef('p');
+          const ti = new ExplicitInstantiation('t');
+          const pi = new ExplicitInstantiation('p');
+          const xi1 = new ExplicitInstantiation('x', [pi]);
+          const xi2 = new ExplicitInstantiation('x', [ti]);
+          td.addParent(pi);
+          h.finalize();
+
+          assert.isTrue(
+              h.typeFulfillsType(xi1, xi2),
+              'Expected an supertype inner type to fulfill the type');
+        });
+      });
+
+      suite('subtype outer types', function() {
+        test('identical inner fulfills type', function() {
+          const h = new TypeHierarchy();
+          const pa = new ParameterDefinition('a', Variance.CONTRA);
+          h.addTypeDef('x', [pa]);
+          const yd = h.addTypeDef('y', [pa]);
+          h.addTypeDef('z');
+          const ga = new GenericInstantiation('a');
+          const zi1 = new ExplicitInstantiation('z');
+          const zi2 = new ExplicitInstantiation('z');
+          const gx = new ExplicitInstantiation('x', [ga]);
+          const yi = new ExplicitInstantiation('y', [zi2]);
+          const xi = new ExplicitInstantiation('x', [zi1]);
+          yd.addParent(gx);
+          h.finalize();
+
+          assert.isTrue(
+              h.typeFulfillsType(yi, xi),
+              'Expected an identical inner type to fulfill the type');
+        });
+
+        test('subtype inner does not fulfill types', function() {
+          const h = new TypeHierarchy();
+          const pa = new ParameterDefinition('a', Variance.CONTRA);
+          h.addTypeDef('x', [pa]);
+          const yd = h.addTypeDef('y', [pa]);
+          const td = h.addTypeDef('t');
+          h.addTypeDef('p');
+          const ga = new GenericInstantiation('a');
+          const ti = new ExplicitInstantiation('t');
+          const pi = new ExplicitInstantiation('p');
+          const gx = new ExplicitInstantiation('x', [ga]);
+          const yi = new ExplicitInstantiation('y', [ti]);
+          const xi = new ExplicitInstantiation('x', [pi]);
+          td.addParent(pi);
+          yd.addParent(gx);
+          h.finalize();
+
+          assert.isFalse(
+              h.typeFulfillsType(yi, xi),
+              'Expected an subtype inner type to not fulfill the type');
+        });
+
+        test('supertype inner fulfills type', function() {
+          const h = new TypeHierarchy();
+          const pa = new ParameterDefinition('a', Variance.CONTRA);
+          h.addTypeDef('x', [pa]);
+          const yd = h.addTypeDef('y', [pa]);
+          const td = h.addTypeDef('t');
+          h.addTypeDef('p');
+          const ga = new GenericInstantiation('a');
+          const ti = new ExplicitInstantiation('t');
+          const pi = new ExplicitInstantiation('p');
+          const gx = new ExplicitInstantiation('x', [ga]);
+          const yi = new ExplicitInstantiation('y', [pi]);
+          const xi = new ExplicitInstantiation('x', [ti]);
+          td.addParent(pi);
+          yd.addParent(gx);
+          h.finalize();
+
+          assert.isTrue(
+              h.typeFulfillsType(yi, xi),
+              'Expected an supertype inner type to fulfill the type');
+        });
+      });
+    });
+
+    suite('invariant types', function() {
+      test('unrelated outers do not fulfill types', function() {
+        const h = new TypeHierarchy();
+        const pa = new ParameterDefinition('a', Variance.INV);
+        h.addTypeDef('x', [pa]);
+        h.addTypeDef('y', [pa]);
+        h.addTypeDef('z');
+        const zi = new ExplicitInstantiation('z');
+        const xi = new ExplicitInstantiation('x', [zi]);
+        const yi = new ExplicitInstantiation('y', [zi]);
+        h.finalize();
+
+        assert.isFalse(
+            h.typeFulfillsType(xi, yi),
+            'Expected an unrelated outer type to not fulfill the type');
+      });
+
+      test('supertype outers do not fulfill types', function() {
+        const h = new TypeHierarchy();
+        const pa = new ParameterDefinition('a', Variance.INV);
+        h.addTypeDef('x', [pa]);
+        const yd = h.addTypeDef('y', [pa]);
+        h.addTypeDef('z');
+        const zi = new ExplicitInstantiation('z');
+        const ga = new GenericInstantiation('a');
+        const gx = new ExplicitInstantiation('x', [ga]);
+        const xi = new ExplicitInstantiation('x', [zi]);
+        const yi = new ExplicitInstantiation('y', [zi]);
+        yd.addParent(gx);
+
+        assert.isFalse(
+            h.typeFulfillsType(xi, yi),
+            'Expected a supertype outer type to not fulfill the type');
+      });
+
+      test('unrelated inners do not fulfill types', function() {
+        const h = new TypeHierarchy();
+        const pa = new ParameterDefinition('a', Variance.INV);
+        h.addTypeDef('x', [pa]);
+        h.addTypeDef('y');
+        h.addTypeDef('z');
+        const zi = new ExplicitInstantiation('z');
+        const yi = new ExplicitInstantiation('y');
+        const xi1 = new ExplicitInstantiation('x', [zi]);
+        const xi2 = new ExplicitInstantiation('x', [yi]);
+        h.finalize();
+
+        assert.isFalse(
+            h.typeFulfillsType(xi1, xi2),
+            'Expected an unrelated inner type to not fulfill the type');
+      });
+
+      test('even a single unrelated inner does not fulfill the type', function() {
+        const h = new TypeHierarchy();
+        const pa = new ParameterDefinition('a', Variance.INV);
+        const pb = new ParameterDefinition('b', Variance.INV);
+        const pc = new ParameterDefinition('c', Variance.INV);
+        h.addTypeDef('x', [pa, pb, pc]);
+        h.addTypeDef('y');
+        h.addTypeDef('z');
+        const zi = new ExplicitInstantiation('z');
+        const yi = new ExplicitInstantiation('y');
+        const xi1 = new ExplicitInstantiation('x', [zi, yi, zi]);
+        const xi2 = new ExplicitInstantiation('x', [zi, zi, zi]);
+        h.finalize();
+
+        assert.isFalse(
+            h.typeFulfillsType(xi1, xi2),
+            'Expected an unrelated inner type to not fulfill the type');
+      });
+
+      suite('identical outer types', function() {
+        test('identical inner fulfills type', function() {
+          const h = new TypeHierarchy();
+          const pa = new ParameterDefinition('a', Variance.INV);
+          h.addTypeDef('x', [pa]);
+          h.addTypeDef('y');
+          const yi1 = new ExplicitInstantiation('y');
+          const yi2 = new ExplicitInstantiation('y');
+          const xi1 = new ExplicitInstantiation('x', [yi1]);
+          const xi2 = new ExplicitInstantiation('x', [yi2]);
+          h.finalize();
+
+          assert.isTrue(
+              h.typeFulfillsType(xi1, xi2),
+              'Expected an identical inner type to fulfill the type');
+        });
+
+        test('subtype inner does not fulfill type', function() {
+          const h = new TypeHierarchy();
+          const pa = new ParameterDefinition('a', Variance.INV);
+          h.addTypeDef('x', [pa]);
+          const td = h.addTypeDef('t');
+          h.addTypeDef('p');
+          const ti = new ExplicitInstantiation('t');
+          const pi = new ExplicitInstantiation('p');
+          const xi1 = new ExplicitInstantiation('x', [ti]);
+          const xi2 = new ExplicitInstantiation('x', [pi]);
+          td.addParent(pi);
+          h.finalize();
+
+          assert.isFalse(
+              h.typeFulfillsType(xi1, xi2),
+              'Expected an subtype inner type to not fulfill the type');
+        });
+
+        test('supertype inner does not fulfill type', function() {
+          const h = new TypeHierarchy();
+          const pa = new ParameterDefinition('a', Variance.INV);
+          h.addTypeDef('x', [pa]);
+          const td = h.addTypeDef('t');
+          h.addTypeDef('p');
+          const ti = new ExplicitInstantiation('t');
+          const pi = new ExplicitInstantiation('p');
+          const xi1 = new ExplicitInstantiation('x', [pi]);
+          const xi2 = new ExplicitInstantiation('x', [ti]);
+          td.addParent(pi);
+          h.finalize();
+
+          assert.isFalse(
+              h.typeFulfillsType(xi1, xi2),
+              'Expected an supertype inner type to not fulfill the type');
+        });
+      });
+
+      suite('subtype outer types', function() {
+        test('identical inner fulfills type', function() {
+          const h = new TypeHierarchy();
+          const pa = new ParameterDefinition('a', Variance.INV);
+          h.addTypeDef('x', [pa]);
+          const yd = h.addTypeDef('y', [pa]);
+          h.addTypeDef('z');
+          const ga = new GenericInstantiation('a');
+          const zi1 = new ExplicitInstantiation('z');
+          const zi2 = new ExplicitInstantiation('z');
+          const gx = new ExplicitInstantiation('x', [ga]);
+          const yi = new ExplicitInstantiation('y', [zi2]);
+          const xi = new ExplicitInstantiation('x', [zi1]);
+          yd.addParent(gx);
+          h.finalize();
+
+          assert.isTrue(
+              h.typeFulfillsType(yi, xi),
+              'Expected an identical inner type to fulfill the type');
+        });
+
+        test('subtype inner does not fulfill types', function() {
+          const h = new TypeHierarchy();
+          const pa = new ParameterDefinition('a', Variance.INV);
+          h.addTypeDef('x', [pa]);
+          const yd = h.addTypeDef('y', [pa]);
+          const td = h.addTypeDef('t');
+          h.addTypeDef('p');
+          const ga = new GenericInstantiation('a');
+          const ti = new ExplicitInstantiation('t');
+          const pi = new ExplicitInstantiation('p');
+          const gx = new ExplicitInstantiation('x', [ga]);
+          const yi = new ExplicitInstantiation('y', [ti]);
+          const xi = new ExplicitInstantiation('x', [pi]);
+          td.addParent(pi);
+          yd.addParent(gx);
+          h.finalize();
+
+          assert.isFalse(
+              h.typeFulfillsType(yi, xi),
+              'Expected an subtype inner type to not fulfill the type');
+        });
+
+        test('supertype inner does not fulfill types', function() {
+          const h = new TypeHierarchy();
+          const pa = new ParameterDefinition('a', Variance.INV);
+          h.addTypeDef('x', [pa]);
+          const yd = h.addTypeDef('y', [pa]);
+          const td = h.addTypeDef('t');
+          h.addTypeDef('p');
+          const ga = new GenericInstantiation('a');
+          const ti = new ExplicitInstantiation('t');
+          const pi = new ExplicitInstantiation('p');
+          const gx = new ExplicitInstantiation('x', [ga]);
+          const yi = new ExplicitInstantiation('y', [pi]);
+          const xi = new ExplicitInstantiation('x', [ti]);
+          td.addParent(pi);
+          yd.addParent(gx);
+          h.finalize();
+
+          assert.isFalse(
+              h.typeFulfillsType(yi, xi),
+              'Expected an supertype inner type to not fulfill the type');
+        });
+      });
+    });
+
+    suite('nested variances', function() {
+
     });
   });
 });

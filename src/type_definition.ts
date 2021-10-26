@@ -6,7 +6,7 @@
 
 import {ParameterDefinition} from './parameter_definition';
 import {TypeHierarchy} from './type_hierarchy';
-import {ExplicitInstantiation, TypeInstantiation} from './type_instantiation';
+import {ExplicitInstantiation, GenericInstantiation, TypeInstantiation} from './type_instantiation';
 import {IncompatibleType} from './exceptions';
 
 export class TypeDefinition {
@@ -14,11 +14,11 @@ export class TypeDefinition {
   private readonly children_: TypeInstantiation[] = [];
   private readonly ancestors_: TypeInstantiation[] = [];
   private readonly descendants_: TypeInstantiation[] = [];
-  private readonly params_: ParameterDefinition[] = [];
 
   constructor(
       readonly hierarchy: TypeHierarchy,
-      readonly name: string
+      readonly name: string,
+      private readonly params_: ParameterDefinition[] = []
   ) {
     this.ancestors_.push(this.createInstance());
     this.descendants_.push(this.createInstance());
@@ -93,6 +93,7 @@ export class TypeDefinition {
   }
 
   createInstance(): ExplicitInstantiation {
-    return new ExplicitInstantiation(this.name);
+    return new ExplicitInstantiation(
+        this.name, this.params_.map(p => new GenericInstantiation()));
   }
 }

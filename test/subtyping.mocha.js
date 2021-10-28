@@ -1435,7 +1435,252 @@ suite('Subtyping', function() {
     });
 
     suite('nested variances', function() {
+      function defineNestedHierarchy() {
+        const h = new TypeHierarchy();
+        const coParam = new ParameterDefinition('a', Variance.CO);
+        const contraParam = new ParameterDefinition('a', Variance.CONTRA);
+        const invParam = new ParameterDefinition('a', Variance.INV);
 
+        const coChildDef = h.addTypeDef('childCo', [coParam]);
+        const coDef = h.addTypeDef('co', [coParam]);
+        const coParentDef = h.addTypeDef('praentCo', [coParam]);
+        coChildDef.addParent(coDef.createInstance());
+        coDef.addParent(coParentDef.createInstance());
+
+        const contraChildDef = h.addTypeDef('childContra', [contraParam]);
+        const contraDef = h.addTypeDef('contra', [coParam]);
+        const contraParentDef = h.addTypeDef('parentContra', [coParam]);
+        contraChildDef.addParent(contraDef.createInstance());
+        contraDef.addParent(contraParentDef.createInstance());
+
+        const invChildDef = h.addTypeDef('childInv', [invParam]);
+        const invDef = h.addTypeDef('inv', [invParam]);
+        const invParentDef = h.addTypeDef('parentInv', [coParam]);
+        invChildDef.addParent(invDef.createInstance());
+        invDef.addParent(invParentDef.createInstance());
+
+        const child = h.addTypeDef('child');
+        const type = h.addTypeDef('type');
+        const parent = h.addTypeDef('parent');
+        child.addParent(type.createInstance());
+        type.addParent(parent.createInstance());
+
+        h.finalize();
+
+        return h;
+      }
+
+      test('co[childCo[child]] fulfills co[co[type]]', function() {
+        const h = defineNestedHierarchy();
+        const a = new ExplicitInstantiation(
+            'co', [new ExplicitInstantiation(
+                'childCo', [new ExplicitInstantiation('child')])]);
+        const b = new ExplicitInstantiation(
+            'co', [new ExplicitInstantiation(
+                'co', [new ExplicitInstantiation('type')])]);
+
+        assert.isTrue(
+            h.typeFulfillsType(a, b),
+            'Expected co[childCo[child]] to fulfill co[co[type]]');
+      });
+
+      test('co[childContra[parent]] fulfills co{contra[type]]', function() {
+        const h = defineNestedHierarchy();
+        const a = new ExplicitInstantiation(
+            'co', [new ExplicitInstantiation(
+                'childContra', [new ExplicitInstantiation('parent')])]);
+        const b = new ExplicitInstantiation(
+            'co', [new ExplicitInstantiation(
+                'contra', [new ExplicitInstantiation('type')])]);
+
+        assert.isTrue(
+            h.typeFulfillsType(a, b),
+            'Expected co[childContra[child]] to fulfill co[contra[type]]');
+      });
+
+      test('co[childInv[type]] fulfills co[inv[type]]', function() {
+        const h = defineNestedHierarchy();
+        const a = new ExplicitInstantiation(
+            'co', [new ExplicitInstantiation(
+                'childInv', [new ExplicitInstantiation('type')])]);
+        const b = new ExplicitInstantiation(
+            'co', [new ExplicitInstantiation(
+                'inv', [new ExplicitInstantiation('type')])]);
+
+        assert.isTrue(
+            h.typeFulfillsType(a, b),
+            'Expected co[childInv[child]] to fulfill co[inv[type]]');
+      });
+
+      test('co[childInv[child]] does not fulfill co[inv[type]]', function() {
+        const h = defineNestedHierarchy();
+        const a = new ExplicitInstantiation(
+            'co', [new ExplicitInstantiation(
+                'childInv', [new ExplicitInstantiation('child')])]);
+        const b = new ExplicitInstantiation(
+            'co', [new ExplicitInstantiation(
+                'inv', [new ExplicitInstantiation('type')])]);
+
+        assert.isFalse(
+            h.typeFulfillsType(a, b),
+            'Expected co[childInv[child]] to not fulfill co[inv[type]]');
+      });
+
+      test('contra[parentCo[parent]] fulfills [contra[co[type]]', function() {
+        const h = defineNestedHierarchy();
+        const a = new ExplicitInstantiation(
+            'contra', [new ExplicitInstantiation(
+                'parentCo', [new ExplicitInstantiation('parent')])]);
+        const b = new ExplicitInstantiation(
+            'contra', [new ExplicitInstantiation(
+                'co', [new ExplicitInstantiation('type')])]);
+
+        assert.isTrue(
+            h.typeFulfillsType(a, b),
+            'Expected contra[parentCo[parent]] to fulfill contra[co[type]]');
+      });
+
+      test('contra[parentContra[child]] fulfills [[contra[contra[type]]',
+          function() {
+            const h = defineNestedHierarchy();
+            const a = new ExplicitInstantiation(
+                'contra', [new ExplicitInstantiation(
+                    'parentContra', [new ExplicitInstantiation('child')])]);
+            const b = new ExplicitInstantiation(
+                'contra', [new ExplicitInstantiation(
+                    'contra', [new ExplicitInstantiation('type')])]);
+
+            assert.isTrue(
+                h.typeFulfillsType(a, b),
+                'Expected contra[parentContra[child]] to fulfill contra[contra[type]]');
+          });
+
+      test('contra[parentInv[type]] fulfills contra[inv[type]]', function() {
+        const h = defineNestedHierarchy();
+        const a = new ExplicitInstantiation(
+            'contra', [new ExplicitInstantiation(
+                'parentInv', [new ExplicitInstantiation('type')])]);
+        const b = new ExplicitInstantiation(
+            'contra', [new ExplicitInstantiation(
+                'inv', [new ExplicitInstantiation('type')])]);
+
+        assert.isTrue(
+            h.typeFulfillsType(a, b),
+            'Expected contra[parentInv[type]] to fulfill contra[inv[type]]');
+      });
+
+      test('contra[parentInv[parent]] does not fulfill contra[inv[type]]',
+          function() {
+            const h = defineNestedHierarchy();
+            const a = new ExplicitInstantiation(
+                'contra', [new ExplicitInstantiation(
+                    'parentInv', [new ExplicitInstantiation('parent')])]);
+            const b = new ExplicitInstantiation(
+                'contra', [new ExplicitInstantiation(
+                    'inv', [new ExplicitInstantiation('type')])]);
+
+            assert.isTrue(
+                h.typeFulfillsType(a, b),
+                'Expected contra[parentInv[parent]] to not fulfill contra[inv[type]]');
+          });
+
+      test('inv[co[type]] fulfills inv[co[type]]', function() {
+        const h = defineNestedHierarchy();
+        const a = new ExplicitInstantiation(
+            'inv', [new ExplicitInstantiation(
+                'co', [new ExplicitInstantiation('type')])]);
+        const b = new ExplicitInstantiation(
+            'inv', [new ExplicitInstantiation(
+                'co', [new ExplicitInstantiation('type')])]);
+
+        assert.isTrue(
+            h.typeFulfillsType(a, b),
+            'Expected inv[co[type]] to fulfill inv[co[type]]');
+      });
+
+      test('inv[co[child]] does not fulfill inv[co[type]]', function() {
+        const h = defineNestedHierarchy();
+        const a = new ExplicitInstantiation(
+            'inv', [new ExplicitInstantiation(
+                'co', [new ExplicitInstantiation('child')])]);
+        const b = new ExplicitInstantiation(
+            'inv', [new ExplicitInstantiation(
+                'co', [new ExplicitInstantiation('type')])]);
+
+        assert.isFalse(
+            h.typeFulfillsType(a, b),
+            'Expected inv[co[child]] to not fulfill inv[co[type]]');
+      });
+
+      test('inv[contra[type]] fulfills inv[contra[type]]', function() {
+        const h = defineNestedHierarchy();
+        const a = new ExplicitInstantiation(
+            'inv', [new ExplicitInstantiation(
+                'contra', [new ExplicitInstantiation('type')])]);
+        const b = new ExplicitInstantiation(
+            'inv', [new ExplicitInstantiation(
+                'contra', [new ExplicitInstantiation('type')])]);
+
+        assert.isTrue(
+            h.typeFulfillsType(a, b),
+            'Expected inv[contra[type]] to fulfill inv[contra[type]]');
+      });
+
+      test('inv[contra[parent]] does not fulfill inv[contra[type[[', function() {
+        const h = defineNestedHierarchy();
+        const a = new ExplicitInstantiation(
+            'inv', [new ExplicitInstantiation(
+                'contra', [new ExplicitInstantiation('parent')])]);
+        const b = new ExplicitInstantiation(
+            'inv', [new ExplicitInstantiation(
+                'contra', [new ExplicitInstantiation('type')])]);
+
+        assert.isFalse(
+            h.typeFulfillsType(a, b),
+            'Expected inv[contra[type]] to not fulfill inv[contra[type]]');
+      });
+
+      test('inv[inv[type]] fulfills inv[inv[type]]', function() {
+        const h = defineNestedHierarchy();
+        const a = new ExplicitInstantiation(
+            'inv', [new ExplicitInstantiation(
+                'inv', [new ExplicitInstantiation('type')])]);
+        const b = new ExplicitInstantiation(
+            'inv', [new ExplicitInstantiation(
+                'inv', [new ExplicitInstantiation('type')])]);
+
+        assert.isTrue(
+            h.typeFulfillsType(a, b),
+            'Expected inv[inv[type]] to fulfill inv[inv[type]]');
+      });
+
+      test('inv[inv[child]] does not fulfill inv[inv[type]]', function() {
+        const h = defineNestedHierarchy();
+        const a = new ExplicitInstantiation(
+            'inv', [new ExplicitInstantiation(
+                'inv', [new ExplicitInstantiation('child')])]);
+        const b = new ExplicitInstantiation(
+            'inv', [new ExplicitInstantiation(
+                'inv', [new ExplicitInstantiation('type')])]);
+
+        assert.isFalse(
+            h.typeFulfillsType(a, b),
+            'Expected inv[inv[child]] to not fulfill inv[inv[type]]');
+      });
+
+      test('inv[inv[parent]] does not fulfill inv[inv[type]]', function() {
+        const h = defineNestedHierarchy();
+        const a = new ExplicitInstantiation(
+            'inv', [new ExplicitInstantiation(
+                'inv', [new ExplicitInstantiation('parent')])]);
+        const b = new ExplicitInstantiation(
+            'inv', [new ExplicitInstantiation(
+                'inv', [new ExplicitInstantiation('type')])]);
+
+        assert.isFalse(
+            h.typeFulfillsType(a, b),
+            'Expected inv[inv[parent]] to not fulfill inv[inv[type]]');
+      });
     });
   });
 });

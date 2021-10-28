@@ -1443,19 +1443,19 @@ suite('Subtyping', function() {
 
         const coChildDef = h.addTypeDef('childCo', [coParam]);
         const coDef = h.addTypeDef('co', [coParam]);
-        const coParentDef = h.addTypeDef('praentCo', [coParam]);
+        const coParentDef = h.addTypeDef('parentCo', [coParam]);
         coChildDef.addParent(coDef.createInstance());
         coDef.addParent(coParentDef.createInstance());
 
         const contraChildDef = h.addTypeDef('childContra', [contraParam]);
-        const contraDef = h.addTypeDef('contra', [coParam]);
-        const contraParentDef = h.addTypeDef('parentContra', [coParam]);
+        const contraDef = h.addTypeDef('contra', [contraParam]);
+        const contraParentDef = h.addTypeDef('parentContra', [contraParam]);
         contraChildDef.addParent(contraDef.createInstance());
         contraDef.addParent(contraParentDef.createInstance());
 
         const invChildDef = h.addTypeDef('childInv', [invParam]);
         const invDef = h.addTypeDef('inv', [invParam]);
-        const invParentDef = h.addTypeDef('parentInv', [coParam]);
+        const invParentDef = h.addTypeDef('parentInv', [invParam]);
         invChildDef.addParent(invDef.createInstance());
         invDef.addParent(invParentDef.createInstance());
 
@@ -1484,7 +1484,7 @@ suite('Subtyping', function() {
             'Expected co[childCo[child]] to fulfill co[co[type]]');
       });
 
-      test('co[childContra[parent]] fulfills co{contra[type]]', function() {
+      test('co[childContra[parent]] fulfills co[contra[type]]', function() {
         const h = defineNestedHierarchy();
         const a = new ExplicitInstantiation(
             'co', [new ExplicitInstantiation(
@@ -1579,7 +1579,7 @@ suite('Subtyping', function() {
                 'contra', [new ExplicitInstantiation(
                     'inv', [new ExplicitInstantiation('type')])]);
 
-            assert.isTrue(
+            assert.isFalse(
                 h.typeFulfillsType(a, b),
                 'Expected contra[parentInv[parent]] to not fulfill contra[inv[type]]');
           });

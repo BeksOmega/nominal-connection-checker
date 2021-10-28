@@ -10,10 +10,12 @@ import {ExplicitInstantiation, GenericInstantiation, TypeInstantiation} from './
 import {IncompatibleType} from './exceptions';
 
 export class TypeDefinition {
-  private readonly parents_: TypeInstantiation[] = [];
-  private readonly children_: TypeInstantiation[] = [];
-  private readonly ancestors_: TypeInstantiation[] = [];
-  private readonly descendants_: TypeInstantiation[] = [];
+  private readonly parents_: ExplicitInstantiation[] = [];
+  private readonly children_: ExplicitInstantiation[] = [];
+  private readonly ancestors_: ExplicitInstantiation[] = [];
+  private readonly descendants_: ExplicitInstantiation[] = [];
+  private readonly ancestorParamsMap_: Map<string, TypeInstantiation[]> =
+      new Map();
 
   constructor(
       readonly hierarchy: TypeHierarchy,
@@ -21,6 +23,8 @@ export class TypeDefinition {
       private readonly params_: ParameterDefinition[] = []
   ) {
     this.ancestors_.push(this.createInstance());
+    this.ancestorParamsMap_.set(
+        name, params_.map(p => new GenericInstantiation(p.name)));
     this.descendants_.push(this.createInstance());
   }
 
@@ -44,56 +48,103 @@ export class TypeDefinition {
     return (this.params_ as readonly ParameterDefinition[]);
   }
 
-  hasParent(t: TypeInstantiation): boolean {
-    return this.parents_.some(p => p.equals(t));
+  hasParent(t: string): boolean {
+    return this.parents_.some(p => p.name == t);
   }
 
-  hasChild(t: TypeInstantiation): boolean {
-    return this.children_.some(c => c.equals(t));
+  hasChild(t: string): boolean {
+    return this.children_.some(c => c.name == t);
   }
 
-  hasAncestor(t: TypeInstantiation): boolean {
-    return this.ancestors_.some(a => a.equals(t));
+  hasAncestor(t: string): boolean {
+    return this.ancestors_.some(a => a.name == t);
   }
 
-  hasDescendant(t: TypeInstantiation): boolean {
-    return this.descendants_.some(d => d.equals(t));
+  hasDescendant(t: string): boolean {
+    return this.descendants_.some(d => d.name == t);
   }
 
-  addParent(t: TypeInstantiation) {
+  addParent(t: ExplicitInstantiation) {
     if (!this.hierarchy.typeIsCompatible(t)) throw new IncompatibleType(t);
-    if (this.hasParent(t)) return;
+    if (this.hasParent(t.name)) return;
     this.parents_.push(t);
-    this.addAncestor(t);
+    this.ancestorParamsMap_.set(t.name, t.params);
+    this.addAncestor(t, this);
     const td = this.hierarchy.getTypeDef(t.name);
-    td.ancestors_.forEach(a => this.addAncestor(a));
+    td.ancestors_.forEach(a => this.addAncestor(a, td));
     td.addChild(this.createInstance());
   }
 
-  private addChild(t: TypeInstantiation) {
-    if (this.hasChild(t)) return;
+  private addChild(t: ExplicitInstantiation) {
+    if (this.hasChild(t.name)) return;
     this.children_.push(t);
     this.addDescendant(t);
     const td = this.hierarchy.getTypeDef(t.name);
     td.descendants_.forEach(d => this.addDescendant(d));
   }
 
-  private addAncestor(t: TypeInstantiation) {
-    if (this.hasAncestor(t)) return;
-    this.ancestors_.push(t);
+  private addAncestor(a: ExplicitInstantiation, parent: TypeDefinition) {
+    if (this.hasAncestor(a.name)) return;
+    this.ancestors_.push(a);
+    const parentToAncestor = parent.getParamsForAncestor(a.name);
+    const thisToParent = this.getParamsForAncestor(parent.name);
+    const thisToAncestor = [];
+    parentToAncestor.forEach((p) => {
+      if (p instanceof GenericInstantiation) {
+        thisToAncestor.push(thisToParent[parent.getIndexOfParam(p.name)]);
+      } else {
+        thisToAncestor.push(p);
+      }
+    });
+    this.ancestorParamsMap_.set(a.name, thisToAncestor);
     this.children_.forEach(
-        c => this.hierarchy.getTypeDef(c.name).addAncestor(t));
+        c => this.hierarchy.getTypeDef(c.name).addAncestor(a, this));
   }
 
-  private addDescendant(t: TypeInstantiation) {
-    if (this.hasDescendant(t)) return;
+  private addDescendant(t: ExplicitInstantiation) {
+    if (this.hasDescendant(t.name)) return;
     this.descendants_.push(t);
     this.parents_.forEach(
         p => this.hierarchy.getTypeDef(p.name).addDescendant(t));
   }
 
+  getParam(n: string): ParameterDefinition {
+    for (const p of this.params_) {
+      if (p.name == n) return p;
+    }
+    return null;
+  }
+
+  getIndexOfParam(n: string): number {
+    for (let i = 0; i < this.params_.length; i++) {
+      if (this.params_[i].name == n) return i;
+    }
+    return -1;
+  }
+
+  /**
+   * Mapping of the names of the ancestors params to our params.
+   * @param n
+   * @param actual
+   */
+  getParamsForAncestor(
+      n: string, actual: TypeInstantiation[] = undefined
+  ): TypeInstantiation[] {
+    const ps = this.ancestorParamsMap_.get(n).map(p => p.clone());
+    if (!actual) return ps;
+    const replaceFn = (p, i, a) => {
+      if (p instanceof GenericInstantiation) {
+        a[i] = actual[this.getIndexOfParam(p.name)];
+      } else {
+        p.params.forEach(replaceFn);
+      }
+    };
+    ps.forEach(replaceFn);
+    return ps;
+  }
+
   createInstance(): ExplicitInstantiation {
     return new ExplicitInstantiation(
-        this.name, this.params_.map(p => new GenericInstantiation()));
+        this.name, this.params_.map(p => new GenericInstantiation(p.name)));
   }
 }

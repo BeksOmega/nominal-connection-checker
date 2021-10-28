@@ -8,7 +8,7 @@ import {TypeDefinition} from './type_definition';
 import {ExplicitInstantiation, GenericInstantiation, TypeInstantiation} from './type_instantiation';
 import {removeDuplicates} from './utils';
 import {IncompatibleType, NotFinalized} from './exceptions';
-import {ParameterDefinition} from "./parameter_definition";
+import {ParameterDefinition, Variance} from "./parameter_definition";
 
 export class TypeHierarchy {
   /**
@@ -62,7 +62,7 @@ export class TypeHierarchy {
     this.initNearestCommon(
         this.nearestCommonAncestors,
         (t, unvisited) => t.parents.some(p => unvisited.has(p.name)),
-        (t1, t2) => t1.hasDescendant(t2.createInstance()),
+        (t1, t2) => t1.hasDescendant(t2.name),
         (t) => t.parents,
         this.getNearestCommonAncestorsOfPair.bind(this),
         this.removeDescendants());
@@ -72,7 +72,7 @@ export class TypeHierarchy {
     this.initNearestCommon(
         this.nearestCommonDescendants,
         (t, unvisited) => t.children.some(c => unvisited.has(c.name)),
-        (t1, t2) => t1.hasAncestor(t2.createInstance()),
+        (t1, t2) => t1.hasAncestor(t2.name),
         (t) => t.children,
         this.getNearestCommonDescendantsOfPair.bind(this),
         this.removeAncestors());
@@ -224,7 +224,7 @@ export class TypeHierarchy {
     }
     if (a instanceof ExplicitInstantiation &&
       b instanceof ExplicitInstantiation) {
-      return this.typeDefsMap.get(a.name).hasAncestor(b);
+      return this.explicitFulfillsExplicit(a, b);
     }
     if (a instanceof GenericInstantiation &&
         b instanceof GenericInstantiation) {
@@ -237,6 +237,30 @@ export class TypeHierarchy {
           a, (b as GenericInstantiation)) :
       this.explicitFulfillsConstrainedGeneric(
           (b as ExplicitInstantiation), (a as GenericInstantiation));
+  }
+
+  private explicitFulfillsExplicit(
+      a: ExplicitInstantiation,
+      b: ExplicitInstantiation
+  ) {
+    const aDef = this.typeDefsMap.get(a.name);
+    const bDef = this.typeDefsMap.get(b.name);
+
+    if (!aDef.hasAncestor(b.name)) return false;
+
+    const subParams = aDef.getParamsForAncestor(b.name, a.params);
+    return b.params.every((superParam, i) => {
+      const subParam = subParams[i];
+      const paramDef = bDef.params[i];
+      switch (paramDef.variance) {
+        case Variance.CO:
+          return this.typeFulfillsType(subParam, superParam);
+        case Variance.CONTRA:
+          return this.typeFulfillsType(superParam, subParam);
+        case Variance.INV:
+          return superParam.equals(subParam);
+      }
+    });
   }
 
   private constrainedGenericFulfillsConstrainedGeneric(

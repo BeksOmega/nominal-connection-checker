@@ -206,8 +206,13 @@ export class TypeHierarchy {
       const ncds = this.getNearestCommonDescendants(...t.upperBounds);
       return ncds.some(
           ncd => ncas.some(nca => this.typeFulfillsType(nca, ncd)));
+    } else if (t instanceof ExplicitInstantiation) {
+      if (!this.typeDefsMap.has(t.name)) return false;
+      const td = this.typeDefsMap.get(t.name);
+      return td.params.length == t.params.length &&
+          t.params.every(p => this.typeIsCompatible(p));
     }
-    return this.typeDefsMap.has(t.name);
+    return false;
   }
 
   /**

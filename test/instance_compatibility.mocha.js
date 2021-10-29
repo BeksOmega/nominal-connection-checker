@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: MIT
  */
 
-import {TypeHierarchy} from '../src/type_hierarchy';
+import {ParameterDefinition, Variance} from '../src/parameter_definition';
 import {ExplicitInstantiation, GenericInstantiation} from '../src/type_instantiation';
+import {TypeHierarchy} from '../src/type_hierarchy';
 import {assert} from 'chai';
-import {ParameterDefinition, Variance} from "../src/parameter_definition";
 
 suite('TypeInstance compatibility', function() {
   test('types that exist are compatible', function() {

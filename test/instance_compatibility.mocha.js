@@ -4,8 +4,9 @@
  * SPDX-License-Identifier: MIT
  */
 
-import {TypeHierarchy} from '../src/type_hierarchy';
+import {ParameterDefinition, Variance} from '../src/parameter_definition';
 import {ExplicitInstantiation, GenericInstantiation} from '../src/type_instantiation';
+import {TypeHierarchy} from '../src/type_hierarchy';
 import {assert} from 'chai';
 
 suite('TypeInstance compatibility', function() {
@@ -122,4 +123,60 @@ suite('TypeInstance compatibility', function() {
             h.typeIsCompatible(gi),
             'Expected a type with upper and lower bounds where the lower is higher than upper to not be compatible');
       });
+
+  test('param types with too few params are not compatible', function() {
+    const h = new TypeHierarchy();
+    const ap = new ParameterDefinition('a', Variance.CO);
+    const bp = new ParameterDefinition('b', Variance.CO);
+    const cp = new ParameterDefinition('c', Variance.CO);
+    h.addTypeDef('x', [ap, bp, cp]);
+    h.finalize();
+
+    const xi = new ExplicitInstantiation(
+        'x', [new GenericInstantiation('m'), new GenericInstantiation('n')]);
+    assert.isFalse(
+        h.typeIsCompatible(xi),
+        'Expected a parameterized type with too few params to not be compatible');
+  });
+
+  test('param types with too many params are not compatible', function() {
+    const h = new TypeHierarchy();
+    const ap = new ParameterDefinition('a', Variance.CO);
+    const bp = new ParameterDefinition('b', Variance.CO);
+    const cp = new ParameterDefinition('c', Variance.CO);
+    h.addTypeDef('x', [ap, bp, cp]);
+    h.finalize();
+
+    const xi = new ExplicitInstantiation(
+        'x',
+        [
+          new GenericInstantiation('m'),
+          new GenericInstantiation('n'),
+          new GenericInstantiation('0'),
+          new GenericInstantiation('p'),
+        ]);
+    assert.isFalse(
+        h.typeIsCompatible(xi),
+        'Expected a parameterized type with too many params to not be compatible');
+  });
+
+  test('param types with incompatible params are not compatible', function() {
+    const h = new TypeHierarchy();
+    const ap = new ParameterDefinition('a', Variance.CO);
+    const bp = new ParameterDefinition('b', Variance.CO);
+    const cp = new ParameterDefinition('c', Variance.CO);
+    h.addTypeDef('x', [ap, bp, cp]);
+    h.finalize();
+
+    const xi = new ExplicitInstantiation(
+        'x',
+        [
+          new GenericInstantiation('m'),
+          new ExplicitInstantiation('y'),  // Does not exist.
+          new GenericInstantiation('0'),
+        ]);
+    assert.isFalse(
+        h.typeIsCompatible(xi),
+        'Expected a parameterized type with an incompatible param to not be compatible');
+  });
 });

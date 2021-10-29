@@ -88,14 +88,15 @@ export class TypeDefinition {
     this.ancestors_.push(a);
     const parentToAncestor = parent.getParamsForAncestor(a.name);
     const thisToParent = this.getParamsForAncestor(parent.name);
-    const thisToAncestor = [];
-    parentToAncestor.forEach((p) => {
+    const replaceFn = (p) => {
       if (p instanceof GenericInstantiation) {
-        thisToAncestor.push(thisToParent[parent.getIndexOfParam(p.name)]);
+        return thisToParent[parent.getIndexOfParam(p.name)];
       } else {
-        thisToAncestor.push(p);
+        p.params = p.params.map(replaceFn);
+        return p;
       }
-    });
+    };
+    const thisToAncestor = parentToAncestor.map(replaceFn);
     this.ancestorParamsMap_.set(a.name, thisToAncestor);
     this.children_.forEach(
         c => this.hierarchy.getTypeDef(c.name).addAncestor(a, this));

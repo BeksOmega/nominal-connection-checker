@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: MIT
  */
 
-import {TypeDefinition} from './type_definition';
 import {ExplicitInstantiation, GenericInstantiation, TypeInstantiation} from './type_instantiation';
-import {removeDuplicates} from './utils';
 import {IncompatibleType, NotFinalized} from './exceptions';
-import {ParameterDefinition, Variance} from "./parameter_definition";
+import {ParameterDefinition, Variance} from './parameter_definition';
+import {TypeDefinition} from './type_definition';
+import {removeDuplicates} from './utils';
 
 export class TypeHierarchy {
   /**
@@ -159,9 +159,9 @@ export class TypeHierarchy {
    * have descendants in the array.
    */
   private removeDescendants() {
-    return (t1, i, arr) =>
+    return (t1: TypeInstantiation, i: number, arr: TypeInstantiation[]) =>
       arr.every(
-          (t2, j) => i == j || !this.getTypeDef(t1.name).hasDescendant(t2));
+          (t2, j) => i == j || !this.getTypeDef(t1.name).hasDescendant(t2.name));
   }
 
   /**
@@ -169,9 +169,9 @@ export class TypeHierarchy {
    * have ancestors in the array.
    */
   private removeAncestors() {
-    return (t1, i, arr) =>
+    return (t1: TypeInstantiation, i: number, arr: TypeInstantiation[]) =>
       arr.every(
-          (t2, j) => i == j || !this.getTypeDef(t1.name).hasAncestor(t2));
+          (t2, j) => i == j || !this.getTypeDef(t1.name).hasAncestor(t2.name));
   }
 
   /**

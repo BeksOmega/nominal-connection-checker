@@ -857,7 +857,7 @@ suite('Subtyping', function() {
     });
   });
 
-  suite.only('explicit parameterized subtyping', function() {
+  suite('explicit parameterized subtyping', function() {
     suite('covariant types', function() {
       test('unrelated outers do not fulfill types', function() {
         const h = new TypeHierarchy();

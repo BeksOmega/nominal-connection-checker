@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import {IncompatibleType} from '../src/exceptions';
+import {IncompatibleType, IncompatibleVariance} from '../src/exceptions';
 import {TypeHierarchy} from '../src/type_hierarchy';
 import {
   ExplicitInstantiation,
@@ -267,5 +267,119 @@ suite('TypeDefinition', function() {
   });
 
   suite('variance inheritance', function() {
+    test('co can inherit from co', function() {
+      const h = new TypeHierarchy();
+      const ap = new ParameterDefinition('a', Variance.CO);
+      const bp = new ParameterDefinition('b', Variance.CO);
+      const ad = h.addTypeDef('a', [ap]);
+      h.addTypeDef('b', [bp]);
+      const bi = new ExplicitInstantiation('b', [new GenericInstantiation('a')]);
+
+      assert.doesNotThrow(() => ad.addParent(bi));
+    });
+
+    test('co cannot inherit from contra', function() {
+      const h = new TypeHierarchy();
+      const ap = new ParameterDefinition('a', Variance.CO);
+      const bp = new ParameterDefinition('b', Variance.CONTRA);
+      const ad = h.addTypeDef('a', [ap]);
+      h.addTypeDef('b', [bp]);
+      const bi = new ExplicitInstantiation('b', [new GenericInstantiation('a')]);
+
+      assert.throws(
+          () => ad.addParent(bi),
+          new RegExp('The type a with parameter a with variance .* cannot ' +
+              'fulfill b with b with variance .*'),
+          IncompatibleVariance);
+    });
+
+    test('co cannot inherit from inv', function() {
+      const h = new TypeHierarchy();
+      const ap = new ParameterDefinition('a', Variance.CO);
+      const bp = new ParameterDefinition('b', Variance.INV);
+      const ad = h.addTypeDef('a', [ap]);
+      h.addTypeDef('b', [bp]);
+      const bi = new ExplicitInstantiation('b', [new GenericInstantiation('a')]);
+
+      assert.throws(
+          () => ad.addParent(bi),
+          new RegExp('The type a with parameter a with variance .* cannot ' +
+              'fulfill b with b with variance .*'),
+          IncompatibleVariance);
+    });
+
+    test('contra cannot inherit from co', function() {
+      const h = new TypeHierarchy();
+      const ap = new ParameterDefinition('a', Variance.CONTRA);
+      const bp = new ParameterDefinition('b', Variance.CO);
+      const ad = h.addTypeDef('a', [ap]);
+      h.addTypeDef('b', [bp]);
+      const bi = new ExplicitInstantiation('b', [new GenericInstantiation('a')]);
+
+      assert.throws(
+          () => ad.addParent(bi),
+          new RegExp('The type a with parameter a with variance .* cannot ' +
+              'fulfill b with b with variance .*'),
+          IncompatibleVariance);
+    });
+
+    test('contra can inherit from contra', function() {
+      const h = new TypeHierarchy();
+      const ap = new ParameterDefinition('a', Variance.CONTRA);
+      const bp = new ParameterDefinition('b', Variance.CONTRA);
+      const ad = h.addTypeDef('a', [ap]);
+      h.addTypeDef('b', [bp]);
+      const bi = new ExplicitInstantiation('b', [new GenericInstantiation('a')]);
+
+      assert.doesNotThrow(() => ad.addParent(bi));
+    });
+
+    test('contra cannot inherit from inv', function() {
+      const h = new TypeHierarchy();
+      const ap = new ParameterDefinition('a', Variance.CONTRA);
+      const bp = new ParameterDefinition('b', Variance.INV);
+      const ad = h.addTypeDef('a', [ap]);
+      h.addTypeDef('b', [bp]);
+      const bi = new ExplicitInstantiation('b', [new GenericInstantiation('a')]);
+
+      assert.throws(
+          () => ad.addParent(bi),
+          new RegExp('The type a with parameter a with variance .* cannot ' +
+              'fulfill b with b with variance .*'),
+          IncompatibleVariance);
+    });
+
+    test('inv can inherit from co', function() {
+      const h = new TypeHierarchy();
+      const ap = new ParameterDefinition('a', Variance.INV);
+      const bp = new ParameterDefinition('b', Variance.CO);
+      const ad = h.addTypeDef('a', [ap]);
+      h.addTypeDef('b', [bp]);
+      const bi = new ExplicitInstantiation('b', [new GenericInstantiation('a')]);
+
+      assert.doesNotThrow(() => ad.addParent(bi));
+    });
+
+    test('inv can inherit from contra', function() {
+      const h = new TypeHierarchy();
+      const ap = new ParameterDefinition('a', Variance.INV);
+      const bp = new ParameterDefinition('b', Variance.CONTRA);
+      const ad = h.addTypeDef('a', [ap]);
+      h.addTypeDef('b', [bp]);
+      const bi = new ExplicitInstantiation('b', [new GenericInstantiation('a')]);
+
+      assert.doesNotThrow(() => ad.addParent(bi));
+    });
+
+    test('inv can inherit from inv', function() {
+      const h = new TypeHierarchy();
+      const ap = new ParameterDefinition('a', Variance.INV);
+      const bp = new ParameterDefinition('b', Variance.INV);
+      const ad = h.addTypeDef('a', [ap]);
+      h.addTypeDef('b', [bp]);
+      const bi = new ExplicitInstantiation('b', [new GenericInstantiation('a')]);
+
+      assert.doesNotThrow(() => ad.addParent(bi));
+    });
   });
 });

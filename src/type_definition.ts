@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: MIT
  */
 
-import {ParameterDefinition} from './parameter_definition';
+import {ParameterDefinition, Variance} from './parameter_definition';
 import {TypeHierarchy} from './type_hierarchy';
 import {ExplicitInstantiation, GenericInstantiation, TypeInstantiation} from './type_instantiation';
-import {IncompatibleType} from './exceptions';
+import {IncompatibleType, IncompatibleVariance} from './exceptions';
 
 export class TypeDefinition {
   private readonly parents_: ExplicitInstantiation[] = [];
@@ -66,6 +66,7 @@ export class TypeDefinition {
 
   addParent(t: ExplicitInstantiation) {
     if (!this.hierarchy.typeIsCompatible(t)) throw new IncompatibleType(t);
+    this.checkCompatibleVariances(t);
     if (this.hasParent(t.name)) return;
     this.parents_.push(t);
     this.ancestorParamsMap_.set(t.name, t.params);
@@ -73,6 +74,20 @@ export class TypeDefinition {
     const td = this.hierarchy.getTypeDef(t.name);
     td.ancestors_.forEach(a => this.addAncestor(a, td));
     td.addChild(this.createInstance());
+  }
+
+  private checkCompatibleVariances(t: ExplicitInstantiation) {
+    const tDef = this.hierarchy.getTypeDef(t.name);
+    t.params.forEach((pInst, i) => {
+      if (pInst instanceof ExplicitInstantiation) return;
+      const p = this.getParam(pInst.name);
+      const sp = tDef.params[i];
+      if (p.variance == Variance.CO && sp.variance != Variance.CO ||
+          p.variance == Variance.CONTRA && sp.variance != Variance.CONTRA) {
+        throw new IncompatibleVariance(
+            this.name, t.name, p.name, sp.name, p.variance, sp.variance);
+      }
+    });
   }
 
   private addChild(t: ExplicitInstantiation) {

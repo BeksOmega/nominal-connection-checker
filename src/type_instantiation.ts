@@ -11,13 +11,12 @@ export interface TypeInstantiation {
 }
 
 export class ExplicitInstantiation implements TypeInstantiation {
-  readonly name: string;
-  readonly params: readonly TypeInstantiation[];
   readonly hasParams: boolean;
 
-  constructor(name: string, params: TypeInstantiation[] = []) {
-    this.name = name;
-    this.params = params;
+  constructor(
+      readonly name: string,
+      readonly params: TypeInstantiation[] = []
+  ) {
     this.hasParams = !!params.length;
   }
 

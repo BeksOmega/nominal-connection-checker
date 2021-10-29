@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: MIT
  */
 
-import {TypeDefinition} from './type_definition';
 import {ExplicitInstantiation, GenericInstantiation, TypeInstantiation} from './type_instantiation';
-import {removeDuplicates} from './utils';
 import {IncompatibleType, NotFinalized} from './exceptions';
+import {ParameterDefinition, Variance} from './parameter_definition';
+import {TypeDefinition} from './type_definition';
+import {removeDuplicates} from './utils';
 
 export class TypeHierarchy {
   /**
@@ -61,7 +62,7 @@ export class TypeHierarchy {
     this.initNearestCommon(
         this.nearestCommonAncestors,
         (t, unvisited) => t.parents.some(p => unvisited.has(p.name)),
-        (t1, t2) => t1.hasDescendant(t2.createInstance()),
+        (t1, t2) => t1.hasDescendant(t2.name),
         (t) => t.parents,
         this.getNearestCommonAncestorsOfPair.bind(this),
         this.removeDescendants());
@@ -71,7 +72,7 @@ export class TypeHierarchy {
     this.initNearestCommon(
         this.nearestCommonDescendants,
         (t, unvisited) => t.children.some(c => unvisited.has(c.name)),
-        (t1, t2) => t1.hasAncestor(t2.createInstance()),
+        (t1, t2) => t1.hasAncestor(t2.name),
         (t) => t.children,
         this.getNearestCommonDescendantsOfPair.bind(this),
         this.removeAncestors());
@@ -158,9 +159,9 @@ export class TypeHierarchy {
    * have descendants in the array.
    */
   private removeDescendants() {
-    return (t1, i, arr) =>
+    return (t1: TypeInstantiation, i: number, arr: TypeInstantiation[]) =>
       arr.every(
-          (t2, j) => i == j || !this.getTypeDef(t1.name).hasDescendant(t2));
+          (t2, j) => i == j || !this.getTypeDef(t1.name).hasDescendant(t2.name));
   }
 
   /**
@@ -168,17 +169,17 @@ export class TypeHierarchy {
    * have ancestors in the array.
    */
   private removeAncestors() {
-    return (t1, i, arr) =>
+    return (t1: TypeInstantiation, i: number, arr: TypeInstantiation[]) =>
       arr.every(
-          (t2, j) => i == j || !this.getTypeDef(t1.name).hasAncestor(t2));
+          (t2, j) => i == j || !this.getTypeDef(t1.name).hasAncestor(t2.name));
   }
 
   /**
-   * Adds a new type definition with the given name to this type hierarchy, and
-   * returns the type definition.
+   * Adds a new type definition with the given name (and optional parameter
+   * definitions) to this type hierarchy, and returns the type definition.
    */
-  addTypeDef(n: string): TypeDefinition {
-    const d = new TypeDefinition(this, n);
+  addTypeDef(n: string, ps: ParameterDefinition[] = []): TypeDefinition {
+    const d = new TypeDefinition(this, n, ps);
     this.typeDefsMap.set(n, d);
     return d;
   }
@@ -223,7 +224,7 @@ export class TypeHierarchy {
     }
     if (a instanceof ExplicitInstantiation &&
       b instanceof ExplicitInstantiation) {
-      return this.typeDefsMap.get(a.name).hasAncestor(b);
+      return this.explicitFulfillsExplicit(a, b);
     }
     if (a instanceof GenericInstantiation &&
         b instanceof GenericInstantiation) {
@@ -236,6 +237,30 @@ export class TypeHierarchy {
           a, (b as GenericInstantiation)) :
       this.explicitFulfillsConstrainedGeneric(
           (b as ExplicitInstantiation), (a as GenericInstantiation));
+  }
+
+  private explicitFulfillsExplicit(
+      a: ExplicitInstantiation,
+      b: ExplicitInstantiation
+  ) {
+    const aDef = this.typeDefsMap.get(a.name);
+    const bDef = this.typeDefsMap.get(b.name);
+
+    if (!aDef.hasAncestor(b.name)) return false;
+
+    const subParams = aDef.getParamsForAncestor(b.name, a.params);
+    return b.params.every((superParam, i) => {
+      const subParam = subParams[i];
+      const paramDef = bDef.params[i];
+      switch (paramDef.variance) {
+        case Variance.CO:
+          return this.typeFulfillsType(subParam, superParam);
+        case Variance.CONTRA:
+          return this.typeFulfillsType(superParam, subParam);
+        case Variance.INV:
+          return superParam.equals(subParam);
+      }
+    });
   }
 
   private constrainedGenericFulfillsConstrainedGeneric(

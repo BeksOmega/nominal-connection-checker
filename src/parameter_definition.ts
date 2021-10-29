@@ -4,12 +4,11 @@
  * SPDX-License-Identifier: MIT
  */
 
-export interface ParameterDefinition {
-  readonly name: string;
-  readonly variance: Variance;
+export class ParameterDefinition {
+  constructor(readonly name: string, readonly variance: Variance) {}
 }
 
-enum Variance {
+export enum Variance {
   CO = 'COVARIANT',
   CONTRA = 'CONTRAVARIANT',
   INV = 'INVARIANT'

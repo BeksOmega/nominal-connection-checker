@@ -4,10 +4,14 @@
  * SPDX-License-Identifier: MIT
  */
 
-import {IncompatibleType} from '../src/exceptions';
+import {IncompatibleType, IncompatibleVariance} from '../src/exceptions';
 import {TypeHierarchy} from '../src/type_hierarchy';
-import {ExplicitInstantiation} from '../src/type_instantiation';
+import {
+  ExplicitInstantiation,
+  GenericInstantiation
+} from '../src/type_instantiation';
 import {assert} from 'chai';
+import {ParameterDefinition, Variance} from "../src/parameter_definition";
 
 suite('TypeDefinition', function() {
   test('every type definition is an ancestor of itself', function() {
@@ -15,7 +19,7 @@ suite('TypeDefinition', function() {
     const t = h.addTypeDef('t');
 
     assert.isTrue(
-        t.hasAncestor(new ExplicitInstantiation('t')),
+        t.hasAncestor('t'),
         'Expected the type definition to be an ancestor of itself');
   });
 
@@ -24,7 +28,7 @@ suite('TypeDefinition', function() {
     const t = h.addTypeDef('t');
 
     assert.isTrue(
-        t.hasDescendant(new ExplicitInstantiation('t')),
+        t.hasDescendant('t'),
         'Expected the type definition to be a descendant of itself');
   });
 
@@ -33,19 +37,18 @@ suite('TypeDefinition', function() {
       const h = new TypeHierarchy();
       const cd = h.addTypeDef('c');
       const pd = h.addTypeDef('p');
-      const ci = new ExplicitInstantiation('c');
       const pi = new ExplicitInstantiation('p');
 
       cd.addParent(pi);
 
       assert.isTrue(
-          cd.hasParent(pi), 'Expected the child to have a parent');
+          cd.hasParent('p'), 'Expected the child to have a parent');
       assert.isTrue(
-          cd.hasAncestor(pi), 'Expected the child to have an ancestor');
+          cd.hasAncestor('p'), 'Expected the child to have an ancestor');
       assert.isTrue(
-          pd.hasChild(ci), 'Expected the parent to have a child');
+          pd.hasChild('c'), 'Expected the parent to have a child');
       assert.isTrue(
-          pd.hasDescendant(ci), 'Expected the parent to have a descendant');
+          pd.hasDescendant('c'), 'Expected the parent to have a descendant');
     });
 
     test('if the parent does not exist, an error is thrown', function() {
@@ -86,7 +89,6 @@ suite('TypeDefinition', function() {
       const td = h.addTypeDef('t');
       const pd = h.addTypeDef('p');
       const gpd = h.addTypeDef('gp');
-      const ti = new ExplicitInstantiation('t');
       const pi = new ExplicitInstantiation('p');
       const gpi = new ExplicitInstantiation('gp');
       pd.addParent(gpi);
@@ -94,16 +96,16 @@ suite('TypeDefinition', function() {
       td.addParent(pi);
 
       assert.isFalse(
-          td.hasParent(gpi),
+          td.hasParent('gp'),
           'Expected the grandparent type to not be a parent');
       assert.isTrue(
-          td.hasAncestor(gpi),
+          td.hasAncestor('gp'),
           'Expected the grandparent type to be an ancestor');
       assert.isFalse(
-          gpd.hasChild(ti),
+          gpd.hasChild('t'),
           'Expected the type to not be a child of the grandparent');
       assert.isTrue(
-          gpd.hasDescendant(ti),
+          gpd.hasDescendant('t'),
           'Expected the type to be a descendant of the grandparent');
     });
 
@@ -114,17 +116,16 @@ suite('TypeDefinition', function() {
           const cd = h.addTypeDef('c');
           const pd = h.addTypeDef('p');
           const ti = new ExplicitInstantiation('t');
-          const ci = new ExplicitInstantiation('c');
           const pi = new ExplicitInstantiation('p');
           cd.addParent(ti);
 
           td.addParent(pi);
 
           assert.isTrue(
-              cd.hasAncestor(pi),
+              cd.hasAncestor('p'),
               'Expected the parent to be an ancestor of the child');
           assert.isTrue(
-              pd.hasDescendant(ci),
+              pd.hasDescendant('c'),
               'Expected the child to be a descendant of the parent');
         });
 
@@ -183,5 +184,202 @@ suite('TypeDefinition', function() {
               1,
               'Expected the descendant to only exist once');
         });
+  });
+
+  suite('reorganizing params for ancestors', function() {
+    function assertParamOrder(type, ancestor, params, msg) {
+      const mappedParams = type.getParamsForAncestor(ancestor);
+      assert.equal(mappedParams.length, params.length, msg);
+      assert.deepEqual(mappedParams, params, msg);
+    }
+
+    test('params for self are identical', function() {
+      const h = new TypeHierarchy();
+      const pa = new ParameterDefinition('a', Variance.CO);
+      const pb = new ParameterDefinition('b', Variance.CO);
+      const x = h.addTypeDef('x', [pa, pb]);
+      h.finalize();
+
+      assertParamOrder(
+          x, 'x', [new GenericInstantiation('a'), new GenericInstantiation('b')],
+          'Expected the param mapping from a type to itself to be identical to its normal params list');
+    });
+
+    test('params are properly reorganized for parent', function() {
+      const h = new TypeHierarchy();
+      const pa = new ParameterDefinition('a', Variance.CO);
+      const pb = new ParameterDefinition('b', Variance.CO);
+      const x = h.addTypeDef('x', [pa, pb]);
+      const y = h.addTypeDef('y', [pb, pa]);
+      x.addParent(y.createInstance());
+      h.finalize();
+
+      assertParamOrder(
+          x, 'y', [new GenericInstantiation('b'), new GenericInstantiation('a')],
+          'Expected params to be properly reorganized for the parent type');
+    });
+
+    test('params are properly reorganized for ancestor', function() {
+      const h = new TypeHierarchy();
+      const pa = new ParameterDefinition('a', Variance.CO);
+      const pb = new ParameterDefinition('b', Variance.CO);
+      const pc = new ParameterDefinition('c', Variance.CO);
+      const x = h.addTypeDef('x', [pa, pb, pc]);
+      const y = h.addTypeDef('y', [pc, pa, pb]);
+      const z = h.addTypeDef('z', [pb, pc, pa]);
+      x.addParent(y.createInstance());
+      y.addParent(z.createInstance());
+      h.finalize();
+
+      assertParamOrder(
+          x,
+          'z',
+          [
+            new GenericInstantiation('b'),
+            new GenericInstantiation('c'),
+            new GenericInstantiation('a'),
+          ],
+          'Expected the params to be properly reorganized for the ancestor type');
+    });
+
+    test('nested params in ancestors are properly mapped', function() {
+      const h = new TypeHierarchy();
+      const pa = new ParameterDefinition('a', Variance.CO);
+      h.addTypeDef('list', [pa]);
+      const listList = h.addTypeDef('listList', [pa]);
+      listList.addParent(new ExplicitInstantiation(
+          'list', [new ExplicitInstantiation(
+              'list', [new GenericInstantiation('a')])]));
+      h.addTypeDef('dog');
+      const dogListList = h.addTypeDef('dogListList');
+      dogListList.addParent(new ExplicitInstantiation(
+          'listList', [new ExplicitInstantiation('dog')]));
+
+      assertParamOrder(
+          dogListList,
+          'list',
+          [
+            new ExplicitInstantiation(
+                'list', [new ExplicitInstantiation('dog')]),
+          ],
+          'Expected nested params to be properly reorganized for the ancestor type');
+    });
+  });
+
+  suite('variance inheritance', function() {
+    test('co can inherit from co', function() {
+      const h = new TypeHierarchy();
+      const ap = new ParameterDefinition('a', Variance.CO);
+      const bp = new ParameterDefinition('b', Variance.CO);
+      const ad = h.addTypeDef('a', [ap]);
+      h.addTypeDef('b', [bp]);
+      const bi = new ExplicitInstantiation('b', [new GenericInstantiation('a')]);
+
+      assert.doesNotThrow(() => ad.addParent(bi));
+    });
+
+    test('co cannot inherit from contra', function() {
+      const h = new TypeHierarchy();
+      const ap = new ParameterDefinition('a', Variance.CO);
+      const bp = new ParameterDefinition('b', Variance.CONTRA);
+      const ad = h.addTypeDef('a', [ap]);
+      h.addTypeDef('b', [bp]);
+      const bi = new ExplicitInstantiation('b', [new GenericInstantiation('a')]);
+
+      assert.throws(
+          () => ad.addParent(bi),
+          new RegExp('The type a with parameter a with variance .* cannot ' +
+              'fulfill b with b with variance .*'),
+          IncompatibleVariance);
+    });
+
+    test('co cannot inherit from inv', function() {
+      const h = new TypeHierarchy();
+      const ap = new ParameterDefinition('a', Variance.CO);
+      const bp = new ParameterDefinition('b', Variance.INV);
+      const ad = h.addTypeDef('a', [ap]);
+      h.addTypeDef('b', [bp]);
+      const bi = new ExplicitInstantiation('b', [new GenericInstantiation('a')]);
+
+      assert.throws(
+          () => ad.addParent(bi),
+          new RegExp('The type a with parameter a with variance .* cannot ' +
+              'fulfill b with b with variance .*'),
+          IncompatibleVariance);
+    });
+
+    test('contra cannot inherit from co', function() {
+      const h = new TypeHierarchy();
+      const ap = new ParameterDefinition('a', Variance.CONTRA);
+      const bp = new ParameterDefinition('b', Variance.CO);
+      const ad = h.addTypeDef('a', [ap]);
+      h.addTypeDef('b', [bp]);
+      const bi = new ExplicitInstantiation('b', [new GenericInstantiation('a')]);
+
+      assert.throws(
+          () => ad.addParent(bi),
+          new RegExp('The type a with parameter a with variance .* cannot ' +
+              'fulfill b with b with variance .*'),
+          IncompatibleVariance);
+    });
+
+    test('contra can inherit from contra', function() {
+      const h = new TypeHierarchy();
+      const ap = new ParameterDefinition('a', Variance.CONTRA);
+      const bp = new ParameterDefinition('b', Variance.CONTRA);
+      const ad = h.addTypeDef('a', [ap]);
+      h.addTypeDef('b', [bp]);
+      const bi = new ExplicitInstantiation('b', [new GenericInstantiation('a')]);
+
+      assert.doesNotThrow(() => ad.addParent(bi));
+    });
+
+    test('contra cannot inherit from inv', function() {
+      const h = new TypeHierarchy();
+      const ap = new ParameterDefinition('a', Variance.CONTRA);
+      const bp = new ParameterDefinition('b', Variance.INV);
+      const ad = h.addTypeDef('a', [ap]);
+      h.addTypeDef('b', [bp]);
+      const bi = new ExplicitInstantiation('b', [new GenericInstantiation('a')]);
+
+      assert.throws(
+          () => ad.addParent(bi),
+          new RegExp('The type a with parameter a with variance .* cannot ' +
+              'fulfill b with b with variance .*'),
+          IncompatibleVariance);
+    });
+
+    test('inv can inherit from co', function() {
+      const h = new TypeHierarchy();
+      const ap = new ParameterDefinition('a', Variance.INV);
+      const bp = new ParameterDefinition('b', Variance.CO);
+      const ad = h.addTypeDef('a', [ap]);
+      h.addTypeDef('b', [bp]);
+      const bi = new ExplicitInstantiation('b', [new GenericInstantiation('a')]);
+
+      assert.doesNotThrow(() => ad.addParent(bi));
+    });
+
+    test('inv can inherit from contra', function() {
+      const h = new TypeHierarchy();
+      const ap = new ParameterDefinition('a', Variance.INV);
+      const bp = new ParameterDefinition('b', Variance.CONTRA);
+      const ad = h.addTypeDef('a', [ap]);
+      h.addTypeDef('b', [bp]);
+      const bi = new ExplicitInstantiation('b', [new GenericInstantiation('a')]);
+
+      assert.doesNotThrow(() => ad.addParent(bi));
+    });
+
+    test('inv can inherit from inv', function() {
+      const h = new TypeHierarchy();
+      const ap = new ParameterDefinition('a', Variance.INV);
+      const bp = new ParameterDefinition('b', Variance.INV);
+      const ad = h.addTypeDef('a', [ap]);
+      h.addTypeDef('b', [bp]);
+      const bi = new ExplicitInstantiation('b', [new GenericInstantiation('a')]);
+
+      assert.doesNotThrow(() => ad.addParent(bi));
+    });
   });
 });

@@ -18,3 +18,11 @@ export class NotFinalized extends Error {
     super('The TypeHierarchy has not been finalized');
   }
 }
+
+export class IncompatibleVariance extends Error {
+  constructor(typeA, typeB, paramA, paramB, varianceA, varianceB) {
+    super(`The type ${typeA} with parameter ${paramA} with variance ` +
+        `${varianceA} cannot fulfill ${typeB} with ${paramB} with variance ` +
+        `${varianceB}`);
+  }
+}

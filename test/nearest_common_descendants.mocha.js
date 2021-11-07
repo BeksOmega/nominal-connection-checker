@@ -8,6 +8,7 @@ import {TypeHierarchy} from '../src/type_hierarchy';
 import {ExplicitInstantiation, GenericInstantiation} from '../src/type_instantiation';
 import {assert} from 'chai';
 import {IncompatibleType, NotFinalized} from '../src/exceptions';
+import {ParameterDefinition, Variance} from "../src/parameter_definition";
 
 suite('Nearest common descendants', function() {
   /**
@@ -979,6 +980,273 @@ suite('Nearest common descendants', function() {
             h, [cg, dg], egs,
             'Expected that when upper and lower bounds unify to multiple types it results in multiple upper and lower bound types');
       });
+    });
+  });
+
+  suite('explicit parameterized nearest common ancestors', function() {
+    function defineParameterizedHierarchy() {
+      const h = new TypeHierarchy();
+      const coParam = new ParameterDefinition('a', Variance.CO);
+      const contraParam = new ParameterDefinition('a', Variance.CONTRA);
+      const invParam = new ParameterDefinition('a', Variance.INV);
+
+      const coc = h.addTypeDef('coc', [coParam]);
+      const coa = h.addTypeDef('coa', [coParam]);
+      const cob = h.addTypeDef('cob', [coParam]);
+      const cop = h.addTypeDef('cop', [coParam]);
+      coc.addParent(coa.createInstance());
+      coc.addParent(cob.createInstance());
+      coa.addParent(cop.createInstance());
+      cob.addParent(cop.createInstance());
+
+      const conc = h.addTypeDef('conc', [contraParam]);
+      const cona = h.addTypeDef('cona', [contraParam]);
+      const conb = h.addTypeDef('conb', [contraParam]);
+      const conp = h.addTypeDef('conp', [contraParam]);
+      conc.addParent(cona.createInstance());
+      conc.addParent(conb.createInstance());
+      cona.addParent(conp.createInstance());
+      conb.addParent(conp.createInstance());
+
+      const invc = h.addTypeDef('invc', [invParam]);
+      const inva = h.addTypeDef('inva', [invParam]);
+      const invb = h.addTypeDef('invb', [invParam]);
+      const invp = h.addTypeDef('invp', [invParam]);
+      invc.addParent(inva.createInstance());
+      invc.addParent(invb.createInstance());
+      inva.addParent(invp.createInstance());
+      invb.addParent(invp.createInstance());
+
+      const c = h.addTypeDef('c');
+      const ta = h.addTypeDef('ta');
+      const tb = h.addTypeDef('tb');
+      h.addTypeDef('tc');
+      const p = h.addTypeDef('p');
+      c.addParent(ta.createInstance());
+      c.addParent(tb.createInstance());
+      ta.addParent(p.createInstance());
+      tb.addParent(p.createInstance());
+
+      h.finalize();
+
+      return h;
+    }
+
+    test('ncd of covariant params is the descendant', function() {
+      const h = defineParameterizedHierarchy();
+      const x = new ExplicitInstantiation(
+          'coa', [new ExplicitInstantiation('ta')]);
+      const y = new ExplicitInstantiation(
+          'coa', [new ExplicitInstantiation('tb')]);
+
+      const e = new ExplicitInstantiation(
+          'coa', [new ExplicitInstantiation('c')]);
+      assertNearestCommonDescendants(
+          h, [x, y], [e],
+          'Expected the ncd of coparent covariant params to be the descendant');
+    });
+
+    test('ncd of unrelated covariant params is empty', function() {
+      const h = defineParameterizedHierarchy();
+      const x = new ExplicitInstantiation(
+          'coa', [new ExplicitInstantiation('ta')]);
+      const y = new ExplicitInstantiation(
+          'coa', [new ExplicitInstantiation('tc')]);
+
+      assertNearestCommonDescendants(
+          h, [x, y], [],
+          'Expected the ncd of unrelated covariant params to be empty');
+    });
+
+    test('ncd of contravariant params is the ancestor', function() {
+      const h = defineParameterizedHierarchy();
+      const x = new ExplicitInstantiation(
+          'cona', [new ExplicitInstantiation('ta')]);
+      const y = new ExplicitInstantiation(
+          'cona', [new ExplicitInstantiation('tb')]);
+
+      const e = new ExplicitInstantiation(
+          'cona', [new ExplicitInstantiation('p')]);
+      assertNearestCommonDescendants(
+          h, [x, y], [e],
+          'Expected the ncd of sibling contravariant params to be the ancestor');
+    });
+
+    test('ncd of unrelated covariant params is empty', function() {
+      const h = defineParameterizedHierarchy();
+      const x = new ExplicitInstantiation(
+          'cona', [new ExplicitInstantiation('ta')]);
+      const y = new ExplicitInstantiation(
+          'cona', [new ExplicitInstantiation('tc')]);
+
+      assertNearestCommonDescendants(
+          h, [x, y], [],
+          'Expected the ncd of unrelated contravariant params to be empty');
+    });
+
+    test('ncd of identical invariant params is identical', function() {
+      const h = defineParameterizedHierarchy();
+      const x = new ExplicitInstantiation(
+          'inva', [new ExplicitInstantiation('ta')]);
+      const y = new ExplicitInstantiation(
+          'inva', [new ExplicitInstantiation('ta')]);
+
+      const e = new ExplicitInstantiation(
+          'inva', [new ExplicitInstantiation('ta')]);
+      assertNearestCommonDescendants(
+          h, [x, y], [e],
+          'Expected the ncd of identical invariant params is identical');
+    });
+
+    test('ncd of related invariant params is empty', function() {
+      const h = defineParameterizedHierarchy();
+      const x = new ExplicitInstantiation(
+          'inva', [new ExplicitInstantiation('ta')]);
+      const y = new ExplicitInstantiation(
+          'inva', [new ExplicitInstantiation('tb')]);
+
+      assertNearestCommonDescendants(
+          h, [x, y], [],
+          'Expected the ncd of related invariant params to be empty');
+    });
+
+    test('ncd of unrelated invariant params is empty', function() {
+      const h = defineParameterizedHierarchy();
+      const x = new ExplicitInstantiation(
+          'inva', [new ExplicitInstantiation('ta')]);
+      const y = new ExplicitInstantiation(
+          'inva', [new ExplicitInstantiation('tc')]);
+
+      assertNearestCommonDescendants(
+          h, [x, y], [],
+          'Expected the ncd of unrelated invariant params to be empty');
+    });
+
+    test('ncd of multiple common outer types results is multiple parameterized types',
+        function() {
+          const h = new TypeHierarchy();
+          const coParam = new ParameterDefinition('a', Variance.CO);
+          const coa = h.addTypeDef('coa', [coParam]);
+          const cob = h.addTypeDef('cob', [coParam]);
+          const coca = h.addTypeDef('copa', [coParam]);
+          const cocb = h.addTypeDef('copb', [coParam]);
+          coca.addParent(coa.createInstance());
+          coca.addParent(cob.createInstance());
+          cocb.addParent(coa.createInstance());
+          cocb.addParent(cob.createInstance());
+          h.addTypeDef('t');
+          h.finalize();
+          const x = new ExplicitInstantiation(
+              'coa', [new ExplicitInstantiation('t')]);
+          const y = new ExplicitInstantiation(
+              'cob', [new ExplicitInstantiation('t')]);
+
+          const e1 = new ExplicitInstantiation(
+              'coca', [new ExplicitInstantiation('t')]);
+          const e2 = new ExplicitInstantiation(
+              'cocb', [new ExplicitInstantiation('t')]);
+
+          assertNearestCommonDescendants(
+              h, [x, y], [e1, e2],
+              'Expected the ncd of multiple common outer types to result n multiple parameterized types');
+        });
+
+    test('ncd of a pair of params each with a pair of common types, results in all combos of common types',
+        function() {
+          const h = new TypeHierarchy();
+          const paramA = new ParameterDefinition('a', Variance.CO);
+          const paramB = new ParameterDefinition('b', Variance.CO);
+          h.addTypeDef('co', [paramA, paramB]);
+          const ta = h.addTypeDef('ta');
+          const tb = h.addTypeDef('tb');
+          const ca = h.addTypeDef('ca');
+          const cb = h.addTypeDef('cb');
+          ca.addParent(ta.createInstance());
+          ca.addParent(tb.createInstance());
+          cb.addParent(ta.createInstance());
+          cb.addParent(tb.createInstance());
+          const tc = h.addTypeDef('tc');
+          const td = h.addTypeDef('td');
+          const pc = h.addTypeDef('pc');
+          const pd = h.addTypeDef('pd');
+          tc.addParent(pc.createInstance());
+          tc.addParent(pd.createInstance());
+          td.addParent(pc.createInstance());
+          td.addParent(pd.createInstance());
+          h.finalize();
+          const x = new ExplicitInstantiation(
+              'co',
+              [
+                new ExplicitInstantiation('ta'),
+                new ExplicitInstantiation('tc'),
+              ]);
+          const y = new ExplicitInstantiation(
+              'co',
+              [
+                new ExplicitInstantiation('tb'),
+                new ExplicitInstantiation('td'),
+              ]);
+
+          const e1 = new ExplicitInstantiation(
+              'co',
+              [
+                new ExplicitInstantiation('ca'),
+                new ExplicitInstantiation('cc'),
+              ]);
+          const e2 = new ExplicitInstantiation(
+              'co',
+              [
+                new ExplicitInstantiation('ca'),
+                new ExplicitInstantiation('cd'),
+              ]);
+          const e3 = new ExplicitInstantiation(
+              'co',
+              [
+                new ExplicitInstantiation('cb'),
+                new ExplicitInstantiation('cc'),
+              ]);
+          const e4 = new ExplicitInstantiation(
+              'co',
+              [
+                new ExplicitInstantiation('cb'),
+                new ExplicitInstantiation('cd'),
+              ]);
+
+          assertNearestCommonDescendants(
+              h, [x, y], [e1, e2, e3, e4],
+              'Expected multiple common types for params to result in all combos of params');
+        });
+
+    test('params are properly reordered for outer types', function() {
+      const h = new TypeHierarchy();
+      const paramA = new ParameterDefinition('a', Variance.CO);
+      const paramB = new ParameterDefinition('b', Variance.CO);
+      const paramC = new ParameterDefinition('c', Variance.CO);
+      const coa = h.addTypeDef('coa', [paramC, paramA, paramB]);
+      const cob = h.addTypeDef('cob', [paramB, paramC, paramA]);
+      const coc = h.addTypeDef('coc', [paramA, paramB, paramC]);
+      coc.addParent(coa.createInstance());
+      coc.addParent(cob.createInstance());
+      const ta = h.addTypeDef('a');
+      const tb = h.addTypeDef('b');
+      const tc = h.addTypeDef('c');
+      const ccb = h.addTypeDef('pcb');
+      const cac = h.addTypeDef('pac');
+      const cba = h.addTypeDef('pba');
+      ccb.addParent(tc.createInstance());
+      ccb.addParent(tb.createInstance());
+      cac.addParent(ta.createInstance());
+      cac.addParent(tc.createInstance());
+      cba.addParent(tb.createInstance());
+      cba.addParent(ta.createInstance());
+      h.finalize();
+      const e = new ExplicitInstantiation(
+          'cop', [ccb.createInstance(), cac.createInstance(), cba.createInstance()]);
+
+
+      assertNearestCommonDescendants(
+          h, [coa.createInstance(), cob.createInstance()], [e],
+          'Expected parameters to be properly reordered to match the order of the descendant');
     });
   });
 });

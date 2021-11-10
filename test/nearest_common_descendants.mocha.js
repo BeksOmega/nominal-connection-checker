@@ -1248,5 +1248,179 @@ suite('Nearest common descendants', function() {
           h, [coa.createInstance(), cob.createInstance()], [e],
           'Expected parameters to be properly reordered to match the order of the descendant');
     });
+
+    suite('nested variances', function() {
+      test('coa[coa[ta]] and cob[cob[tb]] unify to coc[coc[c]]', function() {
+        const h = defineParameterizedHierarchy();
+        const x = new ExplicitInstantiation(
+            'coa', [new ExplicitInstantiation(
+                'coa', [new ExplicitInstantiation('ta')])]);
+        const y = new ExplicitInstantiation(
+            'cob', [new ExplicitInstantiation(
+                'cob', [new ExplicitInstantiation('tb')])]);
+
+        const e = new ExplicitInstantiation(
+            'coc', [new ExplicitInstantiation(
+                'coc', [new ExplicitInstantiation('c')])]);
+        assertNearestCommonDescendants(
+            h, [x, y], [e],
+            'Expected coa[coa[ta]] and cob[cob[tb]] to unify to coc[coc[c]]');
+      });
+
+      test('coa[cona[ta]] and cob[conb[tb]] unify to coc[conc[p]]', function() {
+        const h = defineParameterizedHierarchy();
+        const x = new ExplicitInstantiation(
+            'coa', [new ExplicitInstantiation(
+                'cona', [new ExplicitInstantiation('ta')])]);
+        const y = new ExplicitInstantiation(
+            'cob', [new ExplicitInstantiation(
+                'conb', [new ExplicitInstantiation('tb')])]);
+
+        const e = new ExplicitInstantiation(
+            'coc', [new ExplicitInstantiation(
+                'conc', [new ExplicitInstantiation('p')])]);
+        assertNearestCommonDescendants(
+            h, [x, y], [e],
+            'Expected coa[cona[ta]] and cob[conb[tb]] to unify to coc[conc[c]]');
+      });
+
+      test('coa[inva[ta]] and cob[invb[tb]] do not unify', function() {
+        const h = defineParameterizedHierarchy();
+        const x = new ExplicitInstantiation(
+            'coa', [new ExplicitInstantiation(
+                'inva', [new ExplicitInstantiation('ta')])]);
+        const y = new ExplicitInstantiation(
+            'cob', [new ExplicitInstantiation(
+                'invb', [new ExplicitInstantiation('tb')])]);
+
+        assertNearestCommonDescendants(
+            h, [x, y], [],
+            'Expected coa[inva[ta]] and cob[invb[tb]] to not unify');
+      });
+
+      test('coa[inva[ta]] and cob[invb[ta]] unify to coc[invc[ta]]', function() {
+        const h = defineParameterizedHierarchy();
+        const x = new ExplicitInstantiation(
+            'coa', [new ExplicitInstantiation(
+                'inva', [new ExplicitInstantiation('ta')])]);
+        const y = new ExplicitInstantiation(
+            'cob', [new ExplicitInstantiation(
+                'invb', [new ExplicitInstantiation('ta')])]);
+
+        const e = new ExplicitInstantiation(
+            'cop', [new ExplicitInstantiation(
+                'invp', [new ExplicitInstantiation('ta')])]);
+        assertNearestCommonDescendants(
+            h, [x, y], [e],
+            'Expected coa[inva[ta]] and cob[invb[ta]] to unify to coc[invc[ta]]');
+      });
+
+      test('cona[coa[ta]] and conb[cob[tb]] unify to conc[cop[p]]', function() {
+        const h = defineParameterizedHierarchy();
+        const x = new ExplicitInstantiation(
+            'cona', [new ExplicitInstantiation(
+                'coa', [new ExplicitInstantiation('ta')])]);
+        const y = new ExplicitInstantiation(
+            'conb', [new ExplicitInstantiation(
+                'cob', [new ExplicitInstantiation('tb')])]);
+
+        const e = new ExplicitInstantiation(
+            'conc', [new ExplicitInstantiation(
+                'cop', [new ExplicitInstantiation('p')])]);
+        assertNearestCommonDescendants(
+            h, [x, y], [e],
+            'Expected cona[coa[ta]] and conb[cob[tb]] to unify to conc[cop[p]]');
+      });
+
+      test('cona[cona[ta]] and conb[cob[tb]] unify to conc[conp[c]]', function() {
+        const h = defineParameterizedHierarchy();
+        const x = new ExplicitInstantiation(
+            'cona', [new ExplicitInstantiation(
+                'cona', [new ExplicitInstantiation('ta')])]);
+        const y = new ExplicitInstantiation(
+            'conb', [new ExplicitInstantiation(
+                'conb', [new ExplicitInstantiation('tb')])]);
+
+        const e = new ExplicitInstantiation(
+            'conc', [new ExplicitInstantiation(
+                'conp', [new ExplicitInstantiation('c')])]);
+        assertNearestCommonDescendants(
+            h, [x, y], [e],
+            'Expected cona[cona[ta]] and conb[conb[tb]] to unify to conc[conp[c]]');
+      });
+
+      test('cona[inva[ta]] and conb[invb[tb]] do not unify', function() {
+        const h = defineParameterizedHierarchy();
+        const x = new ExplicitInstantiation(
+            'cona', [new ExplicitInstantiation(
+                'inva', [new ExplicitInstantiation('ta')])]);
+        const y = new ExplicitInstantiation(
+            'conb', [new ExplicitInstantiation(
+                'invb', [new ExplicitInstantiation('tb')])]);
+
+        assertNearestCommonDescendants(
+            h, [x, y], [],
+            'Expected cona[inva[ta]] and conb[invb[tb]] to not unify');
+      });
+
+      test('cona[inva[ta]] and conb[invb[ta]] unify o conc[invp[ta]]', function() {
+        const h = defineParameterizedHierarchy();
+        const x = new ExplicitInstantiation(
+            'cona', [new ExplicitInstantiation(
+                'inva', [new ExplicitInstantiation('ta')])]);
+        const y = new ExplicitInstantiation(
+            'conb', [new ExplicitInstantiation(
+                'invb', [new ExplicitInstantiation('ta')])]);
+
+        const e = new ExplicitInstantiation(
+            'conc', [new ExplicitInstantiation(
+                'invp', [new ExplicitInstantiation('ta')])]);
+        assertNearestCommonDescendants(
+            h, [x, y], [e],
+            'Expected cona[inva[ta]] and conb[invb[ta]] to unify to conc[invp[ta]]');
+      });
+
+      test('inva[coa[ta]] and invb[cob[tb]] do not unify', function() {
+        const h = defineParameterizedHierarchy();
+        const x = new ExplicitInstantiation(
+            'inva', [new ExplicitInstantiation(
+                'coa', [new ExplicitInstantiation('ta')])]);
+        const y = new ExplicitInstantiation(
+            'inva', [new ExplicitInstantiation(
+                'cob', [new ExplicitInstantiation('tb')])]);
+
+        assertNearestCommonDescendants(
+            h, [x, y], [],
+            'Expected inva[coa[ta]] and invb[cob[tb]] to not unify');
+      });
+
+      test('inva[cona[ta]] and invb[conb[tb]] do not unify', function() {
+        const h = defineParameterizedHierarchy();
+        const x = new ExplicitInstantiation(
+            'inva', [new ExplicitInstantiation(
+                'cona', [new ExplicitInstantiation('ta')])]);
+        const y = new ExplicitInstantiation(
+            'inva', [new ExplicitInstantiation(
+                'conb', [new ExplicitInstantiation('tb')])]);
+
+        assertNearestCommonDescendants(
+            h, [x, y], [],
+            'Expected inva[cona[ta]] and invb[conb[tb]] to not unify');
+      });
+
+      test('inva[inva[ta]] and invb[invb[tb]] do not unify', function() {
+        const h = defineParameterizedHierarchy();
+        const x = new ExplicitInstantiation(
+            'inva', [new ExplicitInstantiation(
+                'inva', [new ExplicitInstantiation('ta')])]);
+        const y = new ExplicitInstantiation(
+            'inva', [new ExplicitInstantiation(
+                'inva', [new ExplicitInstantiation('tb')])]);
+
+        assertNearestCommonDescendants(
+            h, [x, y], [],
+            'Expected inva[inva[ta]] and invb[invb[tb]] to not unify');
+      });
+    });
   });
 });

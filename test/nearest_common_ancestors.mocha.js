@@ -1257,13 +1257,26 @@ suite('Nearest common ancestors', function() {
       tc.addParent(pcb.createInstance());
       tc.addParent(pac.createInstance());
       h.finalize();
+      const coai = new ExplicitInstantiation(
+          'coa',
+          [
+            new ExplicitInstantiation('c'),
+            new ExplicitInstantiation('a'),
+            new ExplicitInstantiation('b'),
+          ]);
+      const cobi = new ExplicitInstantiation(
+          'cob',
+          [
+            new ExplicitInstantiation('b'),
+            new ExplicitInstantiation('c'),
+            new ExplicitInstantiation('a'),
+          ]);
       const e = new ExplicitInstantiation(
           'cop', [pcb.createInstance(), pac.createInstance(), pba.createInstance()]);
 
-
       assertNearestCommonAncestors(
-          h, [coa.createInstance(), cob.createInstance()], [e],
-          'Expected parameters to be properly reorderd to match teh order of the ancestor');
+          h, [coai, cobi], [e],
+          'Expected parameters to be properly reordered to match the order of the ancestor');
     });
 
     suite('non-nearest outer types unifying', function() {
@@ -1274,12 +1287,13 @@ suite('Nearest common ancestors', function() {
         h.addTypeDef('co', [coParam]);
         const invType = h.addTypeDef('inv', [invParam]);
         invType.addParent(new ExplicitInstantiation(
-            'co', [new ExplicitInstantiation('inv')]));
+            'co', [new GenericInstantiation('inv')]));
         const a = h.addTypeDef('a');
         const b = h.addTypeDef('b');
         const p = h.addTypeDef('p');
         a.addParent(p.createInstance());
         b.addParent(p.createInstance());
+        h.finalize();
 
         const invAI = new ExplicitInstantiation('inv', [new ExplicitInstantiation('a')]);
         const invBI = new ExplicitInstantiation('inv', [new ExplicitInstantiation('b')]);
@@ -1297,12 +1311,13 @@ suite('Nearest common ancestors', function() {
         h.addTypeDef('contra', [contraParam]);
         const invType = h.addTypeDef('inv', [invParam]);
         invType.addParent(new ExplicitInstantiation(
-            'contra', [new ExplicitInstantiation('inv')]));
+            'contra', [new GenericInstantiation('inv')]));
         const a = h.addTypeDef('a');
         const b = h.addTypeDef('b');
         const c = h.addTypeDef('p');
         c.addParent(a.createInstance());
         c.addParent(b.createInstance());
+        h.finalize();
 
         const invAI = new ExplicitInstantiation('inv', [new ExplicitInstantiation('a')]);
         const invBI = new ExplicitInstantiation('inv', [new ExplicitInstantiation('b')]);
@@ -1318,10 +1333,11 @@ suite('Nearest common ancestors', function() {
         h.addTypeDef('a');
         h.addTypeDef('b');
         const aParam = new ParameterDefinition('a', Variance.INV);
-        const bParam = new ParameterDefinition('a', Variance.INV);
+        const bParam = new ParameterDefinition('b', Variance.INV);
         const t = h.addTypeDef('t', [aParam, bParam]);
         const p = h.addTypeDef('p', [aParam]);
         t.addParent(p.createInstance());
+        h.finalize();
         const ti1 = new ExplicitInstantiation(
             't',
             [new ExplicitInstantiation('a'), new ExplicitInstantiation('b')]);
@@ -1341,7 +1357,7 @@ suite('Nearest common ancestors', function() {
         h.addTypeDef('a');
         h.addTypeDef('b');
         const aParam = new ParameterDefinition('a', Variance.INV);
-        const bParam = new ParameterDefinition('a', Variance.INV);
+        const bParam = new ParameterDefinition('b', Variance.INV);
         const t = h.addTypeDef('t', [aParam, bParam]);
         const pa = h.addTypeDef('pa', [aParam, bParam]);
         const pb = h.addTypeDef('pb', [aParam]);
@@ -1350,6 +1366,7 @@ suite('Nearest common ancestors', function() {
         t.addParent(pb.createInstance());
         pa.addParent(gp.createInstance());
         pb.addParent(gp.createInstance());
+        h.finalize();
         const ti1 = new ExplicitInstantiation(
             't',
             [new ExplicitInstantiation('a'), new ExplicitInstantiation('b')]);

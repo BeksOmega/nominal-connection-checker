@@ -29,19 +29,19 @@ export class TypeDefinition {
   }
 
   get parents() {
-    return (this.parents_ as readonly TypeInstantiation[]);
+    return (this.parents_ as readonly ExplicitInstantiation[]);
   }
 
   get children() {
-    return (this.children_ as readonly TypeInstantiation[]);
+    return (this.children_ as readonly ExplicitInstantiation[]);
   }
 
   get ancestors() {
-    return (this.ancestors_ as readonly TypeInstantiation[]);
+    return (this.ancestors_ as readonly ExplicitInstantiation[]);
   }
 
   get descendants() {
-    return (this.descendants_ as readonly TypeInstantiation[]);
+    return (this.descendants_ as readonly ExplicitInstantiation[]);
   }
 
   get params() {
@@ -62,6 +62,10 @@ export class TypeDefinition {
 
   hasDescendant(t: string): boolean {
     return this.descendants_.some(d => d.name == t);
+  }
+
+  hasParams(): boolean {
+    return !!this.params_.length;
   }
 
   addParent(t: ExplicitInstantiation) {

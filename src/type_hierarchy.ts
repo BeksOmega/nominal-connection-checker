@@ -191,7 +191,7 @@ export class TypeHierarchy {
    * otherwise.
    */
   getTypeDef(n: string): TypeDefinition {
-    return this.typeDefsMap.get(n);
+    return this.getTypeDef(n);
   }
 
   /**
@@ -210,7 +210,7 @@ export class TypeHierarchy {
           ncd => ncas.some(nca => this.typeFulfillsType(nca, ncd)));
     } else if (t instanceof ExplicitInstantiation) {
       if (!this.typeDefsMap.has(t.name)) return false;
-      const td = this.typeDefsMap.get(t.name);
+      const td = this.getTypeDef(t.name);
       return td.params.length == t.params.length &&
           t.params.every(p => this.typeIsCompatible(p));
     }
@@ -250,8 +250,8 @@ export class TypeHierarchy {
       a: ExplicitInstantiation,
       b: ExplicitInstantiation
   ) {
-    const aDef = this.typeDefsMap.get(a.name);
-    const bDef = this.typeDefsMap.get(b.name);
+    const aDef = this.getTypeDef(a.name);
+    const bDef = this.getTypeDef(b.name);
 
     if (!aDef.hasAncestor(b.name)) return false;
 
@@ -398,9 +398,10 @@ export class TypeHierarchy {
         [types[0]]);
 
     const commons = [];
+    // We have to use this kind of loop b/c we append to the commons array.
     for (let i = 0; i < commonOuters.length; i++) {
       const co = commonOuters[i];
-      const coDef = this.typeDefsMap.get(co.name);
+      const coDef = this.getTypeDef(co.name);
       if (!coDef.hasParams()) {
         commons.push(co);
         continue;
@@ -413,7 +414,7 @@ export class TypeHierarchy {
       if (combos.length) {
         commons.push(...combos.map(c => new ExplicitInstantiation(co.name, c)));
       } else {
-        // If this commonType didn't unify, maybe the parents of that type will.
+        // If this commonType didn't unify, maybe some related type will.
         commonOuters.push(...getAlternativeCommons(coDef));
       }
     }
@@ -436,7 +437,7 @@ export class TypeHierarchy {
   ): ExplicitInstantiation[][] {
     const paramsLists = commonType.params.map(p => []);
     types.forEach(t => {
-      const def = this.typeDefsMap.get(t.name);
+      const def = this.getTypeDef(t.name);
       const ps = getParamsForCommon(def, commonType, t.params);
       ps.forEach((p, i) => {
         paramsLists[i].push(p);

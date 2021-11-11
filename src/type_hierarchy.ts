@@ -191,7 +191,7 @@ export class TypeHierarchy {
    * otherwise.
    */
   getTypeDef(n: string): TypeDefinition {
-    return this.getTypeDef(n);
+    return this.typeDefsMap.get(n);
   }
 
   /**

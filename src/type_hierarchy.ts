@@ -8,7 +8,7 @@ import {ExplicitInstantiation, GenericInstantiation, TypeInstantiation} from './
 import {IncompatibleType, NotFinalized} from './exceptions';
 import {ParameterDefinition, Variance} from './parameter_definition';
 import {TypeDefinition} from './type_definition';
-import {removeDuplicates} from './utils';
+import {combine, removeDuplicates} from './utils';
 
 export class TypeHierarchy {
   /**
@@ -27,7 +27,7 @@ export class TypeHierarchy {
    * ancestor of both x and y.
    */
   private readonly nearestCommonAncestors:
-      Map<string, Map<string, TypeInstantiation[]>> = new Map();
+      Map<string, Map<string, ExplicitInstantiation[]>> = new Map();
 
   /**
    * A map of type names to maps of type names to lists of TypeInstantiations
@@ -40,7 +40,7 @@ export class TypeHierarchy {
    * descendant of both x and y.
    */
   private readonly nearestCommonDescendants:
-    Map<string, Map<string, TypeInstantiation[]>> = new Map();
+    Map<string, Map<string, ExplicitInstantiation[]>> = new Map();
 
   /**
    * Whether this type hierarchy has had finalize() called on it or not.
@@ -65,7 +65,7 @@ export class TypeHierarchy {
         (t1, t2) => t1.hasDescendant(t2.name),
         (t) => t.parents,
         this.getNearestCommonAncestorsOfPair.bind(this),
-        this.removeDescendants());
+        this.removeAncestors());
   }
 
   private initNearestCommonDescendants() {
@@ -75,7 +75,7 @@ export class TypeHierarchy {
         (t1, t2) => t1.hasAncestor(t2.name),
         (t) => t.children,
         this.getNearestCommonDescendantsOfPair.bind(this),
-        this.removeAncestors());
+        this.removeDescendants());
   }
 
   /**
@@ -158,20 +158,22 @@ export class TypeHierarchy {
    * Returns a filter function which removes any TypeInstantiations that also
    * have descendants in the array.
    */
-  private removeDescendants() {
+  private removeAncestors() {
     return (t1: TypeInstantiation, i: number, arr: TypeInstantiation[]) =>
       arr.every(
-          (t2, j) => i == j || !this.getTypeDef(t1.name).hasDescendant(t2.name));
+          t2 => t1.name == t2.name ||
+            !this.getTypeDef(t1.name).hasDescendant(t2.name));
   }
 
   /**
    * Returns a filter function which removes any TypeInstantiations that also
    * have ancestors in the array.
    */
-  private removeAncestors() {
+  private removeDescendants() {
     return (t1: TypeInstantiation, i: number, arr: TypeInstantiation[]) =>
       arr.every(
-          (t2, j) => i == j || !this.getTypeDef(t1.name).hasAncestor(t2.name));
+          t2 => t1.name == t2.name ||
+            !this.getTypeDef(t1.name).hasAncestor(t2.name));
   }
 
   /**
@@ -208,7 +210,7 @@ export class TypeHierarchy {
           ncd => ncas.some(nca => this.typeFulfillsType(nca, ncd)));
     } else if (t instanceof ExplicitInstantiation) {
       if (!this.typeDefsMap.has(t.name)) return false;
-      const td = this.typeDefsMap.get(t.name);
+      const td = this.getTypeDef(t.name);
       return td.params.length == t.params.length &&
           t.params.every(p => this.typeIsCompatible(p));
     }
@@ -248,8 +250,8 @@ export class TypeHierarchy {
       a: ExplicitInstantiation,
       b: ExplicitInstantiation
   ) {
-    const aDef = this.typeDefsMap.get(a.name);
-    const bDef = this.typeDefsMap.get(b.name);
+    const aDef = this.getTypeDef(a.name);
+    const bDef = this.getTypeDef(b.name);
 
     if (!aDef.hasAncestor(b.name)) return false;
 
@@ -298,32 +300,42 @@ export class TypeHierarchy {
       ...types: TypeInstantiation[]
   ): TypeInstantiation[] {
     return this.getNearestCommon(
+        types,
         this.getNearestCommonAncestors.bind(this),
         this.getNearestCommonAncestorsOfPair.bind(this),
-        ...types);
+        (t, c, ps) => t.getParamsForAncestor(c.name, ps),
+        this.getNearestCommonAncestors.bind(this),
+        this.getNearestCommonDescendants.bind(this),
+        (t) => t.parents);
   }
 
   getNearestCommonDescendants(
       ...types: TypeInstantiation[]
   ): TypeInstantiation[] {
     return this.getNearestCommon(
+        types,
         this.getNearestCommonDescendants.bind(this),
         this.getNearestCommonDescendantsOfPair.bind(this),
-        ...types);
+        (t, c, ps) => t.getParamsForDescendant(c.name, ps),
+        this.getNearestCommonDescendants.bind(this),
+        this.getNearestCommonAncestors.bind(this),
+        (t) => []);
   }
 
   /**
    * Returns the nearest common ancestors/descendants of the given types,
    * depending on what functions are passed to getNC and getNCOfPair.
-   * @param getNC Returns the nearest common ancestors/descendants of the types.
-   * @param getNCOfPair Returns the nearest common ancestors/descendants of the
-   *     pair of types.
-   * @param types The types to find the nearest common ancestors/descendants of.
    */
   private getNearestCommon(
+      types: TypeInstantiation[],
       getNC: (...types) => TypeInstantiation[],
       getNCOfPair: (a, b) => ExplicitInstantiation[],
-      ...types: TypeInstantiation[]
+      getParamsForCommon:
+        (t: TypeDefinition, c: TypeDefinition, ps: TypeInstantiation[]) =>
+          TypeInstantiation[],
+      unifyCovariant: (...TypeInstantiation) => TypeInstantiation[],
+      unifyContravariant: (...TypeInstantiation) => TypeInstantiation[],
+      getAlternativeCommons: (TypeDefinition) => ExplicitInstantiation[],
   ): TypeInstantiation[] {
     if (!this.finalized) throw new NotFinalized();
     types.forEach(t => {
@@ -337,10 +349,15 @@ export class TypeHierarchy {
     if (types.length == 0) return [new GenericInstantiation()];
 
     if (types.some(t => t instanceof GenericInstantiation)) {
-      return this.getNearestCommonWithGenerics(getNC, ...types);
+      return this.getNearestCommonWithGenerics(types, getNC);
     }
     return this.getNearestCommonOfExplicits(
-        getNCOfPair, ...types as ExplicitInstantiation[]);
+        types as ExplicitInstantiation[],
+        getNCOfPair,
+        getParamsForCommon,
+        unifyCovariant,
+        unifyContravariant,
+        getAlternativeCommons);
   }
 
   /**
@@ -350,8 +367,8 @@ export class TypeHierarchy {
    * @param types The types to find the nearest common ancestors/descendants of.
    */
   private getNearestCommonWithGenerics(
-      getNC: (...types) => TypeInstantiation[],
-      ...types: TypeInstantiation[]
+      types: TypeInstantiation[],
+      getNC: (...types) => TypeInstantiation[]
   ): GenericInstantiation[] {
     const lcs = getNC(...this.getLowerBounds(...types)) as ExplicitInstantiation[];
     const ucs = getNC(...this.getUpperBounds(...types)) as ExplicitInstantiation[];
@@ -364,18 +381,82 @@ export class TypeHierarchy {
   /**
    * Returns the nearest common ancestors/descendants of the given type list,
    * which only includes explicit types.
-   * @param getNCOfPair Returns the nearest common ancestors/descendants of the
-   *     pair of types.
-   * @param types The types to find the nearest common ancestors/descendants of.
    */
   private getNearestCommonOfExplicits(
+      types: ExplicitInstantiation[],
       getNCOfPair: (a, b) => ExplicitInstantiation[],
-      ...types: ExplicitInstantiation[]
+      getParamsForCommon:
+          (t: TypeDefinition, c: TypeDefinition, ps: TypeInstantiation[]) =>
+          TypeInstantiation[],
+      unifyCovariant: (...TypeInstantiation) => TypeInstantiation[],
+      unifyContravariant: (...TypeInstantiation) => TypeInstantiation[],
+      getAlternativeCommons: (TypeDefinition) => ExplicitInstantiation[],
   ): ExplicitInstantiation[] {
-    return types.reduce(
+    const commonOuters = types.reduce(
         (ncs, type) =>
           ncs.flatMap(nc => getNCOfPair(type, nc)).filter(removeDuplicates()),
         [types[0]]);
+
+    const commons = [];
+    // We have to use this kind of loop b/c we append to the commons array.
+    for (let i = 0; i < commonOuters.length; i++) {
+      const co = commonOuters[i];
+      const coDef = this.getTypeDef(co.name);
+      if (!coDef.hasParams()) {
+        commons.push(co);
+        continue;
+      }
+      // Typescript can't deal w/ heterogeneous arrays :/
+      const commonParams: any = this.getCommonParamTypes(
+          types, coDef, getParamsForCommon, unifyCovariant, unifyContravariant);
+      commonParams[0] = commonParams[0].map(v => [v]);
+      const combos: TypeInstantiation[][] = combine(commonParams);
+      if (combos.length) {
+        commons.push(...combos.map(c => new ExplicitInstantiation(co.name, c)));
+      } else {
+        // If this commonType didn't unify, maybe some related type will.
+        commonOuters.push(...getAlternativeCommons(coDef));
+      }
+    }
+    return commons.filter(removeDuplicates()).filter(this.removeAncestors());
+  }
+
+  /**
+   *  Returns an array of arrays of common types for each of the parameters of
+   *  the commonType based on the parameters of the types. An empty subarray
+   *  means a common type for that parameter could not be found.
+   */
+  private getCommonParamTypes(
+      types: ExplicitInstantiation[],
+      commonType: TypeDefinition,
+      getParamsForCommon:
+          (t: TypeDefinition, c: TypeDefinition, ps: TypeInstantiation[]) =>
+            TypeInstantiation[],
+      unifyCovariant: (...TypeInstantiation) => TypeInstantiation[],
+      unifyContravariant: (...TypeInstantiation) => TypeInstantiation[],
+  ): ExplicitInstantiation[][] {
+    const paramsLists = commonType.params.map(p => []);
+    types.forEach(t => {
+      const def = this.getTypeDef(t.name);
+      const ps = getParamsForCommon(def, commonType, t.params);
+      ps.forEach((p, i) => {
+        paramsLists[i].push(p);
+      });
+    });
+
+    return paramsLists.map((list, i) => {
+      switch (commonType.params[i].variance) {
+        case Variance.CO:
+          return unifyCovariant(...list);
+        case Variance.CONTRA:
+          return unifyContravariant(...list);
+        case Variance.INV: {
+          const [first, ...rest] = list;
+          if (rest.every(t => t.equals(first))) return [first];
+          return [];
+        }
+      }
+    });
   }
 
   /**
@@ -419,7 +500,8 @@ export class TypeHierarchy {
    * in the nearestCommonAncestors array.
    */
   private getNearestCommonAncestorsOfPair(
-      a: ExplicitInstantiation, b: ExplicitInstantiation) {
+      a: ExplicitInstantiation, b: ExplicitInstantiation
+  ): ExplicitInstantiation[] {
     return this.nearestCommonAncestors.get(a.name).get(b.name);
   }
 
@@ -428,7 +510,8 @@ export class TypeHierarchy {
    * in the nearestCommonDescendants array.
    */
   private getNearestCommonDescendantsOfPair(
-      a: ExplicitInstantiation, b: ExplicitInstantiation) {
+      a: ExplicitInstantiation, b: ExplicitInstantiation
+  ): ExplicitInstantiation[] {
     return this.nearestCommonDescendants.get(a.name).get(b.name);
   }
 }

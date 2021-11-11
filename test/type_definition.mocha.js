@@ -4,14 +4,11 @@
  * SPDX-License-Identifier: MIT
  */
 
+import {ExplicitInstantiation, GenericInstantiation} from '../src/type_instantiation';
 import {IncompatibleType, IncompatibleVariance} from '../src/exceptions';
 import {TypeHierarchy} from '../src/type_hierarchy';
-import {
-  ExplicitInstantiation,
-  GenericInstantiation
-} from '../src/type_instantiation';
+import {ParameterDefinition, Variance} from '../src/parameter_definition';
 import {assert} from 'chai';
-import {ParameterDefinition, Variance} from "../src/parameter_definition";
 
 suite('TypeDefinition', function() {
   test('every type definition is an ancestor of itself', function() {
@@ -187,10 +184,10 @@ suite('TypeDefinition', function() {
   });
 
   suite('reorganizing params for ancestors', function() {
-    function assertParamOrder(type, ancestor, params, msg) {
-      const mappedParams = type.getParamsForAncestor(ancestor);
-      assert.equal(mappedParams.length, params.length, msg);
-      assert.deepEqual(mappedParams, params, msg);
+    function assertParamOrder(t, a, ps, msg) {
+      const mappedParams = t.getParamsForAncestor(a);
+      assert.equal(mappedParams.length, ps.length, msg);
+      assert.deepEqual(mappedParams, ps, msg);
     }
 
     test('params for self are identical', function() {
@@ -263,6 +260,125 @@ suite('TypeDefinition', function() {
                 'list', [new ExplicitInstantiation('dog')]),
           ],
           'Expected nested params to be properly reorganized for the ancestor type');
+    });
+  });
+
+  suite('reorganizing params for descendants', function() {
+    function assertParamOrder(t, d, aps, eps, msg) {
+      const mappedParams = t.getParamsForDescendant(d, aps);
+      assert.equal(mappedParams.length, eps.length, msg);
+      assert.deepEqual(mappedParams, eps, msg);
+    }
+
+    test('params for self are identical', function() {
+      const h = new TypeHierarchy();
+      const pa = new ParameterDefinition('a', Variance.CO);
+      const pb = new ParameterDefinition('b', Variance.CO);
+      const x = h.addTypeDef('x', [pa, pb]);
+      h.finalize();
+
+      assertParamOrder(
+          x, 'x', undefined,
+          [new GenericInstantiation('a'), new GenericInstantiation('b')],
+          'Expected the param mapping from a type to itself to be identical to its normal params list');
+    });
+
+    test('params are properly reorganized for child', function() {
+      const h = new TypeHierarchy();
+      const pa = new ParameterDefinition('a', Variance.CO);
+      const pb = new ParameterDefinition('b', Variance.CO);
+      const x = h.addTypeDef('x', [pb, pa]);
+      const y = h.addTypeDef('y', [pa, pb]);
+      x.addParent(y.createInstance());
+      h.finalize();
+
+      assertParamOrder(
+          y, 'x', undefined,
+          [new GenericInstantiation('b'), new GenericInstantiation('a')],
+          'Expected params to be properly reorganized for the child type');
+    });
+
+    test('params are properly reorganized for descendant', function() {
+      const h = new TypeHierarchy();
+      const pa = new ParameterDefinition('a', Variance.CO);
+      const pb = new ParameterDefinition('b', Variance.CO);
+      const pc = new ParameterDefinition('c', Variance.CO);
+      const x = h.addTypeDef('x', [pc, pa, pb]);
+      const y = h.addTypeDef('y', [pb, pc, pa]);
+      const z = h.addTypeDef('z', [pa, pb, pc]);
+      x.addParent(y.createInstance());
+      y.addParent(z.createInstance());
+      h.finalize();
+
+      assertParamOrder(
+          z,
+          'x',
+          undefined,
+          [
+            new GenericInstantiation('c'),
+            new GenericInstantiation('a'),
+            new GenericInstantiation('b'),
+          ],
+          'Expected the params to be properly reorganized for the descendant type');
+    });
+
+    test.skip('nested params in descendants are properly remapped', function() {
+      const h = new TypeHierarchy();
+      const pa = new ParameterDefinition('a', Variance.CO);
+      const list = h.addTypeDef('list', [pa]);
+      const listList = h.addTypeDef('listList', [pa]);
+      listList.addParent(new ExplicitInstantiation(
+          'list', [new ExplicitInstantiation(
+              'list', [new GenericInstantiation('a')])]));
+      h.addTypeDef('dog');
+
+      assertParamOrder(
+          list,
+          'listList',
+          [
+            new ExplicitInstantiation(
+                'list', [new ExplicitInstantiation('dog')]),
+          ],
+          [
+            new ExplicitInstantiation('dog'),
+          ],
+          'Expected nested params to be properly reorganized for the descendant type');
+    });
+
+    test.skip('explicit params with non-matching actual params result in an empty array', function() {
+      const h = new TypeHierarchy();
+      const pa = new ParameterDefinition('a', Variance.CO);
+      const list = h.addTypeDef('list', [pa]);
+      h.addTypeDef('collection', [pa]);
+      const listList = h.addTypeDef('listList', [pa]);
+      listList.addParent(new ExplicitInstantiation(
+          'list', [new ExplicitInstantiation(
+              'list', [new GenericInstantiation('a')])]));
+      h.addTypeDef('dog');
+
+      assertParamOrder(
+          list,
+          'listList',
+          [
+            new ExplicitInstantiation('collection', [new ExplicitInstantiation('dog')]),
+          ],
+          [],
+          'Expected explicit params with non-matching actual params to result in an empty array');
+    });
+
+    test('missing param in descendant is an empty generic', function() {
+      const h = new TypeHierarchy();
+      const pa = new ParameterDefinition('a', Variance.CO);
+      const pb = new ParameterDefinition('b', Variance.CO);
+      const x = h.addTypeDef('x', [pa, pb]);
+      const y = h.addTypeDef('y', [pa]);
+      x.addParent(y.createInstance());
+      h.finalize();
+
+      assertParamOrder(
+          y, 'x', undefined,
+          [new GenericInstantiation('a'), new GenericInstantiation('')],
+          'Expected missing params in descendants to be empty generics');
     });
   });
 

@@ -8,7 +8,7 @@ import {TypeHierarchy} from '../src/type_hierarchy';
 import {ExplicitInstantiation, GenericInstantiation} from '../src/type_instantiation';
 import {assert} from 'chai';
 import {IncompatibleType, NotFinalized} from '../src/exceptions';
-import {ParameterDefinition, Variance} from "../src/parameter_definition";
+import {ParameterDefinition, Variance} from '../src/parameter_definition';
 
 suite('Nearest common descendants', function() {
   /**
@@ -1128,8 +1128,8 @@ suite('Nearest common descendants', function() {
           const coParam = new ParameterDefinition('a', Variance.CO);
           const coa = h.addTypeDef('coa', [coParam]);
           const cob = h.addTypeDef('cob', [coParam]);
-          const coca = h.addTypeDef('copa', [coParam]);
-          const cocb = h.addTypeDef('copb', [coParam]);
+          const coca = h.addTypeDef('coca', [coParam]);
+          const cocb = h.addTypeDef('cocb', [coParam]);
           coca.addParent(coa.createInstance());
           coca.addParent(cob.createInstance());
           cocb.addParent(coa.createInstance());
@@ -1148,7 +1148,7 @@ suite('Nearest common descendants', function() {
 
           assertNearestCommonDescendants(
               h, [x, y], [e1, e2],
-              'Expected the ncd of multiple common outer types to result n multiple parameterized types');
+              'Expected the ncd of multiple common outer types to result in multiple parameterized types');
         });
 
     test('ncd of a pair of params each with a pair of common types, results in all combos of common types',
@@ -1167,12 +1167,12 @@ suite('Nearest common descendants', function() {
           cb.addParent(tb.createInstance());
           const tc = h.addTypeDef('tc');
           const td = h.addTypeDef('td');
-          const pc = h.addTypeDef('pc');
-          const pd = h.addTypeDef('pd');
-          tc.addParent(pc.createInstance());
-          tc.addParent(pd.createInstance());
-          td.addParent(pc.createInstance());
-          td.addParent(pd.createInstance());
+          const cc = h.addTypeDef('cc');
+          const cd = h.addTypeDef('cd');
+          cc.addParent(tc.createInstance());
+          cc.addParent(td.createInstance());
+          cd.addParent(tc.createInstance());
+          cd.addParent(td.createInstance());
           h.finalize();
           const x = new ExplicitInstantiation(
               'co',
@@ -1230,9 +1230,9 @@ suite('Nearest common descendants', function() {
       const ta = h.addTypeDef('a');
       const tb = h.addTypeDef('b');
       const tc = h.addTypeDef('c');
-      const ccb = h.addTypeDef('pcb');
-      const cac = h.addTypeDef('pac');
-      const cba = h.addTypeDef('pba');
+      const ccb = h.addTypeDef('ccb');
+      const cac = h.addTypeDef('cac');
+      const cba = h.addTypeDef('cba');
       ccb.addParent(tc.createInstance());
       ccb.addParent(tb.createInstance());
       cac.addParent(ta.createInstance());
@@ -1240,12 +1240,26 @@ suite('Nearest common descendants', function() {
       cba.addParent(tb.createInstance());
       cba.addParent(ta.createInstance());
       h.finalize();
+      const coai = new ExplicitInstantiation(
+          'coa',
+          [
+            new ExplicitInstantiation('a'),
+            new ExplicitInstantiation('b'),
+            new ExplicitInstantiation('c'),
+          ]);
+      const cobi = new ExplicitInstantiation(
+          'cob',
+          [
+            new ExplicitInstantiation('a'),
+            new ExplicitInstantiation('b'),
+            new ExplicitInstantiation('c'),
+          ]);
       const e = new ExplicitInstantiation(
-          'cop', [ccb.createInstance(), cac.createInstance(), cba.createInstance()]);
+          'coc', [ccb.createInstance(), cac.createInstance(), cba.createInstance()]);
 
 
       assertNearestCommonDescendants(
-          h, [coa.createInstance(), cob.createInstance()], [e],
+          h, [coai, cobi], [e],
           'Expected parameters to be properly reordered to match the order of the descendant');
     });
 
@@ -1308,8 +1322,8 @@ suite('Nearest common descendants', function() {
                 'invb', [new ExplicitInstantiation('ta')])]);
 
         const e = new ExplicitInstantiation(
-            'cop', [new ExplicitInstantiation(
-                'invp', [new ExplicitInstantiation('ta')])]);
+            'coc', [new ExplicitInstantiation(
+                'invc', [new ExplicitInstantiation('ta')])]);
         assertNearestCommonDescendants(
             h, [x, y], [e],
             'Expected coa[inva[ta]] and cob[invb[ta]] to unify to coc[invc[ta]]');

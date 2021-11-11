@@ -1507,10 +1507,10 @@ suite('Nearest common ancestors', function() {
 
         const e = new ExplicitInstantiation(
             'conp', [new ExplicitInstantiation(
-                'invp', [new ExplicitInstantiation('ta')])]);
+                'invc', [new ExplicitInstantiation('ta')])]);
         assertNearestCommonAncestors(
             h, [x, y], [e],
-            'Expected cona[inva[ta]] and conb[invb[ta]] to unify to conp[invp[ta]]');
+            'Expected cona[inva[ta]] and conb[invb[ta]] to unify to conp[invc[ta]]');
       });
 
       test('inva[coa[ta]] and invb[cob[tb]] do not unify', function() {

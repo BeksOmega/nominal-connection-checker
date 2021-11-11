@@ -313,13 +313,13 @@ export class TypeHierarchy {
       ...types: TypeInstantiation[]
   ): TypeInstantiation[] {
     return this.getNearestCommon(
-      types,
-      this.getNearestCommonDescendants.bind(this),
-      this.getNearestCommonDescendantsOfPair.bind(this),
-      (t, c, ps) => t.getParamsForAncestor(c.name, ps),
-      this.getNearestCommonDescendants.bind(this),
-      this.getNearestCommonAncestors.bind(this),
-      (t) => []);
+        types,
+        this.getNearestCommonDescendants.bind(this),
+        this.getNearestCommonDescendantsOfPair.bind(this),
+        (t, c, ps) => t.getParamsForDescendant(c.name, ps),
+        this.getNearestCommonDescendants.bind(this),
+        this.getNearestCommonAncestors.bind(this),
+        (t) => []);
   }
 
   /**

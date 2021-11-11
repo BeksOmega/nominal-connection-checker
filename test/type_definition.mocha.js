@@ -263,7 +263,7 @@ suite('TypeDefinition', function() {
     });
   });
 
-  suite.only('reorganizing params for descendants', function() {
+  suite('reorganizing params for descendants', function() {
     function assertParamOrder(t, d, aps, eps, msg) {
       const mappedParams = t.getParamsForDescendant(d, aps);
       assert.equal(mappedParams.length, eps.length, msg);

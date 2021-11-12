@@ -1263,6 +1263,80 @@ suite('Nearest common descendants', function() {
           'Expected parameters to be properly reordered to match the order of the descendant');
     });
 
+    test('missing params in descendants are ignored', function() {
+      const h = new TypeHierarchy();
+      const pa = new ParameterDefinition('a', Variance.CO);
+      const pb = new ParameterDefinition('b', Variance.CO);
+      const x = h.addTypeDef('x', [pa]);
+      const y = h.addTypeDef('y', [pb]);
+      const z = h.addTypeDef('z', [pa, pb]);
+      z.addParent(x.createInstance());
+      z.addParent(y.createInstance());
+      h.addTypeDef('a');
+      h.addTypeDef('b');
+      h.finalize();
+      const xi = new ExplicitInstantiation('x', [new ExplicitInstantiation('a')]);
+      const yi = new ExplicitInstantiation('y', [new ExplicitInstantiation('b')]);
+      const e = new ExplicitInstantiation(
+          'z', [new ExplicitInstantiation('a'), new ExplicitInstantiation('b')]);
+
+      assertNearestCommonDescendants(
+          h, [xi, yi], [e],
+          'Expected missing params in descendants to be ignored');
+    });
+
+    test('nca with non-matching explicit type is empty', function() {
+      const h = new TypeHierarchy();
+      const pa = new ParameterDefinition('a', Variance.CO);
+      const pb = new ParameterDefinition('b', Variance.CO);
+      const ad = h.addTypeDef('a', [pa]);
+      h.addTypeDef('b', [pa, pb]);
+      h.addTypeDef('b', [pa, pb]);
+      h.addTypeDef('d');
+      h.addTypeDef('e');
+      ad.addParent(new ExplicitInstantiation(
+          'b', [new GenericInstantiation('a'), new ExplicitInstantiation('d')]));
+      ad.addParent(new ExplicitInstantiation(
+          'c', [new GenericInstantiation('a'), new ExplicitInstantiation('d')]));
+      h.finalize();
+      const bi = new ExplicitInstantiation(
+          'b', [new ExplicitInstantiation('e'), new ExplicitInstantiation('d')]);
+      const ci = new ExplicitInstantiation(
+          'c', [new ExplicitInstantiation('e'), new ExplicitInstantiation('e')]);
+
+      assertNearestCommonDescendants(
+          h, [bi, ci], [],
+          'Expected non-matching explicit types to result in an empty array');
+    });
+
+    test('nested params are properly mapped to children', function() {
+      const h = new TypeHierarchy();
+      const pa = new ParameterDefinition('a', Variance.CO);
+      h.addTypeDef('list', [pa]);
+      const listList = h.addTypeDef('listList', [pa]);
+      listList.addParent(new ExplicitInstantiation(
+          'list', [new ExplicitInstantiation(
+              'list', [new GenericInstantiation('a')])]));
+      const ad = h.addTypeDef('a');
+      const bd = h.addTypeDef('b');
+      const cd = h.addTypeDef('c');
+      cd.addParent(ad.createInstance());
+      cd.addParent(bd.createInstance());
+      h.finalize();
+      const l1 = new ExplicitInstantiation(
+          'list', [new ExplicitInstantiation(
+              'list', [new ExplicitInstantiation('a')])]);
+      const l2 = new ExplicitInstantiation(
+          'list', [new ExplicitInstantiation(
+              'list', [new ExplicitInstantiation('b')])]);
+      const e = new ExplicitInstantiation(
+          'listList', [new ExplicitInstantiation('c')]);
+
+      assertNearestCommonDescendants(
+          h, [l1, l2], [e],
+          'Expected nested params to be properly remapped to children');
+    });
+
     suite('nested variances', function() {
       test('coa[coa[ta]] and cob[cob[tb]] unify to coc[coc[c]]', function() {
         const h = defineParameterizedHierarchy();

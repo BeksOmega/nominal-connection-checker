@@ -162,7 +162,8 @@ export class TypeDefinition {
   }
 
   /**
-   * Mapping of the names of the descendant params to our params.
+   * Mapping of the names of the descendant params to our params. And empty
+   * array signals that a mapping could not be found.
    */
   getParamsForDescendant(
       n: string, actual: TypeInstantiation[]): TypeInstantiation[][] {

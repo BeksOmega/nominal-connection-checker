@@ -424,6 +424,26 @@ suite('TypeDefinition', function() {
           [],
           'Expected explicit params with non-matching actual params to result in an empty array');
     });
+
+    test('all types are returned for params that are referenced multiple times', function() {
+      const h = new TypeHierarchy();
+      const pa = new ParameterDefinition('a', Variance.CO);
+      const pb = new ParameterDefinition('b', Variance.CO);
+      const dict = h.addTypeDef('dict', [pa, pb]);
+      const sameDict = h.addTypeDef('sameDict', [pa]);
+      sameDict.addParent(new ExplicitInstantiation(
+          'dict', [new GenericInstantiation('a'), new GenericInstantiation('a')]));
+      h.addTypeDef('a');
+      h.addTypeDef('b');
+      h.finalize();
+
+      assertParamOrder(
+          dict,
+          'sameDict',
+          [new ExplicitInstantiation('a'), new ExplicitInstantiation('b')],
+          [[new ExplicitInstantiation('a'), new ExplicitInstantiation('b')]],
+          'Expected all types to be returned for params that are referenced multiple times');
+    });
   });
 
   suite('variance inheritance', function() {

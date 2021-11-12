@@ -275,11 +275,15 @@ suite('TypeDefinition', function() {
       const pa = new ParameterDefinition('a', Variance.CO);
       const pb = new ParameterDefinition('b', Variance.CO);
       const x = h.addTypeDef('x', [pa, pb]);
+      h.addTypeDef('a');
+      h.addTypeDef('b');
       h.finalize();
 
       assertParamOrder(
-          x, 'x', undefined,
-          [new GenericInstantiation('a'), new GenericInstantiation('b')],
+          x,
+          'x',
+          [new ExplicitInstantiation('a'), new ExplicitInstantiation('b')],
+          [[new ExplicitInstantiation('a')], [new ExplicitInstantiation('b')]],
           'Expected the param mapping from a type to itself to be identical to its normal params list');
     });
 
@@ -290,11 +294,15 @@ suite('TypeDefinition', function() {
       const x = h.addTypeDef('x', [pb, pa]);
       const y = h.addTypeDef('y', [pa, pb]);
       x.addParent(y.createInstance());
+      h.addTypeDef('a');
+      h.addTypeDef('b');
       h.finalize();
 
       assertParamOrder(
-          y, 'x', undefined,
-          [new GenericInstantiation('b'), new GenericInstantiation('a')],
+          y,
+          'x',
+          [new ExplicitInstantiation('a'), new ExplicitInstantiation('b')],
+          [[new ExplicitInstantiation('b')], [new ExplicitInstantiation('a')]],
           'Expected params to be properly reorganized for the child type');
     });
 
@@ -308,16 +316,23 @@ suite('TypeDefinition', function() {
       const z = h.addTypeDef('z', [pa, pb, pc]);
       x.addParent(y.createInstance());
       y.addParent(z.createInstance());
+      h.addTypeDef('a');
+      h.addTypeDef('b');
+      h.addTypeDef('c');
       h.finalize();
 
       assertParamOrder(
           z,
           'x',
-          undefined,
           [
-            new GenericInstantiation('c'),
-            new GenericInstantiation('a'),
-            new GenericInstantiation('b'),
+            new ExplicitInstantiation('a'),
+            new ExplicitInstantiation('b'),
+            new ExplicitInstantiation('c'),
+          ],
+          [
+            [new ExplicitInstantiation('c')],
+            [new ExplicitInstantiation('a')],
+            [new ExplicitInstantiation('b')],
           ],
           'Expected the params to be properly reorganized for the descendant type');
     });
@@ -329,11 +344,15 @@ suite('TypeDefinition', function() {
       const x = h.addTypeDef('x', [pa, pb]);
       const y = h.addTypeDef('y', [pa]);
       x.addParent(y.createInstance());
+      h.addTypeDef('a');
+      h.addTypeDef('b');
       h.finalize();
 
       assertParamOrder(
-          y, 'x', undefined,
-          [new GenericInstantiation('a'), new GenericInstantiation('')],
+          y,
+          'x',
+          [new ExplicitInstantiation('a')],
+          [[new ExplicitInstantiation('a')], [new GenericInstantiation('')]],
           'Expected missing params in descendants to be empty generics');
     });
 
@@ -341,24 +360,20 @@ suite('TypeDefinition', function() {
       const h = new TypeHierarchy();
       const pa = new ParameterDefinition('a', Variance.CO);
       const pb = new ParameterDefinition('b', Variance.CO);
-      const ad = h.addTypeDef('a', [pa]);
-      const bd = h.addTypeDef('b', [pa, pb]);
+      const xd = h.addTypeDef('x', [pa]);
+      const yd = h.addTypeDef('y', [pa, pb]);
       h.addTypeDef('c');
       h.addTypeDef('d');
-      ad.addParent(new ExplicitInstantiation(
-          'b', [new GenericInstantiation('a'), new ExplicitInstantiation('c')]));
+      xd.addParent(new ExplicitInstantiation(
+          'y', [new GenericInstantiation('a'), new ExplicitInstantiation('c')]));
       h.finalize();
 
       assertParamOrder(
-          bd,
-          'a',
+          yd,
+          'x',
           [
-            new ExplicitInstantiation(
-                'b',
-                [
-                  new ExplicitInstantiation('d'),
-                  new ExplicitInstantiation('d'),
-                ]),
+            new ExplicitInstantiation('d'),
+            new ExplicitInstantiation('d'),
           ],
           [],
           'Expected non-matching actual type to result in an empty array');
@@ -383,7 +398,7 @@ suite('TypeDefinition', function() {
                 'list', [new ExplicitInstantiation('dog')]),
           ],
           [
-            new ExplicitInstantiation('dog'),
+            [new ExplicitInstantiation('dog')],
           ],
           'Expected nested params to be properly reorganized for the descendant type');
     });
@@ -403,7 +418,8 @@ suite('TypeDefinition', function() {
           list,
           'listList',
           [
-            new ExplicitInstantiation('collection', [new ExplicitInstantiation('t')]),
+            new ExplicitInstantiation(
+                'collection', [new ExplicitInstantiation('t')]),
           ],
           [],
           'Expected explicit params with non-matching actual params to result in an empty array');

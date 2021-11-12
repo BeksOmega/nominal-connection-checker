@@ -16,8 +16,6 @@ export class TypeDefinition {
   private readonly descendants_: ExplicitInstantiation[] = [];
   private readonly ancestorParamsMap_: Map<string, TypeInstantiation[]> =
       new Map();
-  private readonly descendantParamsMap_: Map<string, TypeInstantiation[]> =
-      new Map();
 
   constructor(
       readonly hierarchy: TypeHierarchy,
@@ -25,9 +23,8 @@ export class TypeDefinition {
       private readonly params_: ParameterDefinition[] = []
   ) {
     this.ancestors_.push(this.createInstance());
-    const gs = params_.map(p => new GenericInstantiation(p.name));
-    this.ancestorParamsMap_.set(name, gs);
-    this.descendantParamsMap_.set(name, gs);
+    this.ancestorParamsMap_.set(
+        name, params_.map(p => new GenericInstantiation(p.name)));
     this.descendants_.push(this.createInstance());
   }
 
@@ -100,11 +97,6 @@ export class TypeDefinition {
   private addChild(t: ExplicitInstantiation, me: ExplicitInstantiation) {
     if (this.hasChild(t.name)) return;
     this.children_.push(t);
-    this.descendantParamsMap_.set(t.name, t.params.map(
-        p => {
-          const i = me.params.findIndex(p2 => p.name == p2.name);
-          return new GenericInstantiation(i == -1 ? '' : this.params_[i].name);
-        }));
     this.addDescendant(t, this);
     const td = this.hierarchy.getTypeDef(t.name);
     td.descendants_.forEach(d => this.addDescendant(d, td));
@@ -132,13 +124,6 @@ export class TypeDefinition {
   private addDescendant(d: ExplicitInstantiation, child: TypeDefinition) {
     if (this.hasDescendant(d.name)) return;
     this.descendants_.push(d);
-    const childToDescendant = child.getParamsForDescendant(d.name);
-    const thisToChild = this.getParamsForDescendant(child.name);
-    const thisToDescendant = childToDescendant.map(p => {
-      const i = child.getIndexOfParam(p.name);
-      return i == -1 ? new GenericInstantiation('') : thisToChild[i];
-    });
-    this.descendantParamsMap_.set(d.name, thisToDescendant);
     this.parents_.forEach(
         p => this.hierarchy.getTypeDef(p.name).addDescendant(d, this));
   }
@@ -180,11 +165,36 @@ export class TypeDefinition {
    * Mapping of the names of the descendant params to our params.
    */
   getParamsForDescendant(
-      n: string, actual: TypeInstantiation[] = undefined
-  ): TypeInstantiation[] {
-    const ps = this.descendantParamsMap_.get(n).map(p => p.clone());
-    if (!actual) return ps;
-    return ps.map(p => p.name == '' ? p : actual[this.getIndexOfParam(p.name)]);
+      n: string, actual: TypeInstantiation[]): TypeInstantiation[][] {
+    const d = this.hierarchy.getTypeDef(n);
+    const descendantToThis = d.getParamsForAncestor(this.name);
+    const map = [];
+    for (let i = 0; i < d.params.length; i++) {
+      const p = d.params[i];
+      const acc = [];
+      const valid = descendantToThis.reduce(
+          (bool, m, i) => bool && this.getBindingsFor(p.name, m, actual[i], acc),
+          true);
+      if (!valid) return [];
+      map.push(!acc.length ? [new GenericInstantiation('')] : acc);
+    }
+    return map;
+  }
+
+  private getBindingsFor(
+      s: string,
+      ref: TypeInstantiation,
+      actual: TypeInstantiation,
+      acc: TypeInstantiation[]
+  ): boolean {
+    if (ref instanceof ExplicitInstantiation) {
+      if (!(actual instanceof ExplicitInstantiation)) return false;
+      if (ref.name != actual.name) return false;
+      return ref.params.reduce((bool, cur, i) =>
+        bool && this.getBindingsFor(s, cur, actual.params[i], acc), true);
+    }
+    if (ref.name == s) acc.push(actual);
+    return true;
   }
 
   createInstance(): ExplicitInstantiation {

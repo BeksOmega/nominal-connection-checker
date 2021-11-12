@@ -303,7 +303,7 @@ export class TypeHierarchy {
         types,
         this.getNearestCommonAncestors.bind(this),
         this.getNearestCommonAncestorsOfPair.bind(this),
-        (t, c, ps) => t.getParamsForAncestor(c.name, ps),
+        (t, c, ps) => [t.getParamsForAncestor(c.name, ps)],
         this.getNearestCommonAncestors.bind(this),
         this.getNearestCommonDescendants.bind(this),
         (t) => t.parents);
@@ -332,7 +332,7 @@ export class TypeHierarchy {
       getNCOfPair: (a, b) => ExplicitInstantiation[],
       getParamsForCommon:
         (t: TypeDefinition, c: TypeDefinition, ps: TypeInstantiation[]) =>
-          TypeInstantiation[],
+          TypeInstantiation[][],
       unifyCovariant: (...TypeInstantiation) => TypeInstantiation[],
       unifyContravariant: (...TypeInstantiation) => TypeInstantiation[],
       getAlternativeCommons: (TypeDefinition) => ExplicitInstantiation[],
@@ -387,7 +387,7 @@ export class TypeHierarchy {
       getNCOfPair: (a, b) => ExplicitInstantiation[],
       getParamsForCommon:
           (t: TypeDefinition, c: TypeDefinition, ps: TypeInstantiation[]) =>
-          TypeInstantiation[],
+          TypeInstantiation[][],
       unifyCovariant: (...TypeInstantiation) => TypeInstantiation[],
       unifyContravariant: (...TypeInstantiation) => TypeInstantiation[],
       getAlternativeCommons: (TypeDefinition) => ExplicitInstantiation[],
@@ -431,16 +431,16 @@ export class TypeHierarchy {
       commonType: TypeDefinition,
       getParamsForCommon:
           (t: TypeDefinition, c: TypeDefinition, ps: TypeInstantiation[]) =>
-            TypeInstantiation[],
+            TypeInstantiation[][],
       unifyCovariant: (...TypeInstantiation) => TypeInstantiation[],
       unifyContravariant: (...TypeInstantiation) => TypeInstantiation[],
   ): ExplicitInstantiation[][] {
-    const paramsLists = commonType.params.map(p => []);
+    const paramsLists = commonType.params.map(_ => []);
     types.forEach(t => {
       const def = this.getTypeDef(t.name);
       const ps = getParamsForCommon(def, commonType, t.params);
       ps.forEach((p, i) => {
-        paramsLists[i].push(p);
+        paramsLists[i].push(...p);
       });
     });
 

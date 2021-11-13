@@ -303,7 +303,7 @@ export class TypeHierarchy {
         types,
         this.getNearestCommonAncestors.bind(this),
         this.getNearestCommonAncestorsOfPair.bind(this),
-        (t, c, ps) => t.getParamsForAncestor(c.name, ps),
+        (t, c, ps) => t.getParamsForAncestor(c.name, ps).map(p => [p]),
         this.getNearestCommonAncestors.bind(this),
         this.getNearestCommonDescendants.bind(this),
         (t) => t.parents);
@@ -332,7 +332,7 @@ export class TypeHierarchy {
       getNCOfPair: (a, b) => ExplicitInstantiation[],
       getParamsForCommon:
         (t: TypeDefinition, c: TypeDefinition, ps: TypeInstantiation[]) =>
-          TypeInstantiation[],
+          TypeInstantiation[][],
       unifyCovariant: (...TypeInstantiation) => TypeInstantiation[],
       unifyContravariant: (...TypeInstantiation) => TypeInstantiation[],
       getAlternativeCommons: (TypeDefinition) => ExplicitInstantiation[],
@@ -387,7 +387,7 @@ export class TypeHierarchy {
       getNCOfPair: (a, b) => ExplicitInstantiation[],
       getParamsForCommon:
           (t: TypeDefinition, c: TypeDefinition, ps: TypeInstantiation[]) =>
-          TypeInstantiation[],
+          TypeInstantiation[][],
       unifyCovariant: (...TypeInstantiation) => TypeInstantiation[],
       unifyContravariant: (...TypeInstantiation) => TypeInstantiation[],
       getAlternativeCommons: (TypeDefinition) => ExplicitInstantiation[],
@@ -409,6 +409,7 @@ export class TypeHierarchy {
       // Typescript can't deal w/ heterogeneous arrays :/
       const commonParams: any = this.getCommonParamTypes(
           types, coDef, getParamsForCommon, unifyCovariant, unifyContravariant);
+      if (!commonParams.length) return [];
       commonParams[0] = commonParams[0].map(v => [v]);
       const combos: TypeInstantiation[][] = combine(commonParams);
       if (combos.length) {
@@ -431,18 +432,19 @@ export class TypeHierarchy {
       commonType: TypeDefinition,
       getParamsForCommon:
           (t: TypeDefinition, c: TypeDefinition, ps: TypeInstantiation[]) =>
-            TypeInstantiation[],
+            TypeInstantiation[][],
       unifyCovariant: (...TypeInstantiation) => TypeInstantiation[],
       unifyContravariant: (...TypeInstantiation) => TypeInstantiation[],
   ): ExplicitInstantiation[][] {
-    const paramsLists = commonType.params.map(p => []);
-    types.forEach(t => {
+    const paramsLists = commonType.params.map(_ => []);
+    for (const t of types) {
       const def = this.getTypeDef(t.name);
       const ps = getParamsForCommon(def, commonType, t.params);
+      if (!ps.length) return [];
       ps.forEach((p, i) => {
-        paramsLists[i].push(p);
+        paramsLists[i].push(...p);
       });
-    });
+    }
 
     return paramsLists.map((list, i) => {
       switch (commonType.params[i].variance) {

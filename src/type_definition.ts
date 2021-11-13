@@ -168,34 +168,35 @@ export class TypeDefinition {
   getParamsForDescendant(
       n: string, actual: TypeInstantiation[]): TypeInstantiation[][] {
     const d = this.hierarchy.getTypeDef(n);
-    const descendantToThis = d.getParamsForAncestor(this.name);
-    const map = [];
-    for (let i = 0; i < d.params.length; i++) {
-      const p = d.params[i];
-      const acc = [];
-      const valid = descendantToThis.reduce(
-          (bool, m, i) => bool && this.getBindingsFor(p.name, m, actual[i], acc),
-          true);
-      if (!valid) return [];
-      map.push(!acc.length ? [new GenericInstantiation('')] : acc);
-    }
-    return map;
+    const dToThis = d.getParamsForAncestor(this.name);
+    if (!dToThis.every((m, i) => this.mappingIsValid(m, actual[i]))) return [];
+    return d.params.map(p => {
+      const all = dToThis.flatMap((m, i) =>
+        this.getBindingsFor(p.name, m, actual[i]));
+      return all.length ? all : [new GenericInstantiation('')];
+    });
   }
 
+  private mappingIsValid(ref, actual) {
+    if (ref instanceof ExplicitInstantiation) {
+      if (!(actual instanceof ExplicitInstantiation)) return false;
+      if (ref.name != actual.name) return false;
+      return ref.params.every((m, i) => this.mappingIsValid(m, actual.params[i]));
+    }
+    return true;
+  }
+
+  // Should only be called if mappingIsValid() is true.
   private getBindingsFor(
       s: string,
       ref: TypeInstantiation,
       actual: TypeInstantiation,
-      acc: TypeInstantiation[]
-  ): boolean {
+  ): TypeInstantiation[] {
     if (ref instanceof ExplicitInstantiation) {
-      if (!(actual instanceof ExplicitInstantiation)) return false;
-      if (ref.name != actual.name) return false;
-      return ref.params.reduce((bool, cur, i) =>
-        bool && this.getBindingsFor(s, cur, actual.params[i], acc), true);
+      return ref.params.flatMap((p, i) =>
+        this.getBindingsFor(s, p, (actual as ExplicitInstantiation).params[i]));
     }
-    if (ref.name == s) acc.push(actual);
-    return true;
+    return ref.name == s ? [actual] : [];
   }
 
   createInstance(): ExplicitInstantiation {

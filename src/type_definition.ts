@@ -162,7 +162,7 @@ export class TypeDefinition {
   }
 
   /**
-   * Mapping of the names of the descendant params to our params. And empty
+   * Mapping of the names of the descendant params to our params. An empty
    * array signals that a mapping could not be found.
    */
   getParamsForDescendant(

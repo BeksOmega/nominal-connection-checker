@@ -5,7 +5,7 @@
  */
 
 import {ExplicitInstantiation, GenericInstantiation} from '../src/type_instantiation';
-import {IncompatibleType, IncompatibleVariance} from '../src/exceptions';
+import {DuplicateParamNames, IncompatibleType, IncompatibleVariance} from '../src/exceptions';
 import {TypeHierarchy} from '../src/type_hierarchy';
 import {ParameterDefinition, Variance} from '../src/parameter_definition';
 import {assert} from 'chai';
@@ -27,6 +27,18 @@ suite('TypeDefinition', function() {
     assert.isTrue(
         t.hasDescendant('t'),
         'Expected the type definition to be a descendant of itself');
+  });
+
+  test('no duplicate params', function() {
+    const h = new TypeHierarchy();
+    assert.throws(
+        () => h.addTypeDef(
+            'test',
+            [
+              new ParameterDefinition('a', Variance.CO),
+              new ParameterDefinition('a', Variance.CO)]),
+        DuplicateParamNames,
+        /The type .* has duplicate params with the name a/);
   });
 
   suite('constructing the type graph', function() {

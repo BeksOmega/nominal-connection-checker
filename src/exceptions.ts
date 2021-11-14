@@ -26,3 +26,9 @@ export class IncompatibleVariance extends Error {
         `${varianceB}`);
   }
 }
+
+export class DuplicateParamNames extends Error {
+  constructor(type, param) {
+    super(`The type ${type} has duplicate params with the name ${param.name}`);
+  }
+}

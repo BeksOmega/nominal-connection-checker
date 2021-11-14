@@ -7,7 +7,7 @@
 import {ParameterDefinition, Variance} from './parameter_definition';
 import {TypeHierarchy} from './type_hierarchy';
 import {ExplicitInstantiation, GenericInstantiation, TypeInstantiation} from './type_instantiation';
-import {IncompatibleType, IncompatibleVariance} from './exceptions';
+import {DuplicateParamNames, IncompatibleType, IncompatibleVariance} from './exceptions';
 
 export class TypeDefinition {
   private readonly parents_: ExplicitInstantiation[] = [];
@@ -22,6 +22,12 @@ export class TypeDefinition {
       readonly name: string,
       private readonly params_: ParameterDefinition[] = []
   ) {
+    const names = new Set();
+    for (const p of params_) {
+      if (names.has(p.name)) throw new DuplicateParamNames(this, p);
+      names.add(p.name);
+    }
+
     this.ancestors_.push(this.createInstance());
     this.ancestorParamsMap_.set(
         name, params_.map(p => new GenericInstantiation(p.name)));

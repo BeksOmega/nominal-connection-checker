@@ -470,390 +470,773 @@ suite('Subtyping', function() {
                 h.typeFulfillsType(ui, gi),
                 'Expected a type that only fulfills the lower bound to not fulfill a genreic with an upper and lower bound');
           });
+
+      suite('explicit parameterized types fulfilling constrained generics',
+          function() {
+            function defineHierarchy() {
+              const h = new TypeHierarchy();
+              const coParam = new ParameterDefinition('co', Variance.CO);
+              const conParam = new ParameterDefinition('con', Variance.CONTRA);
+              const invParam = new ParameterDefinition('inv', Variance.INV);
+              const cop = h.addTypeDef('cop', [coParam]);
+              const co = h.addTypeDef('co', [coParam]);
+              const coc = h.addTypeDef('coc', [coParam]);
+              const contrap = h.addTypeDef('contrap', [conParam]);
+              const contra = h.addTypeDef('contra', [conParam]);
+              const contrac = h.addTypeDef('contrac', [conParam]);
+              h.addTypeDef('inv', [invParam]);
+              coc.addParent(co.createInstance());
+              co.addParent(cop.createInstance());
+              contrac.addParent(contra.createInstance());
+              contra.addParent(contrap.createInstance());
+              const p = h.addTypeDef('parent');
+              const t = h.addTypeDef('type');
+              const c = h.addTypeDef('child');
+              c.addParent(t.createInstance());
+              t.addParent(p.createInstance());
+              h.finalize();
+              return h;
+            }
+
+            test('coc[c] fulfills T <: co[t]', function() {
+              const h = defineHierarchy();
+              const t1 = new ExplicitInstantiation(
+                  'coc', [new ExplicitInstantiation('child')]);
+              const t2 = new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation(
+                      'co', [new ExplicitInstantiation('type')])]);
+
+              assert.isTrue(
+                  h.typeFulfillsType(t1, t2),
+                  'Expected coc[c] to fulfill T <: co[t]');
+            });
+
+            test('cop[p] fulfills T >: co[t]', function() {
+              const h = defineHierarchy();
+              const t1 = new ExplicitInstantiation(
+                  'cop', [new ExplicitInstantiation('parent')]);
+              const t2 = new GenericInstantiation(
+                  't', [new ExplicitInstantiation(
+                      'co', [new ExplicitInstantiation('type')])]);
+
+              assert.isTrue(
+                  h.typeFulfillsType(t1, t2),
+                  'Expected coc[c] to fulfill T >: co[t]');
+            });
+
+            test('conc[p] fulfills T <: con[t]', function() {
+              const h = defineHierarchy();
+              const t1 = new ExplicitInstantiation(
+                  'contrac', [new ExplicitInstantiation('parent')]);
+              const t2 = new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation(
+                      'contra', [new ExplicitInstantiation('type')])]);
+
+              assert.isTrue(
+                  h.typeFulfillsType(t1, t2),
+                  'Expected conc[p] to fulfill T <: con[t]');
+            });
+
+            test('conp[c] fulfills T >: con[t]', function() {
+              const h = defineHierarchy();
+              const t1 = new ExplicitInstantiation(
+                  'contrap', [new ExplicitInstantiation('child')]);
+              const t2 = new GenericInstantiation(
+                  't', [new ExplicitInstantiation(
+                      'contra', [new ExplicitInstantiation('type')])]);
+
+              assert.isTrue(
+                  h.typeFulfillsType(t1, t2),
+                  'Expected conp[c] to fulfill T >: con[t]');
+            });
+
+            test('inv[t] fulfills T <: inv[t]', function() {
+              const h = defineHierarchy();
+              const t1 = new ExplicitInstantiation(
+                  'inv', [new ExplicitInstantiation('type')]);
+              const t2 = new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation(
+                      'inv', [new ExplicitInstantiation('type')])]);
+
+              assert.isTrue(
+                  h.typeFulfillsType(t1, t2),
+                  'Expected inv[t] to fulfill T <: inv[t]');
+            });
+
+            test('inv[c] does not fulfill T <: inv[t]', function() {
+              const h = defineHierarchy();
+              const t1 = new ExplicitInstantiation(
+                  'inv', [new ExplicitInstantiation('child')]);
+              const t2 = new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation(
+                      'inv', [new ExplicitInstantiation('type')])]);
+
+              assert.isFalse(
+                  h.typeFulfillsType(t1, t2),
+                  'Expected inv[child] to not fulfill T <: inv[t]');
+            });
+
+            test('inv[p] does not fulfill T <: inv[t]', function() {
+              const h = defineHierarchy();
+              const t1 = new ExplicitInstantiation(
+                  'inv', [new ExplicitInstantiation('parent')]);
+              const t2 = new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation(
+                      'inv', [new ExplicitInstantiation('type')])]);
+
+              assert.isFalse(
+                  h.typeFulfillsType(t1, t2),
+                  'Expected inv[parent] to not fulfill T <: inv[t]');
+            });
+
+            test('inv[t] fulfills T >: inv[t]', function() {
+              const h = defineHierarchy();
+              const t1 = new ExplicitInstantiation(
+                  'inv', [new ExplicitInstantiation('type')]);
+              const t2 = new GenericInstantiation(
+                  't', [new ExplicitInstantiation(
+                      'inv', [new ExplicitInstantiation('type')])]);
+
+              assert.isTrue(
+                  h.typeFulfillsType(t1, t2),
+                  'Expected inv[t] to fulfill T >: inv[t]');
+            });
+
+            test('inv[c] does not fulfill T >: inv[t]', function() {
+              const h = defineHierarchy();
+              const t1 = new ExplicitInstantiation(
+                  'inv', [new ExplicitInstantiation('child')]);
+              const t2 = new GenericInstantiation(
+                  't', [new ExplicitInstantiation(
+                      'inv', [new ExplicitInstantiation('type')])]);
+
+              assert.isFalse(
+                  h.typeFulfillsType(t1, t2),
+                  'Expected inv[child] to not fulfill T >: inv[t]');
+            });
+
+            test('inv[p] does not fulfill T >: inv[t]', function() {
+              const h = defineHierarchy();
+              const t1 = new ExplicitInstantiation(
+                  'inv', [new ExplicitInstantiation('parent')]);
+              const t2 = new GenericInstantiation(
+                  't', [new ExplicitInstantiation(
+                      'inv', [new ExplicitInstantiation('type')])]);
+
+              assert.isFalse(
+                  h.typeFulfillsType(t1, t2),
+                  'Expected inv[parent] to not fulfill T >: inv[t]');
+            });
+          });
     });
 
     suite('constrained generics fulfilling each other', function() {
-      test('generics with identical upper bounds fulfill each other',
-          function() {
-            const h = new TypeHierarchy();
-            h.addTypeDef('t');
-            const ti = new ExplicitInstantiation('t');
-            const gi1 = new GenericInstantiation('g', [], [ti]);
-            const gi2 = new GenericInstantiation('g', [], [ti]);
-            h.finalize();
+      suite('basic relations', function() {
+        function defineHierarchy() {
+          const h = new TypeHierarchy();
+          const animal = h.addTypeDef('animal');
+          const mammal = h.addTypeDef('mammal');
+          const dog = h.addTypeDef('dog');
+          dog.addParent(mammal.createInstance());
+          mammal.addParent(animal.createInstance());
+          h.finalize();
+          return h;
+        }
 
-            assert.isTrue(
-                h.typeFulfillsType(gi1, gi2),
-                'Expected generics with identical upper bounds to fulfill each other');
-          });
+        test('T <: Mammal fulfills T <: Animal', function() {
+          const h = defineHierarchy();
+          const t1 = new GenericInstantiation(
+              't', [], [new ExplicitInstantiation('mammal')]);
+          const t2 = new GenericInstantiation(
+              't', [], [new ExplicitInstantiation('animal')]);
 
-      test('generics with one upper bound lower than the other fulfill each other',
-          function() {
-            const h = new TypeHierarchy();
-            const td = h.addTypeDef('t');
-            h.addTypeDef('p');
-            const ti = new ExplicitInstantiation('t');
-            const pi = new ExplicitInstantiation('p');
-            const gi1 = new GenericInstantiation('g', [], [ti]);
-            const gi2 = new GenericInstantiation('g', [], [pi]);
-            td.addParent(pi);
-            h.finalize();
+          assert.isTrue(
+              h.typeFulfillsType(t1, t2),
+              'Expected T <: Mammal to fulfill T <: Animal');
+        });
 
-            assert.isTrue(
-                h.typeFulfillsType(gi1, gi2),
-                'Expected generics with one upper bound lower than the other to fulfill each other');
-          });
+        test('T >: Mammal fulfills T <: Animal', function() {
+          const h = defineHierarchy();
+          const t1 = new GenericInstantiation(
+              't', [new ExplicitInstantiation('mammal')]);
+          const t2 = new GenericInstantiation(
+              't', [], [new ExplicitInstantiation('animal')]);
 
-      test('generics with upper bounds that share children fulfill each other',
-          function() {
-            const h = new TypeHierarchy();
-            const td = h.addTypeDef('t');
-            h.addTypeDef('p1');
-            h.addTypeDef('p2');
-            const p1i = new ExplicitInstantiation('p1');
-            const p2i = new ExplicitInstantiation('p2');
-            const gi1 = new GenericInstantiation('g', [], [p1i]);
-            const gi2 = new GenericInstantiation('g', [], [p2i]);
-            td.addParent(p1i);
-            td.addParent(p2i);
-            h.finalize();
+          assert.isTrue(
+              h.typeFulfillsType(t1, t2),
+              'Expected T >: Mammal to fulfill T <: Animal');
+        });
 
-            assert.isTrue(
-                h.typeFulfillsType(gi1, gi2),
-                'Expected generics with upper bounds that share children to fulfill each other');
-          });
+        test('T <: Mammal fulfills T <: Dog', function() {
+          const h = defineHierarchy();
+          const t1 = new GenericInstantiation(
+              't', [], [new ExplicitInstantiation('mammal')]);
+          const t2 = new GenericInstantiation(
+              't', [], [new ExplicitInstantiation('dog')]);
 
-      test('generics with unrelated upper bounds do not fulfill each other',
-          function() {
-            const h = new TypeHierarchy();
-            h.addTypeDef('t1');
-            h.addTypeDef('t2');
-            const t1i = new ExplicitInstantiation('t1');
-            const t2i = new ExplicitInstantiation('t2');
-            const gi1 = new GenericInstantiation('g', [], [t1i]);
-            const gi2 = new GenericInstantiation('g', [], [t2i]);
-            h.finalize();
+          assert.isTrue(
+              h.typeFulfillsType(t1, t2),
+              'Expected T <: Mammal to fulfill T <: dog');
+        });
 
-            assert.isFalse(
-                h.typeFulfillsType(gi1, gi2),
-                'Expected generics with unrelated upper bounds to not fulfill each other');
-          });
+        test('T >: Mammal does not fulfill T <: Dog', function() {
+          const h = defineHierarchy();
+          const t1 = new GenericInstantiation(
+              't', [new ExplicitInstantiation('mammal')]);
+          const t2 = new GenericInstantiation(
+              't', [], [new ExplicitInstantiation('dog')]);
 
-      test('T <: Animal & <: Flier fulfills G <: Mammal', function() {
-        const h = new TypeHierarchy();
-        h.addTypeDef('Animal');
-        h.addTypeDef('Flier');
-        const mammald = h.addTypeDef('Mammal');
-        const birdd = h.addTypeDef('Bird');
-        const batd = h.addTypeDef('Bat');
-        const animali = new ExplicitInstantiation('Animal');
-        const flieri = new ExplicitInstantiation('Flier');
-        const mammali = new ExplicitInstantiation('Mammal');
-        const t = new GenericInstantiation('t', [], [animali, flieri]);
-        const g = new GenericInstantiation('g', [], [mammali]);
-        birdd.addParent(animali);
-        birdd.addParent(flieri);
-        mammald.addParent(animali);
-        batd.addParent(mammali);
-        batd.addParent(flieri);
-        h.finalize();
+          assert.isFalse(
+              h.typeFulfillsType(t1, t2),
+              'Expected T >: Mammal to fulfill T <: dog');
+        });
 
-        assert.isTrue(
-            h.typeFulfillsType(t, g),
-            'Expected T <: Animal & <: Flier to fulfill G <: Mammal');
+        test('T <: Mammal does not fulfill T >: Animal', function() {
+          const h = defineHierarchy();
+          const t1 = new GenericInstantiation(
+              't', [], [new ExplicitInstantiation('mammal')]);
+          const t2 = new GenericInstantiation(
+              't', [new ExplicitInstantiation('animal')]);
+
+          assert.isFalse(
+              h.typeFulfillsType(t1, t2),
+              'Expected T <: Mammal to fulfill T >: Animal');
+        });
+
+        test('T >: Mammal fulfills T >: Animal', function() {
+          const h = defineHierarchy();
+          const t1 = new GenericInstantiation(
+              't', [new ExplicitInstantiation('mammal')]);
+          const t2 = new GenericInstantiation(
+              't', [new ExplicitInstantiation('animal')]);
+
+          assert.isTrue(
+              h.typeFulfillsType(t1, t2),
+              'Expected T >: Mammal to fulfill T >: Animal');
+        });
+
+        test('T <: Mammal fulfills T >: Dog', function() {
+          const h = defineHierarchy();
+          const t1 = new GenericInstantiation(
+              't', [], [new ExplicitInstantiation('mammal')]);
+          const t2 = new GenericInstantiation(
+              't', [new ExplicitInstantiation('dog')]);
+
+          assert.isTrue(
+              h.typeFulfillsType(t1, t2),
+              'Expected T <: Mammal to fulfill T >: dog');
+        });
+
+        test('T >: Mammal fulfills T >: Dog', function() {
+          const h = defineHierarchy();
+          const t1 = new GenericInstantiation(
+              't', [new ExplicitInstantiation('mammal')]);
+          const t2 = new GenericInstantiation(
+              't', [new ExplicitInstantiation('dog')]);
+
+          assert.isTrue(
+              h.typeFulfillsType(t1, t2),
+              'Expected T >: Mammal to fulfill T >: dog');
+        });
       });
 
-      test('T <: Mammal fulfills G <: Animal & <: Flier', function() {
-        const h = new TypeHierarchy();
-        h.addTypeDef('Animal');
-        h.addTypeDef('Flier');
-        const mammald = h.addTypeDef('Mammal');
-        const birdd = h.addTypeDef('Bird');
-        const batd = h.addTypeDef('Bat');
-        const animali = new ExplicitInstantiation('Animal');
-        const flieri = new ExplicitInstantiation('Flier');
-        const mammali = new ExplicitInstantiation('Mammal');
-        const t = new GenericInstantiation('t', [], [mammali]);
-        const g = new GenericInstantiation('g', [], [animali, flieri]);
-        birdd.addParent(animali);
-        birdd.addParent(flieri);
-        mammald.addParent(animali);
-        batd.addParent(mammali);
-        batd.addParent(flieri);
-        h.finalize();
+      suite('upper bounds', function() {
+        test('generics with identical upper bounds fulfill each other',
+            function() {
+              const h = new TypeHierarchy();
+              h.addTypeDef('t');
+              const ti = new ExplicitInstantiation('t');
+              const gi1 = new GenericInstantiation('g', [], [ti]);
+              const gi2 = new GenericInstantiation('g', [], [ti]);
+              h.finalize();
 
-        assert.isTrue(
-            h.typeFulfillsType(t, g),
-            'Expected T <: Mammal to fulfill G <: Animal & Flier');
+              assert.isTrue(
+                  h.typeFulfillsType(gi1, gi2),
+                  'Expected generics with identical upper bounds to fulfill each other');
+            });
+
+        test('generics with upper bounds that share children fulfill each other',
+            function() {
+              const h = new TypeHierarchy();
+              const t1d = h.addTypeDef('t1');
+              const t2d = h.addTypeDef('t2');
+              const cd = h.addTypeDef('c');
+              const gi1 = new GenericInstantiation('g', [], [t1d.createInstance()]);
+              const gi2 = new GenericInstantiation('g', [], [t2d.createInstance()]);
+              cd.addParent(t1d.createInstance());
+              cd.addParent(t2d.createInstance());
+              h.finalize();
+
+              assert.isTrue(
+                  h.typeFulfillsType(gi1, gi2),
+                  'Expected generics with upper bounds that share children to fulfill each other');
+            });
+
+        test('generics with upper bounds that share parents do not fulfill each other', function() {
+          const h = new TypeHierarchy();
+          const t1d = h.addTypeDef('t1');
+          const t2d = h.addTypeDef('t2');
+          const p = h.addTypeDef('p');
+          const gi1 = new GenericInstantiation('g', [], [t1d.createInstance()]);
+          const gi2 = new GenericInstantiation('g', [], [t2d.createInstance()]);
+          t1d.addParent(p.createInstance());
+          t2d.addParent(p.createInstance());
+          h.finalize();
+
+          assert.isFalse(
+              h.typeFulfillsType(gi1, gi2),
+              'Expected generics with upper bounds that share parents to not fulfill each other');
+        });
+
+        test('generics with unrelated upper bounds do not fulfill each other',
+            function() {
+              const h = new TypeHierarchy();
+              h.addTypeDef('t1');
+              h.addTypeDef('t2');
+              const t1i = new ExplicitInstantiation('t1');
+              const t2i = new ExplicitInstantiation('t2');
+              const gi1 = new GenericInstantiation('g', [], [t1i]);
+              const gi2 = new GenericInstantiation('g', [], [t2i]);
+              h.finalize();
+
+              assert.isFalse(
+                  h.typeFulfillsType(gi1, gi2),
+                  'Expected generics with unrelated upper bounds to not fulfill each other');
+            });
+
+        test('T <: Animal & <: Flier fulfills G <: Mammal', function() {
+          const h = new TypeHierarchy();
+          h.addTypeDef('Animal');
+          h.addTypeDef('Flier');
+          const mammald = h.addTypeDef('Mammal');
+          const birdd = h.addTypeDef('Bird');
+          const batd = h.addTypeDef('Bat');
+          const animali = new ExplicitInstantiation('Animal');
+          const flieri = new ExplicitInstantiation('Flier');
+          const mammali = new ExplicitInstantiation('Mammal');
+          const t = new GenericInstantiation('t', [], [animali, flieri]);
+          const g = new GenericInstantiation('g', [], [mammali]);
+          birdd.addParent(animali);
+          birdd.addParent(flieri);
+          mammald.addParent(animali);
+          batd.addParent(mammali);
+          batd.addParent(flieri);
+          h.finalize();
+
+          assert.isTrue(
+              h.typeFulfillsType(t, g),
+              'Expected T <: Animal & <: Flier to fulfill G <: Mammal');
+        });
+
+        test('T <: Mammal fulfills G <: Animal & <: Flier', function() {
+          const h = new TypeHierarchy();
+          h.addTypeDef('Animal');
+          h.addTypeDef('Flier');
+          const mammald = h.addTypeDef('Mammal');
+          const birdd = h.addTypeDef('Bird');
+          const batd = h.addTypeDef('Bat');
+          const animali = new ExplicitInstantiation('Animal');
+          const flieri = new ExplicitInstantiation('Flier');
+          const mammali = new ExplicitInstantiation('Mammal');
+          const t = new GenericInstantiation('t', [], [mammali]);
+          const g = new GenericInstantiation('g', [], [animali, flieri]);
+          birdd.addParent(animali);
+          birdd.addParent(flieri);
+          mammald.addParent(animali);
+          batd.addParent(mammali);
+          batd.addParent(flieri);
+          h.finalize();
+
+          assert.isTrue(
+              h.typeFulfillsType(t, g),
+              'Expected T <: Mammal to fulfill G <: Animal & Flier');
+        });
       });
 
-      test('generics with identical lower bounds fulfill each other',
-          function() {
-            const h = new TypeHierarchy();
-            h.addTypeDef('t');
-            const ti = new ExplicitInstantiation('t');
-            const gi1 = new GenericInstantiation('g', [ti]);
-            const gi2 = new GenericInstantiation('g', [ti]);
-            h.finalize();
+      suite('lower bounds', function() {
+        test('generics with identical lower bounds fulfill each other',
+            function() {
+              const h = new TypeHierarchy();
+              h.addTypeDef('t');
+              const ti = new ExplicitInstantiation('t');
+              const gi1 = new GenericInstantiation('g', [ti]);
+              const gi2 = new GenericInstantiation('g', [ti]);
+              h.finalize();
 
-            assert.isTrue(
-                h.typeFulfillsType(gi1, gi2),
-                'Expected generics with identical lower bounds to fulfill each other');
-          });
+              assert.isTrue(
+                  h.typeFulfillsType(gi1, gi2),
+                  'Expected generics with identical lower bounds to fulfill each other');
+            });
 
-      test('generics with one lower bound higher than the other fulfill each other',
-          function() {
-            const h = new TypeHierarchy();
-            const td = h.addTypeDef('t');
-            h.addTypeDef('p');
-            const ti = new ExplicitInstantiation('t');
-            const pi = new ExplicitInstantiation('p');
-            const gi1 = new GenericInstantiation('g', [ti]);
-            const gi2 = new GenericInstantiation('g', [pi]);
-            td.addParent(pi);
-            h.finalize();
+        test('generics with lower bounds that share parents fulfill each other',
+            function() {
+              const h = new TypeHierarchy();
+              const t1d = h.addTypeDef('t1');
+              const t2d = h.addTypeDef('t2');
+              h.addTypeDef('p');
+              const t1i = new ExplicitInstantiation('t1');
+              const t2i = new ExplicitInstantiation('t2');
+              const pi = new ExplicitInstantiation('p');
+              const gi1 = new GenericInstantiation('g', [t1i]);
+              const gi2 = new GenericInstantiation('g', [t2i]);
+              t1d.addParent(pi);
+              t2d.addParent(pi);
+              h.finalize();
 
-            assert.isTrue(
-                h.typeFulfillsType(gi1, gi2),
-                'Expected generics with one lower bound higher than the other to fulfill each other');
-          });
+              assert.isTrue(
+                  h.typeFulfillsType(gi1, gi2),
+                  'Expected generics with lower bounds that share parents to fulfill each other');
+            });
 
-      test('generics with lower bounds that share parents fulfill each other',
-          function() {
-            const h = new TypeHierarchy();
-            const t1d = h.addTypeDef('t1');
-            const t2d = h.addTypeDef('t2');
-            h.addTypeDef('p');
-            const t1i = new ExplicitInstantiation('t1');
-            const t2i = new ExplicitInstantiation('t2');
-            const pi = new ExplicitInstantiation('p');
-            const gi1 = new GenericInstantiation('g', [t1i]);
-            const gi2 = new GenericInstantiation('g', [t2i]);
-            t1d.addParent(pi);
-            t2d.addParent(pi);
-            h.finalize();
+        test('generics with lower bounds that share children do not fulfill each other',
+            function() {
+              const h = new TypeHierarchy();
+              const t1d = h.addTypeDef('t1');
+              const t2d = h.addTypeDef('t2');
+              const cd = h.addTypeDef('c');
+              const gi1 = new GenericInstantiation('g', [t1d.createInstance()]);
+              const gi2 = new GenericInstantiation('g', [t2d.createInstance()]);
+              cd.addParent(t1d.createInstance());
+              cd.addParent(t2d.createInstance());
+              h.finalize();
 
-            assert.isTrue(
-                h.typeFulfillsType(gi1, gi2),
-                'Expected generics with lower bounds that share parents to fulfill each other');
-          });
+              assert.isFalse(
+                  h.typeFulfillsType(gi1, gi2),
+                  'Expected generics with lower bounds that share children to not fulfill each other');
+            });
 
-      test('generics with unrelated lower bounds do not fulfill each other',
-          function() {
-            const h = new TypeHierarchy();
-            h.addTypeDef('t1');
-            h.addTypeDef('t2');
-            const t1i = new ExplicitInstantiation('t1');
-            const t2i = new ExplicitInstantiation('t2');
-            const gi1 = new GenericInstantiation('g', [t1i]);
-            const gi2 = new GenericInstantiation('g', [t2i]);
-            h.finalize();
+        test('generics with unrelated lower bounds do not fulfill each other',
+            function() {
+              const h = new TypeHierarchy();
+              h.addTypeDef('t1');
+              h.addTypeDef('t2');
+              const t1i = new ExplicitInstantiation('t1');
+              const t2i = new ExplicitInstantiation('t2');
+              const gi1 = new GenericInstantiation('g', [t1i]);
+              const gi2 = new GenericInstantiation('g', [t2i]);
+              h.finalize();
 
-            assert.isFalse(
-                h.typeFulfillsType(gi1, gi2),
-                'Expected generics with unrelated lower bounds to not fulfill each other');
-          });
+              assert.isFalse(
+                  h.typeFulfillsType(gi1, gi2),
+                  'Expected generics with unrelated lower bounds to not fulfill each other');
+            });
+      });
 
-      test('generic with a lower bound lower than a generic with an upper bound fulfills the generic',
-          function() {
-            const h = new TypeHierarchy();
-            const td = h.addTypeDef('t');
-            h.addTypeDef('p');
-            const ti = new ExplicitInstantiation('t');
-            const pi = new ExplicitInstantiation('p');
-            const gi1 = new GenericInstantiation('g', [ti]);
-            const gi2 = new GenericInstantiation('g', [pi]);
-            td.addParent(pi);
-            h.finalize();
+      suite('multiple bounds', function() {
+        test('generic with a lower bound lower than a generic with an upper bound fulfills the generic',
+            function() {
+              const h = new TypeHierarchy();
+              const td = h.addTypeDef('t');
+              h.addTypeDef('p');
+              const ti = new ExplicitInstantiation('t');
+              const pi = new ExplicitInstantiation('p');
+              const gi1 = new GenericInstantiation('g', [ti]);
+              const gi2 = new GenericInstantiation('g', [pi]);
+              td.addParent(pi);
+              h.finalize();
 
-            assert.isTrue(
-                h.typeFulfillsType(gi1, gi2),
-                'Expected a generic with a lower bound lower than a generic with an upperbound to fulfill the generic');
-          });
+              assert.isTrue(
+                  h.typeFulfillsType(gi1, gi2),
+                  'Expected a generic with a lower bound lower than a generic with an upperbound to fulfill the generic');
+            });
 
-      test('generic with a lower bound compatible with both of the upper bounds fulfills the generic',
-          function() {
-            const h = new TypeHierarchy();
-            const td = h.addTypeDef('t');
-            h.addTypeDef('p1');
-            h.addTypeDef('p2');
-            const ti = new ExplicitInstantiation('t');
-            const p1i = new ExplicitInstantiation('p1');
-            const p2i = new ExplicitInstantiation('p2');
-            const gi1 = new GenericInstantiation('g', [ti]);
-            const gi2 = new GenericInstantiation('g', [], [p1i, p2i]);
-            td.addParent(p1i);
-            td.addParent(p2i);
-            h.finalize();
+        test('generic with a lower bound compatible with both of the upper bounds fulfills the generic',
+            function() {
+              const h = new TypeHierarchy();
+              const td = h.addTypeDef('t');
+              h.addTypeDef('p1');
+              h.addTypeDef('p2');
+              const ti = new ExplicitInstantiation('t');
+              const p1i = new ExplicitInstantiation('p1');
+              const p2i = new ExplicitInstantiation('p2');
+              const gi1 = new GenericInstantiation('g', [ti]);
+              const gi2 = new GenericInstantiation('g', [], [p1i, p2i]);
+              td.addParent(p1i);
+              td.addParent(p2i);
+              h.finalize();
 
-            assert.isTrue(
-                h.typeFulfillsType(gi1, gi2),
-                'Expected a generic with a lower bound compatible with both of the upper bounds to fulfill the generic');
-          });
+              assert.isTrue(
+                  h.typeFulfillsType(gi1, gi2),
+                  'Expected a generic with a lower bound compatible with both of the upper bounds to fulfill the generic');
+            });
 
-      test('generic with an upper bound compatible with both of the lower bounds fulfills the generic',
-          function() {
-            const h = new TypeHierarchy();
-            const t1d = h.addTypeDef('t1');
-            const t2d = h.addTypeDef('t2');
-            h.addTypeDef('p');
-            const t1i = new ExplicitInstantiation('t1');
-            const t2i = new ExplicitInstantiation('t2');
-            const pi = new ExplicitInstantiation('p');
-            const gi1 = new GenericInstantiation('g', [t1i, t2i]);
-            const gi2 = new GenericInstantiation('g', [], [pi]);
-            t1d.addParent(pi);
-            t2d.addParent(pi);
-            h.finalize();
+        test('generic with an upper bound compatible with both of the lower bounds fulfills the generic',
+            function() {
+              const h = new TypeHierarchy();
+              const t1d = h.addTypeDef('t1');
+              const t2d = h.addTypeDef('t2');
+              h.addTypeDef('p');
+              const t1i = new ExplicitInstantiation('t1');
+              const t2i = new ExplicitInstantiation('t2');
+              const pi = new ExplicitInstantiation('p');
+              const gi1 = new GenericInstantiation('g', [t1i, t2i]);
+              const gi2 = new GenericInstantiation('g', [], [pi]);
+              t1d.addParent(pi);
+              t2d.addParent(pi);
+              h.finalize();
 
-            assert.isTrue(
-                h.typeFulfillsType(gi1, gi2),
-                'Expected a generic an upper bound compatible with bth of the lower bounds to fulfill the generic');
-          });
+              assert.isTrue(
+                  h.typeFulfillsType(gi1, gi2),
+                  'Expected a generic an upper bound compatible with bth of the lower bounds to fulfill the generic');
+            });
 
-      test('generic with a lower bound incompatible with one of the upper bounds does not fulfill the generic',
-          function() {
-            const h = new TypeHierarchy();
-            const td = h.addTypeDef('t');
-            h.addTypeDef('p1');
-            h.addTypeDef('p2');
-            const ti = new ExplicitInstantiation('t');
-            const p1i = new ExplicitInstantiation('p1');
-            const p2i = new ExplicitInstantiation('p2');
-            const gi1 = new GenericInstantiation('g', [ti]);
-            const gi2 = new GenericInstantiation('g', [], [p1i, p2i]);
-            td.addParent(p1i);
-            h.finalize();
+        test('generic with a lower bound incompatible with one of the upper bounds does not fulfill the generic',
+            function() {
+              const h = new TypeHierarchy();
+              const td = h.addTypeDef('t');
+              h.addTypeDef('p1');
+              h.addTypeDef('p2');
+              const ti = new ExplicitInstantiation('t');
+              const p1i = new ExplicitInstantiation('p1');
+              const p2i = new ExplicitInstantiation('p2');
+              const gi1 = new GenericInstantiation('g', [ti]);
+              const gi2 = new GenericInstantiation('g', [], [p1i, p2i]);
+              td.addParent(p1i);
+              h.finalize();
 
-            assert.isFalse(
-                h.typeFulfillsType(gi1, gi2),
-                'Expected a generic with a lower bound incompatible with one of the upperbounds to not fulfill the generic');
-          });
+              assert.isFalse(
+                  h.typeFulfillsType(gi1, gi2),
+                  'Expected a generic with a lower bound incompatible with one of the upperbounds to not fulfill the generic');
+            });
 
-      test('generic with an upper bound incompatible with one of the lower bounds does not fulfill the generic',
-          function() {
-            const h = new TypeHierarchy();
-            const t1d = h.addTypeDef('t1');
-            h.addTypeDef('t2');
-            h.addTypeDef('p');
-            const t1i = new ExplicitInstantiation('t1');
-            const t2i = new ExplicitInstantiation('t2');
-            const pi = new ExplicitInstantiation('p');
-            const gi1 = new GenericInstantiation('g', [t1i, t2i]);
-            const gi2 = new GenericInstantiation('g', [], [pi]);
-            t1d.addParent(pi);
-            h.finalize();
+        test('generic with an upper bound incompatible with one of the lower bounds does not fulfill the generic',
+            function() {
+              const h = new TypeHierarchy();
+              const t1d = h.addTypeDef('t1');
+              h.addTypeDef('t2');
+              h.addTypeDef('p');
+              const t1i = new ExplicitInstantiation('t1');
+              const t2i = new ExplicitInstantiation('t2');
+              const pi = new ExplicitInstantiation('p');
+              const gi1 = new GenericInstantiation('g', [t1i, t2i]);
+              const gi2 = new GenericInstantiation('g', [], [pi]);
+              t1d.addParent(pi);
+              h.finalize();
 
-            assert.isFalse(
-                h.typeFulfillsType(gi1, gi2),
-                'Expected a generic an upper bound incompatible with one of the lower bounds to not fulfill the generic');
-          });
+              assert.isFalse(
+                  h.typeFulfillsType(gi1, gi2),
+                  'Expected a generic an upper bound incompatible with one of the lower bounds to not fulfill the generic');
+            });
+      });
 
-      test('generics with identical upper and lower bounds fulfill each other',
-          function() {
-            const h = new TypeHierarchy();
-            h.addTypeDef('gp');
-            const pd = h.addTypeDef('p');
-            const td = h.addTypeDef('t');
-            const cd = h.addTypeDef('c');
-            const gcd = h.addTypeDef('gc');
-            const gpi1 = new ExplicitInstantiation('gp');
-            const gpi2 = new ExplicitInstantiation('gp');
-            const pi = new ExplicitInstantiation('p');
-            const ti = new ExplicitInstantiation('t');
-            const ci = new ExplicitInstantiation('c');
-            const gci1 = new ExplicitInstantiation('gc');
-            const gci2 = new ExplicitInstantiation('gc');
-            pd.addParent(gpi1);
-            td.addParent(pi);
-            cd.addParent(ti);
-            gcd.addParent(ci);
-            const gi1 = new GenericInstantiation('g', [gci1], [gpi1]);
-            const gi2 = new GenericInstantiation('g', [gci2], [gpi2]);
-            h.finalize();
+      suite('ranges', function() {
+        test('generics with ranges fulfill each other',
+            function() {
+              const h = new TypeHierarchy();
+              h.addTypeDef('gp');
+              const pd = h.addTypeDef('p');
+              const td = h.addTypeDef('t');
+              const cd = h.addTypeDef('c');
+              const gcd = h.addTypeDef('gc');
+              const gpi1 = new ExplicitInstantiation('gp');
+              const gpi2 = new ExplicitInstantiation('gp');
+              const pi = new ExplicitInstantiation('p');
+              const ti = new ExplicitInstantiation('t');
+              const ci = new ExplicitInstantiation('c');
+              const gci1 = new ExplicitInstantiation('gc');
+              const gci2 = new ExplicitInstantiation('gc');
+              pd.addParent(gpi1);
+              td.addParent(pi);
+              cd.addParent(ti);
+              gcd.addParent(ci);
+              const gi1 = new GenericInstantiation('g', [gci1], [gpi1]);
+              const gi2 = new GenericInstantiation('g', [gci2], [gpi2]);
+              h.finalize();
 
-            assert.isTrue(
-                h.typeFulfillsType(gi1, gi2),
-                'Expected generics with identical upper and lower bounds to fulfill each other');
-          });
+              assert.isTrue(
+                  h.typeFulfillsType(gi1, gi2),
+                  'Expected generics with identical upper and lower bounds to fulfill each other');
+            });
 
-      test('generics with upper and lower bounds where one encloses the other fulfill each other',
-          function() {
-            const h = new TypeHierarchy();
-            h.addTypeDef('gp');
-            const pd = h.addTypeDef('p');
-            const td = h.addTypeDef('t');
-            const cd = h.addTypeDef('c');
-            const gcd = h.addTypeDef('gc');
-            const gpi = new ExplicitInstantiation('gp');
-            const pi = new ExplicitInstantiation('p');
-            const ti = new ExplicitInstantiation('t');
-            const ci = new ExplicitInstantiation('c');
-            const gci = new ExplicitInstantiation('gc');
-            pd.addParent(gpi);
-            td.addParent(pi);
-            cd.addParent(ti);
-            gcd.addParent(ci);
-            const gi = new GenericInstantiation('g', [gci], [gpi]);
-            const hi = new GenericInstantiation('h', [ci], [pi]);
-            h.finalize();
+        test('generics with ranges where one encloses the other fulfill each other',
+            function() {
+              const h = new TypeHierarchy();
+              h.addTypeDef('gp');
+              const pd = h.addTypeDef('p');
+              const td = h.addTypeDef('t');
+              const cd = h.addTypeDef('c');
+              const gcd = h.addTypeDef('gc');
+              const gpi = new ExplicitInstantiation('gp');
+              const pi = new ExplicitInstantiation('p');
+              const ti = new ExplicitInstantiation('t');
+              const ci = new ExplicitInstantiation('c');
+              const gci = new ExplicitInstantiation('gc');
+              pd.addParent(gpi);
+              td.addParent(pi);
+              cd.addParent(ti);
+              gcd.addParent(ci);
+              const gi = new GenericInstantiation('g', [gci], [gpi]);
+              const hi = new GenericInstantiation('h', [ci], [pi]);
+              h.finalize();
 
-            assert.isTrue(
-                h.typeFulfillsType(gi, hi),
-                'Expected generics with upper ad lower bounds where one encloses the other to fulfill each other');
-          });
+              assert.isTrue(
+                  h.typeFulfillsType(gi, hi),
+                  'Expected generics with upper ad lower bounds where one encloses the other to fulfill each other');
+            });
 
-      test('generics with upper and lower bounds that intersect fulfill each other',
-          function() {
-            const h = new TypeHierarchy();
-            h.addTypeDef('gp');
-            const pd = h.addTypeDef('p');
-            const td = h.addTypeDef('t');
-            const cd = h.addTypeDef('c');
-            const gcd = h.addTypeDef('gc');
-            const gpi = new ExplicitInstantiation('gp');
-            const pi = new ExplicitInstantiation('p');
-            const ti = new ExplicitInstantiation('t');
-            const ci = new ExplicitInstantiation('c');
-            const gci = new ExplicitInstantiation('gc');
-            pd.addParent(gpi);
-            td.addParent(pi);
-            cd.addParent(ti);
-            gcd.addParent(ci);
-            const gi = new GenericInstantiation('g', [ci], [gpi]);
-            const hi = new GenericInstantiation('h', [gci], [pi]);
-            h.finalize();
+        test('generics with ranges that intersect fulfill each other',
+            function() {
+              const h = new TypeHierarchy();
+              h.addTypeDef('gp');
+              const pd = h.addTypeDef('p');
+              const td = h.addTypeDef('t');
+              const cd = h.addTypeDef('c');
+              const gcd = h.addTypeDef('gc');
+              const gpi = new ExplicitInstantiation('gp');
+              const pi = new ExplicitInstantiation('p');
+              const ti = new ExplicitInstantiation('t');
+              const ci = new ExplicitInstantiation('c');
+              const gci = new ExplicitInstantiation('gc');
+              pd.addParent(gpi);
+              td.addParent(pi);
+              cd.addParent(ti);
+              gcd.addParent(ci);
+              const gi = new GenericInstantiation('g', [ci], [gpi]);
+              const hi = new GenericInstantiation('h', [gci], [pi]);
+              h.finalize();
 
-            assert.isTrue(
-                h.typeFulfillsType(gi, hi),
-                'Expected generics with upper and lower bounds that intersect to fulfill each other');
-          });
+              assert.isTrue(
+                  h.typeFulfillsType(gi, hi),
+                  'Expected generics with upper and lower bounds that intersect to fulfill each other');
+            });
 
-      test('generic with upper and lower bounds that do not intersect do not fulfill each other',
-          function() {
-            const h = new TypeHierarchy();
-            h.addTypeDef('gp');
-            const pd = h.addTypeDef('p');
-            const td = h.addTypeDef('t');
-            const cd = h.addTypeDef('c');
-            const gcd = h.addTypeDef('gc');
-            const gpi = new ExplicitInstantiation('gp');
-            const pi = new ExplicitInstantiation('p');
-            const ti = new ExplicitInstantiation('t');
-            const ci = new ExplicitInstantiation('c');
-            const gci = new ExplicitInstantiation('gc');
-            pd.addParent(gpi);
-            td.addParent(pi);
-            cd.addParent(ti);
-            gcd.addParent(ci);
-            const gi = new GenericInstantiation('g', [gci], [ci]);
-            const hi = new GenericInstantiation('h', [pi], [gpi]);
-            h.finalize();
+        test('generic with ranges that do not intersect do not fulfill each other',
+            function() {
+              const h = new TypeHierarchy();
+              h.addTypeDef('gp');
+              const pd = h.addTypeDef('p');
+              const td = h.addTypeDef('t');
+              const cd = h.addTypeDef('c');
+              const gcd = h.addTypeDef('gc');
+              const gpi = new ExplicitInstantiation('gp');
+              const pi = new ExplicitInstantiation('p');
+              const ti = new ExplicitInstantiation('t');
+              const ci = new ExplicitInstantiation('c');
+              const gci = new ExplicitInstantiation('gc');
+              pd.addParent(gpi);
+              td.addParent(pi);
+              cd.addParent(ti);
+              gcd.addParent(ci);
+              const gi = new GenericInstantiation('g', [gci], [ci]);
+              const hi = new GenericInstantiation('h', [pi], [gpi]);
+              h.finalize();
 
-            assert.isFalse(
-                h.typeFulfillsType(gi, hi),
-                'Expected generics with upper and lower bounds that do not intersect to not fulfill each other');
-          });
+              assert.isFalse(
+                  h.typeFulfillsType(gi, hi),
+                  'Expected generics with upper and lower bounds that do not intersect to not fulfill each other');
+            });
+      });
+    });
+
+    suite('constrained generics fulfilling explicits', function() {
+      function defineHierarchy() {
+        const h = new TypeHierarchy();
+        const animal = h.addTypeDef('animal');
+        const mammal = h.addTypeDef('mammal');
+        const dog = h.addTypeDef('dog');
+        dog.addParent(mammal.createInstance());
+        mammal.addParent(animal.createInstance());
+        h.finalize();
+        return h;
+      }
+
+      function defineHierarchy2() {
+        const h = new TypeHierarchy();
+        const gp = h.addTypeDef('GrandParent');
+        const p = h.addTypeDef('Parent');
+        const t = h.addTypeDef('Type');
+        const c = h.addTypeDef('Child');
+        const gc = h.addTypeDef('GrandChild');
+        gc.addParent(c.createInstance());
+        c.addParent(t.createInstance());
+        t.addParent(p.createInstance());
+        p.addParent(gp.createInstance());
+        h.finalize();
+        return h;
+      }
+
+      test('T <: Mammal fulfills Animal', function() {
+        const h = defineHierarchy();
+        const t = new GenericInstantiation(
+            't', [], [new ExplicitInstantiation('mammal')]);
+        const dog = new ExplicitInstantiation('animal');
+
+        assert.isTrue(
+            h.typeFulfillsType(t, dog),
+            'Expected T <: Mammal to fulfill Animal');
+      });
+
+      test('T >: Mammal fulfills Animal', function() {
+        const h = defineHierarchy();
+        const t = new GenericInstantiation(
+            't', [new ExplicitInstantiation('mammal')]);
+        const dog = new ExplicitInstantiation('animal');
+
+        assert.isTrue(
+            h.typeFulfillsType(t, dog),
+            'Expected T >: Mammal to fulfill Animal');
+      });
+
+      test('T <: Mammal fulfills Dog', function() {
+        const h = defineHierarchy();
+        const t = new GenericInstantiation(
+            't', [], [new ExplicitInstantiation('mammal')]);
+        const dog = new ExplicitInstantiation('dog');
+
+        assert.isTrue(
+            h.typeFulfillsType(t, dog),
+            'Expected T <: Mammal to fulfill Dog');
+      });
+
+      test('T >: Mammal does not fulfill  Dog', function() {
+        const h = defineHierarchy();
+        const t = new GenericInstantiation(
+            't', [new ExplicitInstantiation('mammal')]);
+        const dog = new ExplicitInstantiation('dog');
+
+        assert.isFalse(
+            h.typeFulfillsType(t, dog),
+            'Expected T >: Mammal to fulfill Dog');
+      });
+
+      test('Child <: T <: Parent fulfills GrandParent', function() {
+        const h = defineHierarchy2();
+        const t = new GenericInstantiation(
+            'k',
+            [new ExplicitInstantiation('Child')],
+            [new ExplicitInstantiation('Parent')]);
+        const gp = new ExplicitInstantiation('GrandParent');
+
+        assert.isTrue(
+            h.typeFulfillsType(t, gp),
+            'Expected Child <: T <: Parent to fulfill GrandParent');
+      });
+
+      test('Child <: T <: Parent fulfills Type', function() {
+        const h = defineHierarchy2();
+        const t = new GenericInstantiation(
+            'k',
+            [new ExplicitInstantiation('Child')],
+            [new ExplicitInstantiation('Parent')]);
+        const type = new ExplicitInstantiation('Type');
+
+        assert.isTrue(
+            h.typeFulfillsType(t, type),
+            'Expected Child <: T <: Parent to fulfill Type');
+      });
+
+      test('Child <: T <: Parent does not fulfill GrandChild', function() {
+        const h = defineHierarchy2();
+        const t = new GenericInstantiation(
+            'k',
+            [new ExplicitInstantiation('Child')],
+            [new ExplicitInstantiation('Parent')]);
+        const gc = new ExplicitInstantiation('GrandChild');
+
+        assert.isFalse(
+            h.typeFulfillsType(t, gc),
+            'Expected Child <: T <: Parent to not fulfill GrandChild');
+      });
     });
   });
 
@@ -1680,6 +2063,380 @@ suite('Subtyping', function() {
         assert.isFalse(
             h.typeFulfillsType(a, b),
             'Expected inv[inv[parent]] to not fulfill inv[inv[type]]');
+      });
+    });
+  });
+
+  suite('generic parameterized subtyping', function() {
+    test('generic params always fulfill explicit params', function() {
+      const h = new TypeHierarchy();
+      const invParam = new ParameterDefinition('inv', Variance.INV);
+      h.addTypeDef('inv', [invParam]);
+      h.addTypeDef('type');
+      h.finalize();
+      const inv1 = new ExplicitInstantiation(
+          'inv', [new GenericInstantiation('g')]);
+      const inv2 = new ExplicitInstantiation(
+          'inv', [new ExplicitInstantiation('type')]);
+
+      assert.isTrue(
+          h.typeFulfillsType(inv1, inv2),
+          'Expected generic params to always fulfill explicit params');
+    });
+
+    test('generic params always fulfill constrained generic params', function() {
+      const h = new TypeHierarchy();
+      const invParam = new ParameterDefinition('inv', Variance.INV);
+      h.addTypeDef('inv', [invParam]);
+      h.addTypeDef('type');
+      h.finalize();
+      const inv1 = new ExplicitInstantiation(
+          'inv', [new GenericInstantiation('g')]);
+      const inv2 = new ExplicitInstantiation(
+          'inv', [new GenericInstantiation(
+              't',
+              [new ExplicitInstantiation('type')],
+              [new ExplicitInstantiation('type')])]);
+
+      assert.isTrue(
+          h.typeFulfillsType(inv1, inv2),
+          'Expected generic params to always fulfill constrained generic params');
+    });
+
+    suite('constrained generics', function() {
+      function defineHierarchy() {
+        const h = new TypeHierarchy();
+        const coParam = new ParameterDefinition('co', Variance.CO);
+        const conParam = new ParameterDefinition('con', Variance.CONTRA);
+        const invParam = new ParameterDefinition('inv', Variance.INV);
+        h.addTypeDef('co', [coParam]);
+        h.addTypeDef('contra', [conParam]);
+        h.addTypeDef('inv', [invParam]);
+        const p = h.addTypeDef('parent');
+        const t = h.addTypeDef('type');
+        const c = h.addTypeDef('child');
+        c.addParent(t.createInstance());
+        t.addParent(p.createInstance());
+        h.finalize();
+        return h;
+      }
+
+      suite('covariant params', function() {
+        test('co[child] fulfills co[T <: type]', function() {
+          const h = defineHierarchy();
+          const co1 = new ExplicitInstantiation(
+              'co', [new ExplicitInstantiation('child')]);
+          const co2 = new ExplicitInstantiation(
+              'co', [new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation('type')])]);
+
+          assert.isTrue(
+              h.typeFulfillsType(co1, co2),
+              'Expected co[child] to fulfill co[T <: type]');
+        });
+
+        test('co[parent] does not fulfill co[t <: type]', function() {
+          const h = defineHierarchy();
+          const co1 = new ExplicitInstantiation(
+              'co', [new ExplicitInstantiation('parent')]);
+          const co2 = new ExplicitInstantiation(
+              'co', [new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation('type')])]);
+
+          assert.isFalse(
+              h.typeFulfillsType(co1, co2),
+              'Expected co[parent] to not fulfill co[T <: type]');
+        });
+
+        test('co[child] does not fulfill co[t >: type]', function() {
+          const h = defineHierarchy();
+          const co1 = new ExplicitInstantiation(
+              'co', [new ExplicitInstantiation('child')]);
+          const co2 = new ExplicitInstantiation(
+              'co', [new GenericInstantiation(
+                  't', [new ExplicitInstantiation('type')])]);
+
+          assert.isFalse(
+              h.typeFulfillsType(co1, co2),
+              'Expected co[child] to not fulfill co[T >: type]');
+        });
+
+        test('co[parent] fulfills co[t >: type]', function() {
+          const h = defineHierarchy();
+          const co1 = new ExplicitInstantiation(
+              'co', [new ExplicitInstantiation('parent')]);
+          const co2 = new ExplicitInstantiation(
+              'co', [new GenericInstantiation(
+                  't', [new ExplicitInstantiation('type')])]);
+
+          assert.isTrue(
+              h.typeFulfillsType(co1, co2),
+              'Expected co[parent] to fulfill co[T >: type]');
+        });
+
+        test('co[t <: type] fulfills co[child]', function() {
+          const h = defineHierarchy();
+          const co1 = new ExplicitInstantiation(
+              'co', [new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation('type')])]);
+          const co2 = new ExplicitInstantiation(
+              'co', [new ExplicitInstantiation('child')]);
+
+          assert.isTrue(
+              h.typeFulfillsType(co1, co2),
+              'Expected co[t <: type] to fulfill co[child]');
+        });
+
+        test('co[t >: type] does not fulfill co[child]', function() {
+          const h = defineHierarchy();
+          const co1 = new ExplicitInstantiation(
+              'co', [new GenericInstantiation(
+                  't', [new ExplicitInstantiation('type')])]);
+          const co2 = new ExplicitInstantiation(
+              'co', [new ExplicitInstantiation('child')]);
+
+          assert.isFalse(
+              h.typeFulfillsType(co1, co2),
+              'Expected co[t >: type] to not fulfill co[child]');
+        });
+
+        test('co[t <: type] fulfills co[parent]', function() {
+          const h = defineHierarchy();
+          const co1 = new ExplicitInstantiation(
+              'co', [new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation('type')])]);
+          const co2 = new ExplicitInstantiation(
+              'co', [new ExplicitInstantiation('parent')]);
+
+          assert.isTrue(
+              h.typeFulfillsType(co1, co2),
+              'Expected co[t <: type] to fulfill co[parent]');
+        });
+
+        test('co[t >: type] fulfills co[parent]', function() {
+          const h = defineHierarchy();
+          const co1 = new ExplicitInstantiation(
+              'co', [new GenericInstantiation(
+                  't', [new ExplicitInstantiation('type')])]);
+          const co2 = new ExplicitInstantiation(
+              'co', [new ExplicitInstantiation('parent')]);
+
+          assert.isTrue(
+              h.typeFulfillsType(co1, co2),
+              'Expected co[t >: type] to fulfill co[parent]');
+        });
+      });
+
+      suite('contravariant params', function() {
+        test('contra[child] fulfills contra[T <: type]', function() {
+          const h = defineHierarchy();
+          const contra1 = new ExplicitInstantiation(
+              'contra', [new ExplicitInstantiation('child')]);
+          const contra2 = new ExplicitInstantiation(
+              'contra', [new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation('type')])]);
+
+          assert.isTrue(
+              h.typeFulfillsType(contra1, contra2),
+              'Expected contra[child] to fulfill contra[T <: type]');
+        });
+
+        test('contra[parent] does not fulfill contra[t <: type]', function() {
+          const h = defineHierarchy();
+          const contra1 = new ExplicitInstantiation(
+              'contra', [new ExplicitInstantiation('parent')]);
+          const contra2 = new ExplicitInstantiation(
+              'contra', [new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation('type')])]);
+
+          assert.isFalse(
+              h.typeFulfillsType(contra1, contra2),
+              'Expected contra[parent] to not fulfill contra[T <: type]');
+        });
+
+        test('contra[child] does not fulfill contra[t >: type]', function() {
+          const h = defineHierarchy();
+          const contra1 = new ExplicitInstantiation(
+              'contra', [new ExplicitInstantiation('child')]);
+          const contra2 = new ExplicitInstantiation(
+              'contra', [new GenericInstantiation(
+                  't', [new ExplicitInstantiation('type')])]);
+
+          assert.isFalse(
+              h.typeFulfillsType(contra1, contra2),
+              'Expected contra[child] to not fulfill contra[T >: type]');
+        });
+
+        test('contra[parent] fulfills contra[t >: type]', function() {
+          const h = defineHierarchy();
+          const contra1 = new ExplicitInstantiation(
+              'contra', [new ExplicitInstantiation('parent')]);
+          const contra2 = new ExplicitInstantiation(
+              'contra', [new GenericInstantiation(
+                  't', [new ExplicitInstantiation('type')])]);
+
+          assert.isTrue(
+              h.typeFulfillsType(contra1, contra2),
+              'Expected contra[parent] to fulfill contra[T >: type]');
+        });
+
+        test('contra[t <: type] fulfills contra[child]', function() {
+          const h = defineHierarchy();
+          const contra1 = new ExplicitInstantiation(
+              'contra', [new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation('type')])]);
+          const contra2 = new ExplicitInstantiation(
+              'contra', [new ExplicitInstantiation('child')]);
+
+          assert.isTrue(
+              h.typeFulfillsType(contra1, contra2),
+              'Expected contra[t <: type] to fulfill contra[child]');
+        });
+
+        test('contra[t >: type] fulfills contra[child]', function() {
+          const h = defineHierarchy();
+          const contra1 = new ExplicitInstantiation(
+              'contra', [new GenericInstantiation(
+                  't', [new ExplicitInstantiation('type')])]);
+          const contra2 = new ExplicitInstantiation(
+              'contra', [new ExplicitInstantiation('child')]);
+
+          assert.isTrue(
+              h.typeFulfillsType(contra1, contra2),
+              'Expected contra[t >: type] to fulfills contra[child]');
+        });
+
+        test('contra[t <: type] does not fulfill contra[parent]', function() {
+          const h = defineHierarchy();
+          const contra1 = new ExplicitInstantiation(
+              'contra', [new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation('type')])]);
+          const contra2 = new ExplicitInstantiation(
+              'contra', [new ExplicitInstantiation('parent')]);
+
+          assert.isFalse(
+              h.typeFulfillsType(contra1, contra2),
+              'Expected contra[t <: type] to not fulfill contra[parent]');
+        });
+
+        test('contra[t >: type] fulfills contra[parent]', function() {
+          const h = defineHierarchy();
+          const contra1 = new ExplicitInstantiation(
+              'contra', [new GenericInstantiation(
+                  't', [new ExplicitInstantiation('type')])]);
+          const contra2 = new ExplicitInstantiation(
+              'contra', [new ExplicitInstantiation('parent')]);
+
+          assert.isTrue(
+              h.typeFulfillsType(contra1, contra2),
+              'Expected contra[t >: type] to fulfill contra[parent]');
+        });
+      });
+
+      suite('invariant params', function() {
+        test('inv[child] fulfills inv[T <: type]', function() {
+          const h = defineHierarchy();
+          const inv1 = new ExplicitInstantiation(
+              'inv', [new ExplicitInstantiation('child')]);
+          const inv2 = new ExplicitInstantiation(
+              'inv', [new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation('type')])]);
+
+          assert.isTrue(
+              h.typeFulfillsType(inv1, inv2),
+              'Expected inv[child] to fulfill inv[T <: type]');
+        });
+
+        test('inv[parent] does not fulfill inv[t <: type]', function() {
+          const h = defineHierarchy();
+          const inv1 = new ExplicitInstantiation(
+              'inv', [new ExplicitInstantiation('parent')]);
+          const inv2 = new ExplicitInstantiation(
+              'inv', [new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation('type')])]);
+
+          assert.isFalse(
+              h.typeFulfillsType(inv1, inv2),
+              'Expected inv[parent] to not fulfill inv[T <: type]');
+        });
+
+        test('inv[child] does not fulfill inv[t >: type]', function() {
+          const h = defineHierarchy();
+          const inv1 = new ExplicitInstantiation(
+              'inv', [new ExplicitInstantiation('child')]);
+          const inv2 = new ExplicitInstantiation(
+              'inv', [new GenericInstantiation(
+                  't', [new ExplicitInstantiation('type')])]);
+
+          assert.isFalse(
+              h.typeFulfillsType(inv1, inv2),
+              'Expected inv[child] to not fulfill inv[T >: type]');
+        });
+
+        test('inv[parent] fulfills inv[t >: type]', function() {
+          const h = defineHierarchy();
+          const inv1 = new ExplicitInstantiation(
+              'inv', [new ExplicitInstantiation('parent')]);
+          const inv2 = new ExplicitInstantiation(
+              'inv', [new GenericInstantiation(
+                  't', [new ExplicitInstantiation('type')])]);
+
+          assert.isTrue(
+              h.typeFulfillsType(inv1, inv2),
+              'Expected inv[parent] to fulfill inv[T >: type]');
+        });
+
+        test('inv[t <: type] fulfills inv[child]', function() {
+          const h = defineHierarchy();
+          const inv1 = new ExplicitInstantiation(
+              'inv', [new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation('type')])]);
+          const inv2 = new ExplicitInstantiation(
+              'inv', [new ExplicitInstantiation('child')]);
+
+          assert.isTrue(
+              h.typeFulfillsType(inv1, inv2),
+              'Expected inv[t <: type] to fulfill inv[child]');
+        });
+
+        test('inv[t >: type] does not fulfill inv[child]', function() {
+          const h = defineHierarchy();
+          const inv1 = new ExplicitInstantiation(
+              'inv', [new GenericInstantiation(
+                  't', [new ExplicitInstantiation('type')])]);
+          const inv2 = new ExplicitInstantiation(
+              'inv', [new ExplicitInstantiation('child')]);
+
+          assert.isFalse(
+              h.typeFulfillsType(inv1, inv2),
+              'Expected inv[t >: type] to fulfills inv[child]');
+        });
+
+        test('inv[t <: type] does not fulfill inv[parent]', function() {
+          const h = defineHierarchy();
+          const inv1 = new ExplicitInstantiation(
+              'inv', [new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation('type')])]);
+          const inv2 = new ExplicitInstantiation(
+              'inv', [new ExplicitInstantiation('parent')]);
+
+          assert.isFalse(
+              h.typeFulfillsType(inv1, inv2),
+              'Expected inv[t <: type] to not fulfill inv[parent]');
+        });
+
+        test('inv[t >: type] fulfills inv[parent]', function() {
+          const h = defineHierarchy();
+          const inv1 = new ExplicitInstantiation(
+              'inv', [new GenericInstantiation(
+                  't', [new ExplicitInstantiation('type')])]);
+          const inv2 = new ExplicitInstantiation(
+              'inv', [new ExplicitInstantiation('parent')]);
+
+          assert.isTrue(
+              h.typeFulfillsType(inv1, inv2),
+              'Expected inv[t >: type] to fulfill inv[parent]');
+        });
       });
     });
   });

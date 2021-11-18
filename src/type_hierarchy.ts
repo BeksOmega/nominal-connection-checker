@@ -239,11 +239,12 @@ export class TypeHierarchy {
     }
 
     // One must be generic and the other must be explicit.
-    return a instanceof ExplicitInstantiation ?
-      this.explicitFulfillsConstrainedGeneric(
-          a, (b as GenericInstantiation)) :
-      this.explicitFulfillsConstrainedGeneric(
-          (b as ExplicitInstantiation), (a as GenericInstantiation));
+    if (a instanceof ExplicitInstantiation) {
+      return this.explicitFulfillsConstrainedGeneric(
+          a, b as GenericInstantiation);
+    }
+    return this.typeFulfillsType(
+        a, new GenericInstantiation('', [], [b as ExplicitInstantiation]));
   }
 
   private explicitFulfillsExplicit(
@@ -259,13 +260,27 @@ export class TypeHierarchy {
     return b.params.every((superParam, i) => {
       const subParam = subParams[i];
       const paramDef = bDef.params[i];
+      // If the super param is a constrained generic, ignore variance.
+      if (superParam instanceof GenericInstantiation) {
+        return this.typeFulfillsType(subParam, superParam);
+      }
+      const subGen = subParam instanceof GenericInstantiation;
       switch (paramDef.variance) {
         case Variance.CO:
-          return this.typeFulfillsType(subParam, superParam);
+          return subGen ?
+            this.typeFulfillsType(
+                subParam, new GenericInstantiation(
+                    '', [], [superParam as ExplicitInstantiation])) :
+            this.typeFulfillsType(subParam, superParam);
         case Variance.CONTRA:
-          return this.typeFulfillsType(superParam, subParam);
+          return subGen ?
+            this.typeFulfillsType(
+                subParam, new GenericInstantiation(
+                    '', [superParam as ExplicitInstantiation])) :
+            this.typeFulfillsType(superParam, subParam);
         case Variance.INV:
-          return superParam.equals(subParam);
+          return this.typeFulfillsType(subParam, superParam) &&
+              this.typeFulfillsType(superParam, subParam);
       }
     });
   }

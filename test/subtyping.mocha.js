@@ -2073,6 +2073,7 @@ suite('Subtyping', function() {
       const invParam = new ParameterDefinition('inv', Variance.INV);
       h.addTypeDef('inv', [invParam]);
       h.addTypeDef('type');
+      h.finalize();
       const inv1 = new ExplicitInstantiation(
           'inv', [new GenericInstantiation('g')]);
       const inv2 = new ExplicitInstantiation(
@@ -2088,6 +2089,7 @@ suite('Subtyping', function() {
       const invParam = new ParameterDefinition('inv', Variance.INV);
       h.addTypeDef('inv', [invParam]);
       h.addTypeDef('type');
+      h.finalize();
       const inv1 = new ExplicitInstantiation(
           'inv', [new GenericInstantiation('g')]);
       const inv2 = new ExplicitInstantiation(
@@ -2244,7 +2246,7 @@ suite('Subtyping', function() {
           const contra1 = new ExplicitInstantiation(
               'contra', [new ExplicitInstantiation('parent')]);
           const contra2 = new ExplicitInstantiation(
-              'cntrao', [new GenericInstantiation(
+              'contra', [new GenericInstantiation(
                   't', [], [new ExplicitInstantiation('type')])]);
 
           assert.isFalse(
@@ -2405,7 +2407,7 @@ suite('Subtyping', function() {
           const inv2 = new ExplicitInstantiation(
               'inv', [new ExplicitInstantiation('child')]);
 
-          assert.isTrue(
+          assert.isFalse(
               h.typeFulfillsType(inv1, inv2),
               'Expected inv[t >: type] to fulfills inv[child]');
         });

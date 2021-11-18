@@ -470,6 +470,164 @@ suite('Subtyping', function() {
                 h.typeFulfillsType(ui, gi),
                 'Expected a type that only fulfills the lower bound to not fulfill a genreic with an upper and lower bound');
           });
+
+      suite('explicit parameterized types fulfilling constrained generics',
+          function() {
+            function defineHierarchy() {
+              const h = new TypeHierarchy();
+              const coParam = new ParameterDefinition('co', Variance.CO);
+              const conParam = new ParameterDefinition('con', Variance.CONTRA);
+              const invParam = new ParameterDefinition('inv', Variance.INV);
+              const cop = h.addTypeDef('cop', [coParam]);
+              const co = h.addTypeDef('co', [coParam]);
+              const coc = h.addTypeDef('coc', [coParam]);
+              const contrap = h.addTypeDef('contrap', [conParam]);
+              const contra = h.addTypeDef('contra', [conParam]);
+              const contrac = h.addTypeDef('contrac', [conParam]);
+              h.addTypeDef('inv', [invParam]);
+              coc.addParent(co.createInstance());
+              co.addParent(cop.createInstance());
+              contrac.addParent(contra.createInstance());
+              contra.addParent(contrap.createInstance());
+              const p = h.addTypeDef('parent');
+              const t = h.addTypeDef('type');
+              const c = h.addTypeDef('child');
+              c.addParent(t.createInstance());
+              t.addParent(p.createInstance());
+              h.finalize();
+              return h;
+            }
+
+            test('coc[c] fulfills T <: co[t]', function() {
+              const h = defineHierarchy();
+              const t1 = new ExplicitInstantiation(
+                  'coc', [new ExplicitInstantiation('child')]);
+              const t2 = new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation(
+                      'co', [new ExplicitInstantiation('type')])]);
+
+              assert.isTrue(
+                  h.typeFulfillsType(t1, t2),
+                  'Expected coc[c] to fulfill T <: co[t]');
+            });
+
+            test('cop[p] fulfills T >: co[t]', function() {
+              const h = defineHierarchy();
+              const t1 = new ExplicitInstantiation(
+                  'cop', [new ExplicitInstantiation('parent')]);
+              const t2 = new GenericInstantiation(
+                  't', [new ExplicitInstantiation(
+                      'co', [new ExplicitInstantiation('type')])]);
+
+              assert.isTrue(
+                  h.typeFulfillsType(t1, t2),
+                  'Expected coc[c] to fulfill T >: co[t]');
+            });
+
+            test('conc[p] fulfills T <: con[t]', function() {
+              const h = defineHierarchy();
+              const t1 = new ExplicitInstantiation(
+                  'contrac', [new ExplicitInstantiation('parent')]);
+              const t2 = new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation(
+                      'contra', [new ExplicitInstantiation('type')])]);
+
+              assert.isTrue(
+                  h.typeFulfillsType(t1, t2),
+                  'Expected conc[p] to fulfill T <: con[t]');
+            });
+
+            test('conp[c] fulfills T >: con[t]', function() {
+              const h = defineHierarchy();
+              const t1 = new ExplicitInstantiation(
+                  'contrap', [new ExplicitInstantiation('child')]);
+              const t2 = new GenericInstantiation(
+                  't', [new ExplicitInstantiation(
+                      'contra', [new ExplicitInstantiation('type')])]);
+
+              assert.isTrue(
+                  h.typeFulfillsType(t1, t2),
+                  'Expected conp[c] to fulfill T >: con[t]');
+            });
+
+            test('inv[t] fulfills T <: inv[t]', function() {
+              const h = defineHierarchy();
+              const t1 = new ExplicitInstantiation(
+                  'inv', [new ExplicitInstantiation('type')]);
+              const t2 = new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation(
+                      'inv', [new ExplicitInstantiation('type')])]);
+
+              assert.isTrue(
+                  h.typeFulfillsType(t1, t2),
+                  'Expected inv[t] to fulfill T <: inv[t]');
+            });
+
+            test('inv[c] does not fulfill T <: inv[t]', function() {
+              const h = defineHierarchy();
+              const t1 = new ExplicitInstantiation(
+                  'inv', [new ExplicitInstantiation('child')]);
+              const t2 = new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation(
+                      'inv', [new ExplicitInstantiation('type')])]);
+
+              assert.isFalse(
+                  h.typeFulfillsType(t1, t2),
+                  'Expected inv[child] to not fulfill T <: inv[t]');
+            });
+
+            test('inv[p] does not fulfill T <: inv[t]', function() {
+              const h = defineHierarchy();
+              const t1 = new ExplicitInstantiation(
+                  'inv', [new ExplicitInstantiation('parent')]);
+              const t2 = new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation(
+                      'inv', [new ExplicitInstantiation('type')])]);
+
+              assert.isFalse(
+                  h.typeFulfillsType(t1, t2),
+                  'Expected inv[parent] to not fulfill T <: inv[t]');
+            });
+
+            test('inv[t] fulfills T >: inv[t]', function() {
+              const h = defineHierarchy();
+              const t1 = new ExplicitInstantiation(
+                  'inv', [new ExplicitInstantiation('type')]);
+              const t2 = new GenericInstantiation(
+                  't', [new ExplicitInstantiation(
+                      'inv', [new ExplicitInstantiation('type')])]);
+
+              assert.isTrue(
+                  h.typeFulfillsType(t1, t2),
+                  'Expected inv[t] to fulfill T >: inv[t]');
+            });
+
+            test('inv[c] does not fulfill T >: inv[t]', function() {
+              const h = defineHierarchy();
+              const t1 = new ExplicitInstantiation(
+                  'inv', [new ExplicitInstantiation('child')]);
+              const t2 = new GenericInstantiation(
+                  't', [new ExplicitInstantiation(
+                      'inv', [new ExplicitInstantiation('type')])]);
+
+              assert.isFalse(
+                  h.typeFulfillsType(t1, t2),
+                  'Expected inv[child] to not fulfill T >: inv[t]');
+            });
+
+            test('inv[p] does not fulfill T >: inv[t]', function() {
+              const h = defineHierarchy();
+              const t1 = new ExplicitInstantiation(
+                  'inv', [new ExplicitInstantiation('parent')]);
+              const t2 = new GenericInstantiation(
+                  't', [new ExplicitInstantiation(
+                      'inv', [new ExplicitInstantiation('type')])]);
+
+              assert.isFalse(
+                  h.typeFulfillsType(t1, t2),
+                  'Expected inv[parent] to not fulfill T >: inv[t]');
+            });
+          });
     });
 
     suite('constrained generics fulfilling each other', function() {
@@ -1905,6 +2063,378 @@ suite('Subtyping', function() {
         assert.isFalse(
             h.typeFulfillsType(a, b),
             'Expected inv[inv[parent]] to not fulfill inv[inv[type]]');
+      });
+    });
+  });
+
+  suite('generic parameterized subtyping', function() {
+    test('generic params always fulfill explicit params', function() {
+      const h = new TypeHierarchy();
+      const invParam = new ParameterDefinition('inv', Variance.INV);
+      h.addTypeDef('inv', [invParam]);
+      h.addTypeDef('type');
+      const inv1 = new ExplicitInstantiation(
+          'inv', [new GenericInstantiation('g')]);
+      const inv2 = new ExplicitInstantiation(
+          'inv', [new ExplicitInstantiation('type')]);
+
+      assert.isTrue(
+          h.typeFulfillsType(inv1, inv2),
+          'Expected generic params to always fulfill explicit params');
+    });
+
+    test('generic params always fulfill constrained generic params', function() {
+      const h = new TypeHierarchy();
+      const invParam = new ParameterDefinition('inv', Variance.INV);
+      h.addTypeDef('inv', [invParam]);
+      h.addTypeDef('type');
+      const inv1 = new ExplicitInstantiation(
+          'inv', [new GenericInstantiation('g')]);
+      const inv2 = new ExplicitInstantiation(
+          'inv', [new GenericInstantiation(
+              't',
+              [new ExplicitInstantiation('type')],
+              [new ExplicitInstantiation('type')])]);
+
+      assert.isTrue(
+          h.typeFulfillsType(inv1, inv2),
+          'Expected generic params to always fulfill constrained generic params');
+    });
+
+    suite('constrained generics', function() {
+      function defineHierarchy() {
+        const h = new TypeHierarchy();
+        const coParam = new ParameterDefinition('co', Variance.CO);
+        const conParam = new ParameterDefinition('con', Variance.CONTRA);
+        const invParam = new ParameterDefinition('inv', Variance.INV);
+        h.addTypeDef('co', [coParam]);
+        h.addTypeDef('contra', [conParam]);
+        h.addTypeDef('inv', [invParam]);
+        const p = h.addTypeDef('parent');
+        const t = h.addTypeDef('type');
+        const c = h.addTypeDef('child');
+        c.addParent(t.createInstance());
+        t.addParent(p.createInstance());
+        h.finalize();
+        return h;
+      }
+
+      suite('covariant params', function() {
+        test('co[child] fulfills co[T <: type]', function() {
+          const h = defineHierarchy();
+          const co1 = new ExplicitInstantiation(
+              'co', [new ExplicitInstantiation('child')]);
+          const co2 = new ExplicitInstantiation(
+              'co', [new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation('type')])]);
+
+          assert.isTrue(
+              h.typeFulfillsType(co1, co2),
+              'Expected co[child] to fulfill co[T <: type]');
+        });
+
+        test('co[parent] does not fulfill co[t <: type]', function() {
+          const h = defineHierarchy();
+          const co1 = new ExplicitInstantiation(
+              'co', [new ExplicitInstantiation('parent')]);
+          const co2 = new ExplicitInstantiation(
+              'co', [new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation('type')])]);
+
+          assert.isFalse(
+              h.typeFulfillsType(co1, co2),
+              'Expected co[parent] to not fulfill co[T <: type]');
+        });
+
+        test('co[child] does not fulfill co[t >: type]', function() {
+          const h = defineHierarchy();
+          const co1 = new ExplicitInstantiation(
+              'co', [new ExplicitInstantiation('child')]);
+          const co2 = new ExplicitInstantiation(
+              'co', [new GenericInstantiation(
+                  't', [new ExplicitInstantiation('type')])]);
+
+          assert.isFalse(
+              h.typeFulfillsType(co1, co2),
+              'Expected co[child] to not fulfill co[T >: type]');
+        });
+
+        test('co[parent] fulfills co[t >: type]', function() {
+          const h = defineHierarchy();
+          const co1 = new ExplicitInstantiation(
+              'co', [new ExplicitInstantiation('parent')]);
+          const co2 = new ExplicitInstantiation(
+              'co', [new GenericInstantiation(
+                  't', [new ExplicitInstantiation('type')])]);
+
+          assert.isTrue(
+              h.typeFulfillsType(co1, co2),
+              'Expected co[parent] to fulfill co[T >: type]');
+        });
+
+        test('co[t <: type] fulfills co[child]', function() {
+          const h = defineHierarchy();
+          const co1 = new ExplicitInstantiation(
+              'co', [new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation('type')])]);
+          const co2 = new ExplicitInstantiation(
+              'co', [new ExplicitInstantiation('child')]);
+
+          assert.isTrue(
+              h.typeFulfillsType(co1, co2),
+              'Expected co[t <: type] to fulfill co[child]');
+        });
+
+        test('co[t >: type] does not fulfill co[child]', function() {
+          const h = defineHierarchy();
+          const co1 = new ExplicitInstantiation(
+              'co', [new GenericInstantiation(
+                  't', [new ExplicitInstantiation('type')])]);
+          const co2 = new ExplicitInstantiation(
+              'co', [new ExplicitInstantiation('child')]);
+
+          assert.isFalse(
+              h.typeFulfillsType(co1, co2),
+              'Expected co[t >: type] to not fulfill co[child]');
+        });
+
+        test('co[t <: type] fulfills co[parent]', function() {
+          const h = defineHierarchy();
+          const co1 = new ExplicitInstantiation(
+              'co', [new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation('type')])]);
+          const co2 = new ExplicitInstantiation(
+              'co', [new ExplicitInstantiation('parent')]);
+
+          assert.isTrue(
+              h.typeFulfillsType(co1, co2),
+              'Expected co[t <: type] to fulfill co[parent]');
+        });
+
+        test('co[t >: type] fulfills co[parent]', function() {
+          const h = defineHierarchy();
+          const co1 = new ExplicitInstantiation(
+              'co', [new GenericInstantiation(
+                  't', [new ExplicitInstantiation('type')])]);
+          const co2 = new ExplicitInstantiation(
+              'co', [new ExplicitInstantiation('parent')]);
+
+          assert.isTrue(
+              h.typeFulfillsType(co1, co2),
+              'Expected co[t >: type] to fulfill co[parent]');
+        });
+      });
+
+      suite('contravariant params', function() {
+        test('contra[child] fulfills contra[T <: type]', function() {
+          const h = defineHierarchy();
+          const contra1 = new ExplicitInstantiation(
+              'contra', [new ExplicitInstantiation('child')]);
+          const contra2 = new ExplicitInstantiation(
+              'contra', [new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation('type')])]);
+
+          assert.isTrue(
+              h.typeFulfillsType(contra1, contra2),
+              'Expected contra[child] to fulfill contra[T <: type]');
+        });
+
+        test('contra[parent] does not fulfill contra[t <: type]', function() {
+          const h = defineHierarchy();
+          const contra1 = new ExplicitInstantiation(
+              'contra', [new ExplicitInstantiation('parent')]);
+          const contra2 = new ExplicitInstantiation(
+              'cntrao', [new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation('type')])]);
+
+          assert.isFalse(
+              h.typeFulfillsType(contra1, contra2),
+              'Expected contra[parent] to not fulfill contra[T <: type]');
+        });
+
+        test('contra[child] does not fulfill contra[t >: type]', function() {
+          const h = defineHierarchy();
+          const contra1 = new ExplicitInstantiation(
+              'contra', [new ExplicitInstantiation('child')]);
+          const contra2 = new ExplicitInstantiation(
+              'contra', [new GenericInstantiation(
+                  't', [new ExplicitInstantiation('type')])]);
+
+          assert.isFalse(
+              h.typeFulfillsType(contra1, contra2),
+              'Expected contra[child] to not fulfill contra[T >: type]');
+        });
+
+        test('contra[parent] fulfills contra[t >: type]', function() {
+          const h = defineHierarchy();
+          const contra1 = new ExplicitInstantiation(
+              'contra', [new ExplicitInstantiation('parent')]);
+          const contra2 = new ExplicitInstantiation(
+              'contra', [new GenericInstantiation(
+                  't', [new ExplicitInstantiation('type')])]);
+
+          assert.isTrue(
+              h.typeFulfillsType(contra1, contra2),
+              'Expected contra[parent] to fulfill contra[T >: type]');
+        });
+
+        test('contra[t <: type] fulfills contra[child]', function() {
+          const h = defineHierarchy();
+          const contra1 = new ExplicitInstantiation(
+              'contra', [new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation('type')])]);
+          const contra2 = new ExplicitInstantiation(
+              'contra', [new ExplicitInstantiation('child')]);
+
+          assert.isTrue(
+              h.typeFulfillsType(contra1, contra2),
+              'Expected contra[t <: type] to fulfill contra[child]');
+        });
+
+        test('contra[t >: type] fulfills contra[child]', function() {
+          const h = defineHierarchy();
+          const contra1 = new ExplicitInstantiation(
+              'contra', [new GenericInstantiation(
+                  't', [new ExplicitInstantiation('type')])]);
+          const contra2 = new ExplicitInstantiation(
+              'contra', [new ExplicitInstantiation('child')]);
+
+          assert.isTrue(
+              h.typeFulfillsType(contra1, contra2),
+              'Expected contra[t >: type] to fulfills contra[child]');
+        });
+
+        test('contra[t <: type] does not fulfill contra[parent]', function() {
+          const h = defineHierarchy();
+          const contra1 = new ExplicitInstantiation(
+              'contra', [new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation('type')])]);
+          const contra2 = new ExplicitInstantiation(
+              'contra', [new ExplicitInstantiation('parent')]);
+
+          assert.isFalse(
+              h.typeFulfillsType(contra1, contra2),
+              'Expected contra[t <: type] to not fulfill contra[parent]');
+        });
+
+        test('contra[t >: type] fulfills contra[parent]', function() {
+          const h = defineHierarchy();
+          const contra1 = new ExplicitInstantiation(
+              'contra', [new GenericInstantiation(
+                  't', [new ExplicitInstantiation('type')])]);
+          const contra2 = new ExplicitInstantiation(
+              'contra', [new ExplicitInstantiation('parent')]);
+
+          assert.isTrue(
+              h.typeFulfillsType(contra1, contra2),
+              'Expected contra[t >: type] to fulfill contra[parent]');
+        });
+      });
+
+      suite('invariant params', function() {
+        test('inv[child] fulfills inv[T <: type]', function() {
+          const h = defineHierarchy();
+          const inv1 = new ExplicitInstantiation(
+              'inv', [new ExplicitInstantiation('child')]);
+          const inv2 = new ExplicitInstantiation(
+              'inv', [new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation('type')])]);
+
+          assert.isTrue(
+              h.typeFulfillsType(inv1, inv2),
+              'Expected inv[child] to fulfill inv[T <: type]');
+        });
+
+        test('inv[parent] does not fulfill inv[t <: type]', function() {
+          const h = defineHierarchy();
+          const inv1 = new ExplicitInstantiation(
+              'inv', [new ExplicitInstantiation('parent')]);
+          const inv2 = new ExplicitInstantiation(
+              'inv', [new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation('type')])]);
+
+          assert.isFalse(
+              h.typeFulfillsType(inv1, inv2),
+              'Expected inv[parent] to not fulfill inv[T <: type]');
+        });
+
+        test('inv[child] does not fulfill inv[t >: type]', function() {
+          const h = defineHierarchy();
+          const inv1 = new ExplicitInstantiation(
+              'inv', [new ExplicitInstantiation('child')]);
+          const inv2 = new ExplicitInstantiation(
+              'inv', [new GenericInstantiation(
+                  't', [new ExplicitInstantiation('type')])]);
+
+          assert.isFalse(
+              h.typeFulfillsType(inv1, inv2),
+              'Expected inv[child] to not fulfill inv[T >: type]');
+        });
+
+        test('inv[parent] fulfills inv[t >: type]', function() {
+          const h = defineHierarchy();
+          const inv1 = new ExplicitInstantiation(
+              'inv', [new ExplicitInstantiation('parent')]);
+          const inv2 = new ExplicitInstantiation(
+              'inv', [new GenericInstantiation(
+                  't', [new ExplicitInstantiation('type')])]);
+
+          assert.isTrue(
+              h.typeFulfillsType(inv1, inv2),
+              'Expected inv[parent] to fulfill inv[T >: type]');
+        });
+
+        test('inv[t <: type] fulfills inv[child]', function() {
+          const h = defineHierarchy();
+          const inv1 = new ExplicitInstantiation(
+              'inv', [new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation('type')])]);
+          const inv2 = new ExplicitInstantiation(
+              'inv', [new ExplicitInstantiation('child')]);
+
+          assert.isTrue(
+              h.typeFulfillsType(inv1, inv2),
+              'Expected inv[t <: type] to fulfill inv[child]');
+        });
+
+        test('inv[t >: type] does not fulfill inv[child]', function() {
+          const h = defineHierarchy();
+          const inv1 = new ExplicitInstantiation(
+              'inv', [new GenericInstantiation(
+                  't', [new ExplicitInstantiation('type')])]);
+          const inv2 = new ExplicitInstantiation(
+              'inv', [new ExplicitInstantiation('child')]);
+
+          assert.isTrue(
+              h.typeFulfillsType(inv1, inv2),
+              'Expected inv[t >: type] to fulfills inv[child]');
+        });
+
+        test('inv[t <: type] does not fulfill inv[parent]', function() {
+          const h = defineHierarchy();
+          const inv1 = new ExplicitInstantiation(
+              'inv', [new GenericInstantiation(
+                  't', [], [new ExplicitInstantiation('type')])]);
+          const inv2 = new ExplicitInstantiation(
+              'inv', [new ExplicitInstantiation('parent')]);
+
+          assert.isFalse(
+              h.typeFulfillsType(inv1, inv2),
+              'Expected inv[t <: type] to not fulfill inv[parent]');
+        });
+
+        test('inv[t >: type] fulfills inv[parent]', function() {
+          const h = defineHierarchy();
+          const inv1 = new ExplicitInstantiation(
+              'inv', [new GenericInstantiation(
+                  't', [new ExplicitInstantiation('type')])]);
+          const inv2 = new ExplicitInstantiation(
+              'inv', [new ExplicitInstantiation('parent')]);
+
+          assert.isTrue(
+              h.typeFulfillsType(inv1, inv2),
+              'Expected inv[t >: type] to fulfill inv[parent]');
+        });
       });
     });
   });

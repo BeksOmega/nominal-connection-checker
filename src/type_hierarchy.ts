@@ -316,7 +316,6 @@ export class TypeHierarchy {
   ): TypeInstantiation[] {
     return this.getNearestCommon(
         types,
-        this.getNearestCommonAncestors.bind(this),
         this.getNearestCommonAncestorsOfPair.bind(this),
         (t, c, ps) => t.getParamsForAncestor(c.name, ps).map(p => [p]),
         this.getNearestCommonAncestors.bind(this),
@@ -329,12 +328,11 @@ export class TypeHierarchy {
   ): TypeInstantiation[] {
     return this.getNearestCommon(
         types,
-        this.getNearestCommonDescendants.bind(this),
         this.getNearestCommonDescendantsOfPair.bind(this),
         (t, c, ps) => t.getParamsForDescendant(c.name, ps),
         this.getNearestCommonDescendants.bind(this),
         this.getNearestCommonAncestors.bind(this),
-        (t) => []);
+        () => []);
   }
 
   /**
@@ -343,7 +341,6 @@ export class TypeHierarchy {
    */
   private getNearestCommon(
       types: TypeInstantiation[],
-      getNC: (...types) => TypeInstantiation[],
       getNCOfPair: (a, b) => ExplicitInstantiation[],
       getParamsForCommon:
         (t: TypeDefinition, c: TypeDefinition, ps: TypeInstantiation[]) =>
@@ -363,30 +360,35 @@ export class TypeHierarchy {
       t instanceof GenericInstantiation && t.isConstrained);
     if (types.length == 0) return [new GenericInstantiation()];
 
+    let result;
     if (types.some(t => t instanceof GenericInstantiation)) {
-      return this.getNearestCommonWithGenerics(types, getNC);
-    }
-    return this.getNearestCommonOfExplicits(
+      result = this.getNearestCommonWithGenerics(
+          types, unifyCovariant, unifyContravariant);
+    } else {
+      result = this.getNearestCommonOfExplicits(
         types as ExplicitInstantiation[],
         getNCOfPair,
         getParamsForCommon,
         unifyCovariant,
         unifyContravariant,
         getAlternativeCommons);
+    }
+    return result.filter(t => this.typeIsCompatible(t));
   }
 
   /**
    * Returns the nearest common ancestors/descendants of the given type list,
    * which will include some constrained generic types.
-   * @param getNC Returns the nearest common ancestors/descendants of the types.
-   * @param types The types to find the nearest common ancestors/descendants of.
    */
   private getNearestCommonWithGenerics(
       types: TypeInstantiation[],
-      getNC: (...types) => TypeInstantiation[]
+      unifyCovariant: (...types) => TypeInstantiation[],
+      unifyContravariant: (...types) => TypeInstantiation[]
   ): GenericInstantiation[] {
-    const lcs = getNC(...this.getLowerBounds(...types)) as ExplicitInstantiation[];
-    const ucs = getNC(...this.getUpperBounds(...types)) as ExplicitInstantiation[];
+    const lcs = unifyContravariant(...this.getLowerBounds(...types)) as
+        ExplicitInstantiation[];
+    const ucs = unifyCovariant(...this.getUpperBounds(...types)) as
+        ExplicitInstantiation[];
     if (!lcs.length) return ucs.map(uc => new GenericInstantiation('', [], [uc]));
     if (!ucs.length) return lcs.map(lc => new GenericInstantiation('', [lc]));
     return lcs.flatMap(lc => ucs.map(uc =>

@@ -7,6 +7,7 @@
 export interface TypeInstantiation {
   readonly name: string;
   equals: (t: TypeInstantiation) => boolean;
+  isEquivalentTo: (t: TypeInstantiation) => boolean;
   clone: () => TypeInstantiation;
 }
 
@@ -29,6 +30,14 @@ export class ExplicitInstantiation implements TypeInstantiation {
       this.name === b.name &&
       this.params.length === b.params.length &&
       this.params.every((p, i) => p.equals(b.params[i]));
+  }
+
+  /**
+   * Returns true if this type instance represents the same type as the provided
+   * type instance, otherwise false.
+   */
+  isEquivalentTo(b: TypeInstantiation): boolean {
+    return this.equals(b);
   }
 
   /**
@@ -57,8 +66,8 @@ export class GenericInstantiation implements TypeInstantiation {
   }
 
   /**
-   * Returns true if this type instance has the same name as the provided type
-   * instance. Otherwise false.
+   * Returns true if this type instance has the same name and bounds as the
+   * provided type instance. Otherwise false.
    */
   equals(b: TypeInstantiation): boolean {
     return b instanceof GenericInstantiation &&
@@ -67,6 +76,21 @@ export class GenericInstantiation implements TypeInstantiation {
         this.upperBounds.length == b.upperBounds.length &&
         this.lowerBounds.every((l, i) => l.equals(b.lowerBounds[i])) &&
         this.upperBounds.every((u, i) => u.equals(b.upperBounds[i]));
+  }
+
+  /**
+   * Returns true if this type instance represents the same type as the provided
+   * type instance, otherwise false.
+   * Ignores name and the order of bounds.
+   */
+  isEquivalentTo(b: TypeInstantiation): boolean {
+    return b instanceof GenericInstantiation &&
+      this.lowerBounds.length == b.lowerBounds.length &&
+      this.upperBounds.length == b.upperBounds.length &&
+      this.lowerBounds.every(
+          (l) => b.lowerBounds.some(l2 => l.isEquivalentTo(l2))) &&
+      this.upperBounds.every(
+          (u) => b.upperBounds.some(u2 => u.isEquivalentTo(u2)));
   }
 
   /**

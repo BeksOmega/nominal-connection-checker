@@ -23,6 +23,8 @@ suite('Nearest common ancestors', function() {
    */
   function assertNearestCommonAncestors(h, ts, eas, msg) {
     const aas = h.getNearestCommonAncestors(...ts);
+    // console.log(aas[0]);
+    // console.log(eas[0]);
     assert.equal(aas.length, eas.length, msg);
     assert.isTrue(aas.every((aa, i) => aa.equals(eas[i])), msg);
   }
@@ -987,6 +989,158 @@ suite('Nearest common ancestors', function() {
             h, [cg, dg], egs,
             'Expected that when upper and lower bounds unify to multiple types it results in multiple upper and lower bound types');
       });
+
+      suite('with parameterized types', function() {
+        function defineHierarchy() {
+          const h = new TypeHierarchy();
+          const coParam = new ParameterDefinition('co', Variance.CO);
+          const conParam = new ParameterDefinition('con', Variance.CONTRA);
+          const invParam = new ParameterDefinition('inv', Variance.INV);
+          h.addTypeDef('co', [coParam]);
+          h.addTypeDef('contra', [conParam]);
+          h.addTypeDef('inv', [invParam]);
+          const p = h.addTypeDef('p');
+          const a = h.addTypeDef('a');
+          const b = h.addTypeDef('b');
+          const c = h.addTypeDef('c');
+          c.addParent(a.createInstance());
+          c.addParent(b.createInstance());
+          a.addParent(p.createInstance());
+          b.addParent(p.createInstance());
+          h.finalize();
+          return h;
+        }
+
+        test('T <: co[a] and T <: co[b] result in T <: co[p]', function() {
+          const h = defineHierarchy();
+          const t1 = new GenericInstantiation(
+              't', [], [new ExplicitInstantiation(
+                  'co', [new ExplicitInstantiation('a')])]);
+          const t2 = new GenericInstantiation(
+              't', [], [new ExplicitInstantiation(
+                  'co', [new ExplicitInstantiation('b')])]);
+          const e = new GenericInstantiation(
+              '', [], [new ExplicitInstantiation(
+                  'co', [new ExplicitInstantiation('p')])]);
+
+          assertNearestCommonAncestors(
+              h, [t1, t2], [e],
+              'Expected T <: co[a] and T <: co[b] to unify to T <: co[p]');
+        });
+
+        test('T >: co[a] and T >: co[b] result in T >: co[c]', function() {
+          const h = defineHierarchy();
+          const t1 = new GenericInstantiation(
+              't', [new ExplicitInstantiation(
+                  'co', [new ExplicitInstantiation('a')])]);
+          const t2 = new GenericInstantiation(
+              't', [new ExplicitInstantiation(
+                  'co', [new ExplicitInstantiation('b')])]);
+          const e = new GenericInstantiation(
+              '', [new ExplicitInstantiation(
+                  'co', [new ExplicitInstantiation('c')])]);
+
+          assertNearestCommonAncestors(
+              h, [t1, t2], [e],
+              'Expected T >: co[a] and T >: co[b] to unify to T >: co[c]');
+        });
+
+        test('T <: con[a] and T <: con[b] result in T <: con[c]', function() {
+          const h = defineHierarchy();
+          const t1 = new GenericInstantiation(
+              't', [], [new ExplicitInstantiation(
+                  'contra', [new ExplicitInstantiation('a')])]);
+          const t2 = new GenericInstantiation(
+              't', [], [new ExplicitInstantiation(
+                  'contra', [new ExplicitInstantiation('b')])]);
+          const e = new GenericInstantiation(
+              '', [], [new ExplicitInstantiation(
+                  'contra', [new ExplicitInstantiation('c')])]);
+
+          assertNearestCommonAncestors(
+              h, [t1, t2], [e],
+              'Expected T <: con[a] and T <: con[b] to unify to T <: con[c]');
+        });
+
+        test('T >: con[a] and T >: con[b] result in T >: con[p]', function() {
+          const h = defineHierarchy();
+          const t1 = new GenericInstantiation(
+              't', [new ExplicitInstantiation(
+                  'contra', [new ExplicitInstantiation('a')])]);
+          const t2 = new GenericInstantiation(
+              't', [new ExplicitInstantiation(
+                  'contra', [new ExplicitInstantiation('b')])]);
+          const e = new GenericInstantiation(
+              '', [new ExplicitInstantiation(
+                  'contra', [new ExplicitInstantiation('p')])]);
+
+          assertNearestCommonAncestors(
+              h, [t1, t2], [e],
+              'Expected T >: con[a] and T >: con[b] to unify to T >: con[p]');
+        });
+
+        test('T <: inv[a] and T <: inv[a] result in T <: inv[a]', function() {
+          const h = defineHierarchy();
+          const t1 = new GenericInstantiation(
+              't', [], [new ExplicitInstantiation(
+                  'inv', [new ExplicitInstantiation('a')])]);
+          const t2 = new GenericInstantiation(
+              't', [], [new ExplicitInstantiation(
+                  'inv', [new ExplicitInstantiation('a')])]);
+          const e = new GenericInstantiation(
+              '', [], [new ExplicitInstantiation(
+                  'inv', [new ExplicitInstantiation('a')])]);
+
+          assertNearestCommonAncestors(
+              h, [t1, t2], [e],
+              'Expected T <: inv[a] and T <: inv[a] to unify to T <: inv[a]');
+        });
+
+        test('T <: inv[a] and T <: inv[b] result in no types', function() {
+          const h = defineHierarchy();
+          const t1 = new GenericInstantiation(
+              't', [], [new ExplicitInstantiation(
+                  'inv', [new ExplicitInstantiation('a')])]);
+          const t2 = new GenericInstantiation(
+              't', [], [new ExplicitInstantiation(
+                  'inv', [new ExplicitInstantiation('b')])]);
+
+          assertNearestCommonAncestors(
+              h, [t1, t2], [],
+              'Expected T <: inv[a] and T <: inv[a] to result in no types');
+        });
+
+        test('T >: inv[a] and T >: inv[a] result in T >: inv[a]', function() {
+          const h = defineHierarchy();
+          const t1 = new GenericInstantiation(
+              't', [new ExplicitInstantiation(
+                  'inv', [new ExplicitInstantiation('a')])]);
+          const t2 = new GenericInstantiation(
+              't', [new ExplicitInstantiation(
+                  'inv', [new ExplicitInstantiation('a')])]);
+          const e = new GenericInstantiation(
+              '', [new ExplicitInstantiation(
+                  'inv', [new ExplicitInstantiation('a')])]);
+
+          assertNearestCommonAncestors(
+              h, [t1, t2], [e],
+              'Expected T >: inv[a] and T >: inv[a] to unify to T >: inv[a]');
+        });
+
+        test('T >: inv[a] and T >: inv[b] result in no types', function() {
+          const h = defineHierarchy();
+          const t1 = new GenericInstantiation(
+              't', [new ExplicitInstantiation(
+                  'inv', [new ExplicitInstantiation('a')])]);
+          const t2 = new GenericInstantiation(
+              't', [new ExplicitInstantiation(
+                  'inv', [new ExplicitInstantiation('b')])]);
+
+          assertNearestCommonAncestors(
+              h, [t1, t2], [],
+              'Expected T >: inv[a] and T >: inv[a] to result in no types');
+        });
+      });
     });
   });
 
@@ -1556,6 +1710,158 @@ suite('Nearest common ancestors', function() {
             h, [x, y], [],
             'Expected inva[inva[ta]] and invb[invb[tb]] to not unify');
       });
+    });
+  });
+
+  suite('generic parameterized nearest common ancestors', function() {
+    function defineHierarchy() {
+      const h = new TypeHierarchy();
+      const coParam = new ParameterDefinition('co', Variance.CO);
+      const conParam = new ParameterDefinition('con', Variance.CONTRA);
+      const invParam = new ParameterDefinition('inv', Variance.INV);
+      h.addTypeDef('co', [coParam]);
+      h.addTypeDef('contra', [conParam]);
+      h.addTypeDef('inv', [invParam]);
+      const p = h.addTypeDef('p');
+      const a = h.addTypeDef('a');
+      const b = h.addTypeDef('b');
+      const c = h.addTypeDef('c');
+      c.addParent(a.createInstance());
+      c.addParent(b.createInstance());
+      a.addParent(p.createInstance());
+      b.addParent(p.createInstance());
+      h.finalize();
+      return h;
+    }
+
+    test('co[T <: a] and co[T <: b] result in co[T <: p]', function() {
+      const h = defineHierarchy();
+      const t1 = new ExplicitInstantiation(
+          'co', [new GenericInstantiation(
+              't', [], [new ExplicitInstantiation('a')])]);
+      const t2 = new ExplicitInstantiation(
+          'co', [new GenericInstantiation(
+              't', [], [new ExplicitInstantiation('b')])]);
+      const e = new ExplicitInstantiation(
+          'co', [new GenericInstantiation(
+              '', [], [new ExplicitInstantiation('p')])]);
+
+      assertNearestCommonAncestors(
+          h, [t1, t2], [e],
+          'Expected the nca of co[T <: a] and co[T <: b] to be co[T <: p]');
+    });
+
+    test('co[T >: a] and co[T >: b] result in co[T >: c]', function() {
+      const h = defineHierarchy();
+      const t1 = new ExplicitInstantiation(
+          'co', [new GenericInstantiation(
+              't', [new ExplicitInstantiation('a')])]);
+      const t2 = new ExplicitInstantiation(
+          'co', [new GenericInstantiation(
+              't', [new ExplicitInstantiation('b')])]);
+      const e = new ExplicitInstantiation(
+          'co', [new GenericInstantiation(
+              '', [new ExplicitInstantiation('c')])]);
+
+      assertNearestCommonAncestors(
+          h, [t1, t2], [e],
+          'Expected the nca of co[T >: a] and co[T >: b] to be co[T >: c]');
+    });
+
+    test('contra[T <: a] and contra[T <: b] result in contra[T <: c]', function() {
+      const h = defineHierarchy();
+      const t1 = new ExplicitInstantiation(
+          'contra', [new GenericInstantiation(
+              'g', [], [new ExplicitInstantiation('a')])]);
+      const t2 = new ExplicitInstantiation(
+          'contra', [new GenericInstantiation(
+              't', [], [new ExplicitInstantiation('b')])]);
+      const e = new ExplicitInstantiation(
+          'contra', [new GenericInstantiation(
+              '', [], [new ExplicitInstantiation('c')])]);
+
+      assertNearestCommonAncestors(
+          h, [t1, t2], [e],
+          'Expected the nca of contra[T <: a] and contra[T <: b] to be contra[T <: c]');
+    });
+
+    test('contra[T >: a] and contra[T >: b] result in contra[T >: p]', function() {
+      const h = defineHierarchy();
+      const t1 = new ExplicitInstantiation(
+          'contra', [new GenericInstantiation(
+              't', [new ExplicitInstantiation('a')])]);
+      const t2 = new ExplicitInstantiation(
+          'contra', [new GenericInstantiation(
+              't', [new ExplicitInstantiation('b')])]);
+      const e = new ExplicitInstantiation(
+          'contra', [new GenericInstantiation(
+              '', [new ExplicitInstantiation('p')])]);
+
+      assertNearestCommonAncestors(
+          h, [t1, t2], [e],
+          'Expected the nca of contra[T >: a] and contra[T >: b] to be contra[T >: p]');
+    });
+
+    test('inv[T <: a] and inv[G <: a] result in inv[T <: a]', function() {
+      const h = defineHierarchy();
+      const t1 = new ExplicitInstantiation(
+          'inv', [new GenericInstantiation(
+              't', [], [new ExplicitInstantiation('a')])]);
+      const t2 = new ExplicitInstantiation(
+          'inv', [new GenericInstantiation(
+              'g', [], [new ExplicitInstantiation('a')])]);
+      const e = new ExplicitInstantiation(
+          'inv', [new GenericInstantiation(
+              '', [], [new ExplicitInstantiation('a')])]);
+
+      assertNearestCommonAncestors(
+          h, [t1, t2], [e],
+          'Expected the nca of inv[T <: a] and inv[T <: a] to be inv[T <: a]');
+    });
+
+    test('inv[T <: a] and inv[T <: b] result in no types', function() {
+      const h = defineHierarchy();
+      const t1 = new ExplicitInstantiation(
+          'inv', [new GenericInstantiation(
+              't', [], [new ExplicitInstantiation('a')])]);
+      const t2 = new ExplicitInstantiation(
+          'inv', [new GenericInstantiation(
+              '', [], [new ExplicitInstantiation('b')])]);
+
+      assertNearestCommonAncestors(
+          h, [t1, t2], [],
+          'Expected the nca of inv[T <: a] and inv[T <: b] to be empty');
+    });
+
+    test('inv[T >: a] and inv[G >: a] result in inv[T >: a]', function() {
+      const h = defineHierarchy();
+      const t1 = new ExplicitInstantiation(
+          'inv', [new GenericInstantiation(
+              't', [new ExplicitInstantiation('a')])]);
+      const t2 = new ExplicitInstantiation(
+          'inv', [new GenericInstantiation(
+              'g', [new ExplicitInstantiation('a')])]);
+      const e = new ExplicitInstantiation(
+          'inv', [new GenericInstantiation(
+              '', [new ExplicitInstantiation('a')])]);
+
+      assertNearestCommonAncestors(
+          h, [t1, t2], [e],
+          'Expected the nca of inv[T >: a] and inv[T >: a] to be inv[T >: a]');
+    });
+
+    test('inv[T >: a] and inv[T >: b] result in no types', function() {
+      const h = defineHierarchy();
+      const t1 = new ExplicitInstantiation(
+          'inv', [new GenericInstantiation(
+              't', [new ExplicitInstantiation('a')])]);
+      const t2 = new ExplicitInstantiation(
+          'inv', [new GenericInstantiation(
+              '', [new ExplicitInstantiation('b')])]);
+
+      assertNearestCommonAncestors(
+          h, [t1, t2], [],
+          'Expected the nca of inv[T >: a] and inv[T >: b] to be empty');
     });
   });
 });

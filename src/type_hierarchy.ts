@@ -471,7 +471,12 @@ export class TypeHierarchy {
           return unifyContravariant(...list);
         case Variance.INV: {
           const [first, ...rest] = list;
-          if (rest.every(t => t.equals(first))) return [first];
+          if (rest.every(t => t.isEquivalentTo(first))) {
+            return first instanceof GenericInstantiation ?
+              [new GenericInstantiation(
+                  '', first.lowerBounds, first.upperBounds)] :
+              [first];
+          }
           return [];
         }
       }

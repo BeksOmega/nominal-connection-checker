@@ -373,6 +373,7 @@ export class TypeHierarchy {
         unifyContravariant,
         getAlternativeCommons);
     }
+    // We can get incompatible types if lower bounds unify above upper bounds.
     return result.filter(t => this.typeIsCompatible(t));
   }
 

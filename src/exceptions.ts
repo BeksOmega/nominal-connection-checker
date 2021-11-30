@@ -32,3 +32,9 @@ export class DuplicateParamNames extends Error {
     super(`The type ${type} has duplicate params with the name ${param.name}`);
   }
 }
+
+export class ParseError extends Error {
+  constructor(msg) {
+    super(`Failed parsing with error: ${msg}`);
+  }
+}

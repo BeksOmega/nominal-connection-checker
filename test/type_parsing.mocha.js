@@ -5,8 +5,9 @@
  */
 
 import {assert} from 'chai';
-import {parseType} from '../src/type_parser';
 import {GenericInstantiation, ExplicitInstantiation} from '../src/type_instantiation';
+import {ParseError} from '../src/exceptions';
+import {parseType} from '../src/type_parser';
 
 suite.only('Type parsing', function() {
   function assertParseMatches(str, expected, msg) {
@@ -14,7 +15,8 @@ suite.only('Type parsing', function() {
   }
 
   function assertInvalidType(str, msg) {
-    assert.throws(() => parseType(str), Error, msg);
+    assert.throws(
+        () => parseType(str), ParseError, /Failed parsing with error: .*/, msg);
   }
 
   suite('simple generics', function() {
@@ -90,7 +92,7 @@ suite.only('Type parsing', function() {
           'Expected lower bound generics using >: to be valid');
     });
 
-    test('lower bound generics cannot use <:', function() {
+    test.only('lower bound generics cannot use <:', function() {
       assertInvalidType(
           'test1, test2 <: t',
           'Expected lower bound generics using <: to be invalid');
@@ -101,7 +103,7 @@ suite.only('Type parsing', function() {
           'a >: b',
           new GenericInstantiation(
               'a',
-              [new ExplicitInstantiation('b')]),
+              [new GenericInstantiation('b')]),
           'Expected generics to be able to be lower bound by generics');
     });
 
@@ -118,7 +120,7 @@ suite.only('Type parsing', function() {
           'Expected upper bound generics using <: to be valid');
     });
 
-    test('upper bound generics cannot use >:', function() {
+    test.only('upper bound generics cannot use >:', function() {
       assertInvalidType(
           'test1, test2 >: t',
           'Expected upper bound generics using >: to be invalid');
@@ -130,13 +132,13 @@ suite.only('Type parsing', function() {
           new GenericInstantiation(
               'a',
               [],
-              [new ExplicitInstantiation('b')]),
+              [new GenericInstantiation('b')]),
           'Expected generics to be able to be upper bound by generics');
     });
 
     test('range generics use <:', function() {
       assertParseMatches(
-          'test1 <: t <: test1',
+          'test1 <: t <: test2',
           new GenericInstantiation(
               't',
               [new ExplicitInstantiation('test1')],
@@ -144,7 +146,7 @@ suite.only('Type parsing', function() {
           'Expected generics with upper and lower bounds to be valid');
     });
 
-    test('range generics cannot use >:', function() {
+    test.only('range generics cannot use >:', function() {
       assertInvalidType(
           'test2 >: t >: test1',
           'Expected range generics using >: to be invalid');
@@ -181,8 +183,8 @@ suite.only('Type parsing', function() {
           new ExplicitInstantiation(
               'test',
               [
-                new ExplicitInstantiation('a'),
-                new ExplicitInstantiation('b'),
+                new GenericInstantiation('a'),
+                new GenericInstantiation('b'),
               ]),
           'Expected generic types to be valid parameters');
     });
@@ -193,7 +195,7 @@ suite.only('Type parsing', function() {
           'Expected empty spaces to be invalid params');
     });
 
-    test('generics cannot have params', function() {
+    test.only('generics cannot have params', function() {
       assertInvalidType(
           'a[test1, test2]',
           'Expected generics to be unable to have params');

@@ -48,6 +48,7 @@
     "@blockly/dev-scripts": "^1.2.10",
     "@blockly/dev-tools": "^2.6.1",
     "@stryker-mutator/core": "^5.4.0",
+    "antlr4ts-cli": "^0.5.0-alpha.4",
     "blockly": "^3.0.0",
     "chai": "^4.3.4",
     "mocha": "^9.1.2",
@@ -64,5 +65,8 @@
     "defaults",
     "IE 11",
     "IE_Mob 11"
-  ]
+  ],
+  "dependencies": {
+    "antlr4ts": "^0.5.0-alpha.4"
+  }
 }

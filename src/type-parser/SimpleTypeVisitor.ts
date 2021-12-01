@@ -12,7 +12,7 @@ import {TypeVisitor} from './TypeVisitor';
 
 export class SimpleTypeVisitor extends
   AbstractParseTreeVisitor<TypeInstantiation> implements
-  TypeVisitor {
+  TypeVisitor<object> {
   protected defaultResult(): TypeInstantiation {
     return undefined;
   }

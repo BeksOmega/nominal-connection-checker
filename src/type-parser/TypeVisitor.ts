@@ -14,7 +14,6 @@ import {LeftLowerBoundsContext} from './TypeParser';
 import {UpperBoundsContext} from './TypeParser';
 import {BoundsListContext} from './TypeParser';
 import {BoundContext} from './TypeParser';
-import {ExplicitInstantiation, GenericInstantiation, TypeInstantiation} from '../type_instantiation';
 
 
 /**
@@ -24,82 +23,82 @@ import {ExplicitInstantiation, GenericInstantiation, TypeInstantiation} from '..
  * @param <Result> The return type of the visit operation. Use `void` for
  * operations with no return type.
  */
-export interface TypeVisitor extends ParseTreeVisitor<TypeInstantiation> {
+export interface TypeVisitor<Result> extends ParseTreeVisitor<Result> {
   /**
    * Visit a parse tree produced by `TypeParser.top`.
    * @param ctx the parse tree
    * @return the visitor result
    */
-  visitTop?: (ctx: TopContext) => TypeInstantiation;
+  visitTop?: (ctx: TopContext) => Result;
 
   /**
    * Visit a parse tree produced by `TypeParser.type`.
    * @param ctx the parse tree
    * @return the visitor result
    */
-  visitType?: (ctx: TypeContext) => TypeInstantiation;
+  visitType?: (ctx: TypeContext) => Result;
 
   /**
    * Visit a parse tree produced by `TypeParser.explicit`.
    * @param ctx the parse tree
    * @return the visitor result
    */
-  visitExplicit?: (ctx: ExplicitContext) => ExplicitInstantiation;
+  visitExplicit?: (ctx: ExplicitContext) => Result;
 
   /**
    * Visit a parse tree produced by `TypeParser.unconstrained`.
    * @param ctx the parse tree
    * @return the visitor result
    */
-  visitUnconstrained?: (ctx: UnconstrainedContext) => GenericInstantiation;
+  visitUnconstrained?: (ctx: UnconstrainedContext) => Result;
 
   /**
    * Visit a parse tree produced by `TypeParser.constrained`.
    * @param ctx the parse tree
    * @return the visitor result
    */
-  visitConstrained?: (ctx: ConstrainedContext) => GenericInstantiation;
+  visitConstrained?: (ctx: ConstrainedContext) => Result;
 
   /**
    * Visit a parse tree produced by `TypeParser.paramsList`.
    * @param ctx the parse tree
    * @return the visitor result
    */
-  visitParamsList?: (ctx: ParamsListContext) => TypeInstantiation[];
+  visitParamsList?: (ctx: ParamsListContext) => Result;
 
   /**
    * Visit a parse tree produced by `TypeParser.rightLowerBounds`.
    * @param ctx the parse tree
    * @return the visitor result
    */
-  visitRightLowerBounds?: (ctx: RightLowerBoundsContext) => TypeInstantiation[];
+  visitRightLowerBounds?: (ctx: RightLowerBoundsContext) => Result;
 
   /**
    * Visit a parse tree produced by `TypeParser.leftLowerBounds`.
    * @param ctx the parse tree
    * @return the visitor result
    */
-  visitLeftLowerBounds?: (ctx: LeftLowerBoundsContext) => TypeInstantiation[];
+  visitLeftLowerBounds?: (ctx: LeftLowerBoundsContext) => Result;
 
   /**
    * Visit a parse tree produced by `TypeParser.upperBounds`.
    * @param ctx the parse tree
    * @return the visitor result
    */
-  visitUpperBounds?: (ctx: UpperBoundsContext) => TypeInstantiation[];
+  visitUpperBounds?: (ctx: UpperBoundsContext) => Result;
 
   /**
    * Visit a parse tree produced by `TypeParser.boundsList`.
    * @param ctx the parse tree
    * @return the visitor result
    */
-  visitBoundsList?: (ctx: BoundsListContext) => TypeInstantiation[];
+  visitBoundsList?: (ctx: BoundsListContext) => Result;
 
   /**
    * Visit a parse tree produced by `TypeParser.bound`.
    * @param ctx the parse tree
    * @return the visitor result
    */
-  visitBound?: (ctx: BoundContext) => TypeInstantiation;
+  visitBound?: (ctx: BoundContext) => Result;
 }
 

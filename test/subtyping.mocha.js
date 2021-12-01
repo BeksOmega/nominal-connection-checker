@@ -471,6 +471,30 @@ suite('Subtyping', function() {
                 'Expected a type that only fulfills the lower bound to not fulfill a genreic with an upper and lower bound');
           });
 
+      suite('generic bounds', function() {
+        test('all types fulfill generics with generic bounds', function() {
+          const h = new TypeHierarchy();
+          const t = h.addTypeDef('t');
+          const gi = new GenericInstantiation(
+              'g', [], [new GenericInstantiation('h')]);
+
+          assert.isTrue(
+              h.typeFulfillsType(t.createInstance(), gi),
+              'Expected any type to fulfill a generic with a generic constraint');
+        });
+
+        test('generic bounds are ignored', function() {
+          const h = new TypeHierarchy();
+          const t = h.addTypeDef('t');
+          const gi = new GenericInstantiation(
+              'g', [], [new GenericInstantiation('h'), t.createInstance]);
+
+          assert.isTrue(
+              h.typeFulfillsType(t.createInstance(), gi),
+              'Expected generic bounds to be ignored');
+        });
+      });
+
       suite('explicit parameterized types fulfilling constrained generics',
           function() {
             function defineHierarchy() {
@@ -1126,6 +1150,37 @@ suite('Subtyping', function() {
                   'Expected generics with upper and lower bounds that do not intersect to not fulfill each other');
             });
       });
+
+      suite('generic bounds', function() {
+        test('generics with generic bounds fulfilling eachother', function() {
+          const h = new TypeHierarchy();
+          h.addTypeDef('t');
+          const gi1 = new GenericInstantiation(
+              'g', [], [new GenericInstantiation('h')]);
+          const gi2 = new GenericInstantiation(
+              'g', [], [new GenericInstantiation('i')]);
+          h.finalize();
+
+          assert.isTrue(
+              h.typeFulfillsType(gi1, gi2),
+              'Expected generics with generic bounds to fulfill eachother');
+        });
+
+        test('generic bounds are ignored', function() {
+          const h = new TypeHierarchy();
+          h.addTypeDef('t');
+          const ti = new ExplicitInstantiation('t');
+          const gi1 = new GenericInstantiation(
+              'g', [], [ti, new GenericInstantiation('h')]);
+          const gi2 = new GenericInstantiation(
+              'g', [], [new GenericInstantiation('i'), ti]);
+          h.finalize();
+
+          assert.isTrue(
+              h.typeFulfillsType(gi1, gi2),
+              'Expected generic bounds to be ignored');
+        });
+      });
     });
 
     suite('constrained generics fulfilling explicits', function() {
@@ -1236,6 +1291,33 @@ suite('Subtyping', function() {
         assert.isFalse(
             h.typeFulfillsType(t, gc),
             'Expected Child <: T <: Parent to not fulfill GrandChild');
+      });
+
+      test('generics with generic bounds fulfill explicits', function() {
+        const h = defineHierarchy();
+        const g = new GenericInstantiation(
+            'g', [], [new GenericInstantiation('h')]);
+        const animal = new ExplicitInstantiation('animal');
+
+        assert.isTrue(
+            h.typeFulfillsType(g, animal),
+            'Expected generics with generic bounds to fulfill explicits');
+      });
+
+      test('generic bounds are ignored', function() {
+        const h = defineHierarchy();
+        const t = new GenericInstantiation(
+            't',
+            [],
+            [
+              new GenericInstantiation('h'),
+              new ExplicitInstantiation('mammal'),
+            ]);
+        const dog = new ExplicitInstantiation('animal');
+
+        assert.isTrue(
+            h.typeFulfillsType(t, dog),
+            'Expected generic bounds to be ignored');
       });
     });
   });

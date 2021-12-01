@@ -530,6 +530,19 @@ suite('Nearest common ancestors', function() {
                 h, [g, lg], [eg],
                 'Expected the nca of a generic and a lower bound generic to be the lower bound generic');
           });
+
+      test('generic bounds are ignored', function() {
+        const h = new TypeHierarchy();
+        const g = new GenericInstantiation('g');
+        const ug = new GenericInstantiation(
+            'g', [], [new GenericInstantiation('h')]);
+        h.finalize();
+
+        const eg = new GenericInstantiation('', [], []);
+        assertNearestCommonAncestors(
+            h, [g, ug], [eg],
+            'Expected generic bounds to be ignored');
+      });
     });
 
     suite('constrained generics with explicit types', function() {
@@ -686,6 +699,19 @@ suite('Nearest common ancestors', function() {
                 h, [lg, ti, ug], [eg],
                 'Expected the nca of a lower bound generic, a middling type, and an upper bound generic to be a constrained generic with a lower bound of the lower type and an upper bound of the upper type');
           });
+
+      test('generic bounds are ignored', function() {
+        const h = new TypeHierarchy();
+        h.addTypeDef('t');
+        const ti = new ExplicitInstantiation('t');
+        const g = new GenericInstantiation(
+            'g', [], [new GenericInstantiation('h')]);
+        h.finalize();
+
+        assertNearestCommonAncestors(
+            h, [ti, g], [ti],
+            'Expected generic bounds to ge ignored');
+      });
     });
 
     suite('constrained generics with constrained generics', function() {
@@ -986,6 +1012,21 @@ suite('Nearest common ancestors', function() {
         assertNearestCommonAncestors(
             h, [cg, dg], egs,
             'Expected that when upper and lower bounds unify to multiple types it results in multiple upper and lower bound types');
+      });
+
+      test('generic bounds are ignored', function() {
+        const h = new TypeHierarchy();
+        h.addTypeDef('t');
+        const ti = new ExplicitInstantiation('t');
+        const tg = new GenericInstantiation('g', [], [ti]);
+        const g = new GenericInstantiation(
+            'g', [], [new GenericInstantiation('h')]);
+        h.finalize();
+
+        const eg = new GenericInstantiation('', [], [ti]);
+        assertNearestCommonAncestors(
+            h, [tg, g], [eg],
+            'Expected generic bounds to be ignored');
       });
 
       suite('with parameterized types', function() {

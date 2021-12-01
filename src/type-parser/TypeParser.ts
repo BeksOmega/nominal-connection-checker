@@ -1,4 +1,4 @@
-// Generated from Type.g4 by ANTLR 4.9.0-SNAPSHOT
+// Generated from src/type-parser/Type.g4 by ANTLR 4.9.0-SNAPSHOT
 
 
 import { ATN } from "antlr4ts/atn/ATN";
@@ -23,7 +23,7 @@ import { VocabularyImpl } from "antlr4ts/VocabularyImpl";
 
 import * as Utils from "antlr4ts/misc/Utils";
 
-import { TypeVisitor } from "./TypeVisitor1";
+import { TypeVisitor } from "./TypeVisitor";
 
 
 export class TypeParser extends Parser {
@@ -35,20 +35,21 @@ export class TypeParser extends Parser {
 	public static readonly GID = 6;
 	public static readonly EID = 7;
 	public static readonly WS = 8;
-	public static readonly RULE_type = 0;
-	public static readonly RULE_explicit = 1;
-	public static readonly RULE_unconstrained = 2;
-	public static readonly RULE_constrained = 3;
-	public static readonly RULE_paramsList = 4;
-	public static readonly RULE_rightLowerBounds = 5;
-	public static readonly RULE_leftLowerBounds = 6;
-	public static readonly RULE_upperBounds = 7;
-	public static readonly RULE_boundsList = 8;
-	public static readonly RULE_bound = 9;
+	public static readonly RULE_top = 0;
+	public static readonly RULE_type = 1;
+	public static readonly RULE_explicit = 2;
+	public static readonly RULE_unconstrained = 3;
+	public static readonly RULE_constrained = 4;
+	public static readonly RULE_paramsList = 5;
+	public static readonly RULE_rightLowerBounds = 6;
+	public static readonly RULE_leftLowerBounds = 7;
+	public static readonly RULE_upperBounds = 8;
+	public static readonly RULE_boundsList = 9;
+	public static readonly RULE_bound = 10;
 	// tslint:disable:no-trailing-whitespace
 	public static readonly ruleNames: string[] = [
-		"type", "explicit", "unconstrained", "constrained", "paramsList", "rightLowerBounds", 
-		"leftLowerBounds", "upperBounds", "boundsList", "bound",
+		"top", "type", "explicit", "unconstrained", "constrained", "paramsList", 
+		"rightLowerBounds", "leftLowerBounds", "upperBounds", "boundsList", "bound",
 	];
 
 	private static readonly _LITERAL_NAMES: Array<string | undefined> = [
@@ -85,17 +86,44 @@ export class TypeParser extends Parser {
 		this._interp = new ParserATNSimulator(TypeParser._ATN, this);
 	}
 	// @RuleVersion(0)
+	public top(): TopContext {
+		let _localctx: TopContext = new TopContext(this._ctx, this.state);
+		this.enterRule(_localctx, 0, TypeParser.RULE_top);
+		try {
+			this.enterOuterAlt(_localctx, 1);
+			{
+			this.state = 22;
+			this.type();
+			this.state = 23;
+			this.match(TypeParser.EOF);
+			}
+		}
+		catch (re) {
+			if (re instanceof RecognitionException) {
+				_localctx.exception = re;
+				this._errHandler.reportError(this, re);
+				this._errHandler.recover(this, re);
+			} else {
+				throw re;
+			}
+		}
+		finally {
+			this.exitRule();
+		}
+		return _localctx;
+	}
+	// @RuleVersion(0)
 	public type(): TypeContext {
 		let _localctx: TypeContext = new TypeContext(this._ctx, this.state);
-		this.enterRule(_localctx, 0, TypeParser.RULE_type);
+		this.enterRule(_localctx, 2, TypeParser.RULE_type);
 		try {
-			this.state = 23;
+			this.state = 28;
 			this._errHandler.sync(this);
 			switch ( this.interpreter.adaptivePredict(this._input, 0, this._ctx) ) {
 			case 1:
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 20;
+				this.state = 25;
 				this.explicit();
 				}
 				break;
@@ -103,7 +131,7 @@ export class TypeParser extends Parser {
 			case 2:
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 21;
+				this.state = 26;
 				this.unconstrained();
 				}
 				break;
@@ -111,7 +139,7 @@ export class TypeParser extends Parser {
 			case 3:
 				this.enterOuterAlt(_localctx, 3);
 				{
-				this.state = 22;
+				this.state = 27;
 				this.constrained();
 				}
 				break;
@@ -134,19 +162,19 @@ export class TypeParser extends Parser {
 	// @RuleVersion(0)
 	public explicit(): ExplicitContext {
 		let _localctx: ExplicitContext = new ExplicitContext(this._ctx, this.state);
-		this.enterRule(_localctx, 2, TypeParser.RULE_explicit);
+		this.enterRule(_localctx, 4, TypeParser.RULE_explicit);
 		let _la: number;
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 25;
+			this.state = 30;
 			this.match(TypeParser.EID);
-			this.state = 27;
+			this.state = 32;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			if (_la === TypeParser.T__0) {
 				{
-				this.state = 26;
+				this.state = 31;
 				this.paramsList();
 				}
 			}
@@ -170,11 +198,11 @@ export class TypeParser extends Parser {
 	// @RuleVersion(0)
 	public unconstrained(): UnconstrainedContext {
 		let _localctx: UnconstrainedContext = new UnconstrainedContext(this._ctx, this.state);
-		this.enterRule(_localctx, 4, TypeParser.RULE_unconstrained);
+		this.enterRule(_localctx, 6, TypeParser.RULE_unconstrained);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 29;
+			this.state = 34;
 			this.match(TypeParser.GID);
 			}
 		}
@@ -195,17 +223,17 @@ export class TypeParser extends Parser {
 	// @RuleVersion(0)
 	public constrained(): ConstrainedContext {
 		let _localctx: ConstrainedContext = new ConstrainedContext(this._ctx, this.state);
-		this.enterRule(_localctx, 6, TypeParser.RULE_constrained);
+		this.enterRule(_localctx, 8, TypeParser.RULE_constrained);
 		try {
-			this.state = 39;
+			this.state = 44;
 			this._errHandler.sync(this);
 			switch ( this.interpreter.adaptivePredict(this._input, 2, this._ctx) ) {
 			case 1:
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 31;
+				this.state = 36;
 				this.match(TypeParser.GID);
-				this.state = 32;
+				this.state = 37;
 				this.rightLowerBounds();
 				}
 				break;
@@ -213,9 +241,9 @@ export class TypeParser extends Parser {
 			case 2:
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 33;
+				this.state = 38;
 				this.match(TypeParser.GID);
-				this.state = 34;
+				this.state = 39;
 				this.upperBounds();
 				}
 				break;
@@ -223,11 +251,11 @@ export class TypeParser extends Parser {
 			case 3:
 				this.enterOuterAlt(_localctx, 3);
 				{
-				this.state = 35;
+				this.state = 40;
 				this.leftLowerBounds();
-				this.state = 36;
+				this.state = 41;
 				this.match(TypeParser.GID);
-				this.state = 37;
+				this.state = 42;
 				this.upperBounds();
 				}
 				break;
@@ -250,32 +278,32 @@ export class TypeParser extends Parser {
 	// @RuleVersion(0)
 	public paramsList(): ParamsListContext {
 		let _localctx: ParamsListContext = new ParamsListContext(this._ctx, this.state);
-		this.enterRule(_localctx, 8, TypeParser.RULE_paramsList);
+		this.enterRule(_localctx, 10, TypeParser.RULE_paramsList);
 		let _la: number;
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 41;
+			this.state = 46;
 			this.match(TypeParser.T__0);
-			this.state = 42;
-			this.type();
 			this.state = 47;
+			this.type();
+			this.state = 52;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			while (_la === TypeParser.T__1) {
 				{
 				{
-				this.state = 43;
+				this.state = 48;
 				this.match(TypeParser.T__1);
-				this.state = 44;
+				this.state = 49;
 				this.type();
 				}
 				}
-				this.state = 49;
+				this.state = 54;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 			}
-			this.state = 50;
+			this.state = 55;
 			this.match(TypeParser.T__2);
 			}
 		}
@@ -296,13 +324,13 @@ export class TypeParser extends Parser {
 	// @RuleVersion(0)
 	public rightLowerBounds(): RightLowerBoundsContext {
 		let _localctx: RightLowerBoundsContext = new RightLowerBoundsContext(this._ctx, this.state);
-		this.enterRule(_localctx, 10, TypeParser.RULE_rightLowerBounds);
+		this.enterRule(_localctx, 12, TypeParser.RULE_rightLowerBounds);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 52;
+			this.state = 57;
 			this.match(TypeParser.T__3);
-			this.state = 53;
+			this.state = 58;
 			this.boundsList();
 			}
 		}
@@ -323,13 +351,13 @@ export class TypeParser extends Parser {
 	// @RuleVersion(0)
 	public leftLowerBounds(): LeftLowerBoundsContext {
 		let _localctx: LeftLowerBoundsContext = new LeftLowerBoundsContext(this._ctx, this.state);
-		this.enterRule(_localctx, 12, TypeParser.RULE_leftLowerBounds);
+		this.enterRule(_localctx, 14, TypeParser.RULE_leftLowerBounds);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 55;
+			this.state = 60;
 			this.boundsList();
-			this.state = 56;
+			this.state = 61;
 			this.match(TypeParser.T__4);
 			}
 		}
@@ -350,13 +378,13 @@ export class TypeParser extends Parser {
 	// @RuleVersion(0)
 	public upperBounds(): UpperBoundsContext {
 		let _localctx: UpperBoundsContext = new UpperBoundsContext(this._ctx, this.state);
-		this.enterRule(_localctx, 14, TypeParser.RULE_upperBounds);
+		this.enterRule(_localctx, 16, TypeParser.RULE_upperBounds);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 58;
+			this.state = 63;
 			this.match(TypeParser.T__4);
-			this.state = 59;
+			this.state = 64;
 			this.boundsList();
 			}
 		}
@@ -377,28 +405,28 @@ export class TypeParser extends Parser {
 	// @RuleVersion(0)
 	public boundsList(): BoundsListContext {
 		let _localctx: BoundsListContext = new BoundsListContext(this._ctx, this.state);
-		this.enterRule(_localctx, 16, TypeParser.RULE_boundsList);
+		this.enterRule(_localctx, 18, TypeParser.RULE_boundsList);
 		try {
 			let _alt: number;
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 61;
-			this.bound();
 			this.state = 66;
+			this.bound();
+			this.state = 71;
 			this._errHandler.sync(this);
 			_alt = this.interpreter.adaptivePredict(this._input, 4, this._ctx);
 			while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
 				if (_alt === 1) {
 					{
 					{
-					this.state = 62;
+					this.state = 67;
 					this.match(TypeParser.T__1);
-					this.state = 63;
+					this.state = 68;
 					this.bound();
 					}
 					}
 				}
-				this.state = 68;
+				this.state = 73;
 				this._errHandler.sync(this);
 				_alt = this.interpreter.adaptivePredict(this._input, 4, this._ctx);
 			}
@@ -421,22 +449,22 @@ export class TypeParser extends Parser {
 	// @RuleVersion(0)
 	public bound(): BoundContext {
 		let _localctx: BoundContext = new BoundContext(this._ctx, this.state);
-		this.enterRule(_localctx, 18, TypeParser.RULE_bound);
+		this.enterRule(_localctx, 20, TypeParser.RULE_bound);
 		try {
-			this.state = 71;
+			this.state = 76;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case TypeParser.GID:
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 69;
+				this.state = 74;
 				this.unconstrained();
 				}
 				break;
 			case TypeParser.EID:
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 70;
+				this.state = 75;
 				this.explicit();
 				}
 				break;
@@ -460,36 +488,37 @@ export class TypeParser extends Parser {
 	}
 
 	public static readonly _serializedATN: string =
-		"\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03\nL\x04\x02\t" +
+		"\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03\nQ\x04\x02\t" +
 		"\x02\x04\x03\t\x03\x04\x04\t\x04\x04\x05\t\x05\x04\x06\t\x06\x04\x07\t" +
-		"\x07\x04\b\t\b\x04\t\t\t\x04\n\t\n\x04\v\t\v\x03\x02\x03\x02\x03\x02\x05" +
-		"\x02\x1A\n\x02\x03\x03\x03\x03\x05\x03\x1E\n\x03\x03\x04\x03\x04\x03\x05" +
-		"\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x05\x05*\n\x05" +
-		"\x03\x06\x03\x06\x03\x06\x03\x06\x07\x060\n\x06\f\x06\x0E\x063\v\x06\x03" +
-		"\x06\x03\x06\x03\x07\x03\x07\x03\x07\x03\b\x03\b\x03\b\x03\t\x03\t\x03" +
-		"\t\x03\n\x03\n\x03\n\x07\nC\n\n\f\n\x0E\nF\v\n\x03\v\x03\v\x05\vJ\n\v" +
-		"\x03\v\x02\x02\x02\f\x02\x02\x04\x02\x06\x02\b\x02\n\x02\f\x02\x0E\x02" +
-		"\x10\x02\x12\x02\x14\x02\x02\x02\x02I\x02\x19\x03\x02\x02\x02\x04\x1B" +
-		"\x03\x02\x02\x02\x06\x1F\x03\x02\x02\x02\b)\x03\x02\x02\x02\n+\x03\x02" +
-		"\x02\x02\f6\x03\x02\x02\x02\x0E9\x03\x02\x02\x02\x10<\x03\x02\x02\x02" +
-		"\x12?\x03\x02\x02\x02\x14I\x03\x02\x02\x02\x16\x1A\x05\x04\x03\x02\x17" +
-		"\x1A\x05\x06\x04\x02\x18\x1A\x05\b\x05\x02\x19\x16\x03\x02\x02\x02\x19" +
-		"\x17\x03\x02\x02\x02\x19\x18\x03\x02\x02\x02\x1A\x03\x03\x02\x02\x02\x1B" +
-		"\x1D\x07\t\x02\x02\x1C\x1E\x05\n\x06\x02\x1D\x1C\x03\x02\x02\x02\x1D\x1E" +
-		"\x03\x02\x02\x02\x1E\x05\x03\x02\x02\x02\x1F \x07\b\x02\x02 \x07\x03\x02" +
-		"\x02\x02!\"\x07\b\x02\x02\"*\x05\f\x07\x02#$\x07\b\x02\x02$*\x05\x10\t" +
-		"\x02%&\x05\x0E\b\x02&\'\x07\b\x02\x02\'(\x05\x10\t\x02(*\x03\x02\x02\x02" +
-		")!\x03\x02\x02\x02)#\x03\x02\x02\x02)%\x03\x02\x02\x02*\t\x03\x02\x02" +
-		"\x02+,\x07\x03\x02\x02,1\x05\x02\x02\x02-.\x07\x04\x02\x02.0\x05\x02\x02" +
-		"\x02/-\x03\x02\x02\x0203\x03\x02\x02\x021/\x03\x02\x02\x0212\x03\x02\x02" +
-		"\x0224\x03\x02\x02\x0231\x03\x02\x02\x0245\x07\x05\x02\x025\v\x03\x02" +
-		"\x02\x0267\x07\x06\x02\x0278\x05\x12\n\x028\r\x03\x02\x02\x029:\x05\x12" +
-		"\n\x02:;\x07\x07\x02\x02;\x0F\x03\x02\x02\x02<=\x07\x07\x02\x02=>\x05" +
-		"\x12\n\x02>\x11\x03\x02\x02\x02?D\x05\x14\v\x02@A\x07\x04\x02\x02AC\x05" +
-		"\x14\v\x02B@\x03\x02\x02\x02CF\x03\x02\x02\x02DB\x03\x02\x02\x02DE\x03" +
-		"\x02\x02\x02E\x13\x03\x02\x02\x02FD\x03\x02\x02\x02GJ\x05\x06\x04\x02" +
-		"HJ\x05\x04\x03\x02IG\x03\x02\x02\x02IH\x03\x02\x02\x02J\x15\x03\x02\x02" +
-		"\x02\b\x19\x1D)1DI";
+		"\x07\x04\b\t\b\x04\t\t\t\x04\n\t\n\x04\v\t\v\x04\f\t\f\x03\x02\x03\x02" +
+		"\x03\x02\x03\x03\x03\x03\x03\x03\x05\x03\x1F\n\x03\x03\x04\x03\x04\x05" +
+		"\x04#\n\x04\x03\x05\x03\x05\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03" +
+		"\x06\x03\x06\x03\x06\x05\x06/\n\x06\x03\x07\x03\x07\x03\x07\x03\x07\x07" +
+		"\x075\n\x07\f\x07\x0E\x078\v\x07\x03\x07\x03\x07\x03\b\x03\b\x03\b\x03" +
+		"\t\x03\t\x03\t\x03\n\x03\n\x03\n\x03\v\x03\v\x03\v\x07\vH\n\v\f\v\x0E" +
+		"\vK\v\v\x03\f\x03\f\x05\fO\n\f\x03\f\x02\x02\x02\r\x02\x02\x04\x02\x06" +
+		"\x02\b\x02\n\x02\f\x02\x0E\x02\x10\x02\x12\x02\x14\x02\x16\x02\x02\x02" +
+		"\x02M\x02\x18\x03\x02\x02\x02\x04\x1E\x03\x02\x02\x02\x06 \x03\x02\x02" +
+		"\x02\b$\x03\x02\x02\x02\n.\x03\x02\x02\x02\f0\x03\x02\x02\x02\x0E;\x03" +
+		"\x02\x02\x02\x10>\x03\x02\x02\x02\x12A\x03\x02\x02\x02\x14D\x03\x02\x02" +
+		"\x02\x16N\x03\x02\x02\x02\x18\x19\x05\x04\x03\x02\x19\x1A\x07\x02\x02" +
+		"\x03\x1A\x03\x03\x02\x02\x02\x1B\x1F\x05\x06\x04\x02\x1C\x1F\x05\b\x05" +
+		"\x02\x1D\x1F\x05\n\x06\x02\x1E\x1B\x03\x02\x02\x02\x1E\x1C\x03\x02\x02" +
+		"\x02\x1E\x1D\x03\x02\x02\x02\x1F\x05\x03\x02\x02\x02 \"\x07\t\x02\x02" +
+		"!#\x05\f\x07\x02\"!\x03\x02\x02\x02\"#\x03\x02\x02\x02#\x07\x03\x02\x02" +
+		"\x02$%\x07\b\x02\x02%\t\x03\x02\x02\x02&\'\x07\b\x02\x02\'/\x05\x0E\b" +
+		"\x02()\x07\b\x02\x02)/\x05\x12\n\x02*+\x05\x10\t\x02+,\x07\b\x02\x02," +
+		"-\x05\x12\n\x02-/\x03\x02\x02\x02.&\x03\x02\x02\x02.(\x03\x02\x02\x02" +
+		".*\x03\x02\x02\x02/\v\x03\x02\x02\x0201\x07\x03\x02\x0216\x05\x04\x03" +
+		"\x0223\x07\x04\x02\x0235\x05\x04\x03\x0242\x03\x02\x02\x0258\x03\x02\x02" +
+		"\x0264\x03\x02\x02\x0267\x03\x02\x02\x0279\x03\x02\x02\x0286\x03\x02\x02" +
+		"\x029:\x07\x05\x02\x02:\r\x03\x02\x02\x02;<\x07\x06\x02\x02<=\x05\x14" +
+		"\v\x02=\x0F\x03\x02\x02\x02>?\x05\x14\v\x02?@\x07\x07\x02\x02@\x11\x03" +
+		"\x02\x02\x02AB\x07\x07\x02\x02BC\x05\x14\v\x02C\x13\x03\x02\x02\x02DI" +
+		"\x05\x16\f\x02EF\x07\x04\x02\x02FH\x05\x16\f\x02GE\x03\x02\x02\x02HK\x03" +
+		"\x02\x02\x02IG\x03\x02\x02\x02IJ\x03\x02\x02\x02J\x15\x03\x02\x02\x02" +
+		"KI\x03\x02\x02\x02LO\x05\b\x05\x02MO\x05\x06\x04\x02NL\x03\x02\x02\x02" +
+		"NM\x03\x02\x02\x02O\x17\x03\x02\x02\x02\b\x1E\".6IN";
 	public static __ATN: ATN;
 	public static get _ATN(): ATN {
 		if (!TypeParser.__ATN) {
@@ -500,6 +529,27 @@ export class TypeParser extends Parser {
 	}
 
 }
+
+export class TopContext extends ParserRuleContext {
+	public type(): TypeContext {
+		return this.getRuleContext(0, TypeContext);
+	}
+	public EOF(): TerminalNode { return this.getToken(TypeParser.EOF, 0); }
+	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+		super(parent, invokingState);
+	}
+	// @Override
+	public get ruleIndex(): number { return TypeParser.RULE_top; }
+	// @Override
+	public accept<Result>(visitor: TypeVisitor<Result>): Result {
+		if (visitor.visitTop) {
+			return visitor.visitTop(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
+}
+
 
 export class TypeContext extends ParserRuleContext {
 	public explicit(): ExplicitContext | undefined {

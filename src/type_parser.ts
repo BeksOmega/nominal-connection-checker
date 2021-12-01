@@ -21,5 +21,5 @@ export function parseType(str: string): TypeInstantiation {
   parser.removeErrorListeners();
   parser.addErrorListener(new ErrorListener());
   const visitor = new SimpleTypeVisitor();
-  return visitor.visit(parser.type());
+  return visitor.visit(parser.top());
 }

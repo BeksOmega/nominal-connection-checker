@@ -6,15 +6,19 @@
  */
 
 import {AbstractParseTreeVisitor} from 'antlr4ts/tree';
-import {BoundContext, BoundsListContext, ConstrainedContext, ExplicitContext, LeftLowerBoundsContext, ParamsListContext, RightLowerBoundsContext, TypeContext, UnconstrainedContext, UpperBoundsContext} from './TypeParser';
+import {BoundContext, BoundsListContext, ConstrainedContext, ExplicitContext, LeftLowerBoundsContext, ParamsListContext, RightLowerBoundsContext, TopContext, TypeContext, UnconstrainedContext, UpperBoundsContext} from './TypeParser';
 import {ExplicitInstantiation, GenericInstantiation, TypeInstantiation} from '../type_instantiation';
-import {TypeVisitor} from './TypeVisitor1';
+import {TypeVisitor} from './TypeVisitor';
 
 export class SimpleTypeVisitor extends
   AbstractParseTreeVisitor<TypeInstantiation> implements
   TypeVisitor {
   protected defaultResult(): TypeInstantiation {
     return undefined;
+  }
+
+  visitTop(ctx: TopContext): TypeInstantiation {
+    return this.visit(ctx.type());
   }
 
   visitType(ctx: TypeContext): TypeInstantiation {

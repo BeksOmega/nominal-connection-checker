@@ -9,7 +9,7 @@ import {GenericInstantiation, ExplicitInstantiation} from '../src/type_instantia
 import {ParseError} from '../src/exceptions';
 import {parseType} from '../src/type_parser';
 
-suite.only('Type parsing', function() {
+suite('Type parsing', function() {
   function assertParseMatches(str, expected, msg) {
     assert.isTrue(parseType(str).equals(expected), msg);
   }
@@ -92,7 +92,7 @@ suite.only('Type parsing', function() {
           'Expected lower bound generics using >: to be valid');
     });
 
-    test.only('lower bound generics cannot use <:', function() {
+    test('lower bound generics cannot use <:', function() {
       assertInvalidType(
           'test1, test2 <: t',
           'Expected lower bound generics using <: to be invalid');
@@ -120,7 +120,7 @@ suite.only('Type parsing', function() {
           'Expected upper bound generics using <: to be valid');
     });
 
-    test.only('upper bound generics cannot use >:', function() {
+    test('upper bound generics cannot use >:', function() {
       assertInvalidType(
           'test1, test2 >: t',
           'Expected upper bound generics using >: to be invalid');
@@ -146,7 +146,7 @@ suite.only('Type parsing', function() {
           'Expected generics with upper and lower bounds to be valid');
     });
 
-    test.only('range generics cannot use >:', function() {
+    test('range generics cannot use >:', function() {
       assertInvalidType(
           'test2 >: t >: test1',
           'Expected range generics using >: to be invalid');
@@ -195,7 +195,7 @@ suite.only('Type parsing', function() {
           'Expected empty spaces to be invalid params');
     });
 
-    test.only('generics cannot have params', function() {
+    test('generics cannot have params', function() {
       assertInvalidType(
           'a[test1, test2]',
           'Expected generics to be unable to have params');

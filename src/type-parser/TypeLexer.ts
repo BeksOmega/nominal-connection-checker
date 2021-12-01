@@ -1,4 +1,4 @@
-// Generated from Type.g4 by ANTLR 4.9.0-SNAPSHOT
+// Generated from src/type-parser/Type.g4 by ANTLR 4.9.0-SNAPSHOT
 
 
 import { ATN } from "antlr4ts/atn/ATN";

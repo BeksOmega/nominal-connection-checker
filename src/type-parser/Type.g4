@@ -1,5 +1,7 @@
 grammar Type;
-type : (explicit | unconstrained | constrained) EOF ;
+top : type EOF ;
+
+type : explicit | unconstrained | constrained ;
 
 explicit : EID paramsList? ;
 unconstrained: GID ;

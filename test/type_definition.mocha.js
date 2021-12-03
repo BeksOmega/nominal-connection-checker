@@ -196,10 +196,10 @@ suite('TypeDefinition', function() {
   });
 
   suite('reorganizing params for ancestors', function() {
-    function assertParamOrder(t, a, ps, msg) {
-      const mappedParams = t.getParamsForAncestor(a);
-      assert.equal(mappedParams.length, ps.length, msg);
-      assert.deepEqual(mappedParams, ps, msg);
+    function assertParamOrder(t, a, actuals, expected, msg) {
+      const mappedParams = t.getParamsForAncestor(a, actuals);
+      assert.equal(mappedParams.length, expected.length, msg);
+      assert.deepEqual(mappedParams, expected, msg);
     }
 
     test('params for self are identical', function() {
@@ -210,7 +210,8 @@ suite('TypeDefinition', function() {
       h.finalize();
 
       assertParamOrder(
-          x, 'x', [new GenericInstantiation('a'), new GenericInstantiation('b')],
+          x, 'x', undefined,
+          [new GenericInstantiation('a'), new GenericInstantiation('b')],
           'Expected the param mapping from a type to itself to be identical to its normal params list');
     });
 
@@ -224,7 +225,8 @@ suite('TypeDefinition', function() {
       h.finalize();
 
       assertParamOrder(
-          x, 'y', [new GenericInstantiation('b'), new GenericInstantiation('a')],
+          x, 'y', undefined,
+          [new GenericInstantiation('b'), new GenericInstantiation('a')],
           'Expected params to be properly reorganized for the parent type');
     });
 
@@ -243,6 +245,7 @@ suite('TypeDefinition', function() {
       assertParamOrder(
           x,
           'z',
+          undefined,
           [
             new GenericInstantiation('b'),
             new GenericInstantiation('c'),
@@ -267,11 +270,35 @@ suite('TypeDefinition', function() {
       assertParamOrder(
           dogListList,
           'list',
+          undefined,
           [
             new ExplicitInstantiation(
                 'list', [new ExplicitInstantiation('dog')]),
           ],
           'Expected nested params to be properly reorganized for the ancestor type');
+    });
+
+    test('generics are properly mapped to actuals', function() {
+      const h = new TypeHierarchy();
+      const pa = new ParameterDefinition('a', Variance.CO);
+      h.addTypeDef('list', [pa]);
+      const listList = h.addTypeDef('listList', [pa]);
+      listList.addParent(new ExplicitInstantiation(
+          'list', [new ExplicitInstantiation(
+              'list', [new GenericInstantiation('a')])]));
+      h.addTypeDef('dog');
+
+      assertParamOrder(
+          listList,
+          'list',
+          [
+            new ExplicitInstantiation('dog'),
+          ],
+          [
+            new ExplicitInstantiation(
+                'list', [new ExplicitInstantiation('dog')]),
+          ],
+          'Expected generics to be properly mapped to actuals');
     });
   });
 

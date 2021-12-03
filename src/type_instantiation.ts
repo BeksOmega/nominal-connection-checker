@@ -9,6 +9,7 @@ export interface TypeInstantiation {
   equals: (t: TypeInstantiation) => boolean;
   isEquivalentTo: (t: TypeInstantiation) => boolean;
   clone: () => TypeInstantiation;
+  toString: () => string;
 }
 
 export class ExplicitInstantiation implements TypeInstantiation {
@@ -47,6 +48,13 @@ export class ExplicitInstantiation implements TypeInstantiation {
   clone(): TypeInstantiation {
     return new ExplicitInstantiation(
         this.name, this.params.map(p => p.clone()));
+  }
+
+  toString(): string {
+    if (this.hasParams) {
+      return `${this.name}[${this.params.map(p => p.toString()).join(', ')}]`;
+    }
+    return this.name;
   }
 }
 
@@ -110,5 +118,16 @@ export class GenericInstantiation implements TypeInstantiation {
         this.name,
         [...this.unfilteredLowerBounds],
         [...this.unfilteredUpperBounds]);
+  }
+
+  toString(): string {
+    if (!this.unfilteredLowerBounds.length && !this.unfilteredUpperBounds.length) {
+      return this.name;
+    }
+    const lBound = this.unfilteredLowerBounds.map(b => b.toString()).join(', ');
+    const uBound = this.unfilteredUpperBounds.map(b => b.toString()).join(', ');
+    if (!this.unfilteredLowerBounds.length) return `${this.name} <: ${uBound}`;
+    if (!this.unfilteredUpperBounds.length) return `${this.name} >: ${lBound}`;
+    return `${lBound} <: ${this.name} <: ${uBound}`;
   }
 }

@@ -19,7 +19,7 @@ suite('Subtyping', function() {
 
     assert.throws(
         () => h.typeFulfillsType(ti1, ti2),
-        /The type instance .* is incompatible with the given TypeHierarchy/,
+        /The type instance t is incompatible with the given TypeHierarchy/,
         IncompatibleType);
   });
 
@@ -33,7 +33,7 @@ suite('Subtyping', function() {
 
     assert.throws(
         () => h.typeFulfillsType(ti, gi),
-        /The type instance .* is incompatible with the given TypeHierarchy/,
+        /The type instance g <: u is incompatible with the given TypeHierarchy/,
         IncompatibleType);
   });
 
@@ -47,7 +47,7 @@ suite('Subtyping', function() {
 
     assert.throws(
         () => h.typeFulfillsType(ti, gi),
-        /The type instance .* is incompatible with the given TypeHierarchy/,
+        /The type instance g >: u is incompatible with the given TypeHierarchy/,
         IncompatibleType);
   });
 
@@ -66,7 +66,27 @@ suite('Subtyping', function() {
 
     assert.throws(
         () => h.typeFulfillsType(ti, gi),
-        /The type instance .* is incompatible with the given TypeHierarchy/,
+        // eslint-disable-next-line max-len
+        /The type instance p <: g <: c is incompatible with the given TypeHierarchy/,
+        IncompatibleType);
+  });
+
+  test('invalid parameter throws', function() {
+    const h = new TypeHierarchy();
+    const pDef = new ParameterDefinition('p');
+    const qDef = new ParameterDefinition('q');
+    h.addTypeDef('a', [pDef, qDef]);
+    h.addTypeDef('b');
+    const ai1 = new ExplicitInstantiation(
+        'a', [new ExplicitInstantiation('b'), new ExplicitInstantiation('b')]);
+    const ai2 = new ExplicitInstantiation(
+        'a', [new ExplicitInstantiation('b'), new ExplicitInstantiation('c')]);
+    h.finalize();
+
+    assert.throws(
+        () => h.typeFulfillsType(ai1, ai2),
+        // eslint-disable-next-line max-len
+        /The type instance a\[b, c\] is incompatible with the given TypeHierarchy/,
         IncompatibleType);
   });
 

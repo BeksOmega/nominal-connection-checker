@@ -51,18 +51,24 @@ export class ExplicitInstantiation implements TypeInstantiation {
 }
 
 export class GenericInstantiation implements TypeInstantiation {
+  readonly lowerBounds: ExplicitInstantiation[];
+  readonly upperBounds: ExplicitInstantiation[];
   readonly isConstrained: boolean;
   readonly hasLowerBound: boolean;
   readonly hasUpperBound: boolean;
 
   constructor(
       readonly name = '',
-      readonly lowerBounds: readonly ExplicitInstantiation[] = [],
-      readonly upperBounds: readonly ExplicitInstantiation[] = []
+      readonly unfilteredLowerBounds: readonly TypeInstantiation[] = [],
+      readonly unfilteredUpperBounds: readonly TypeInstantiation[] = []
   ) {
-    this.isConstrained = !!lowerBounds.length || !!upperBounds.length;
-    this.hasLowerBound = !!lowerBounds.length;
-    this.hasUpperBound = !!upperBounds.length;
+    this.lowerBounds = unfilteredLowerBounds.filter(
+        (t) => t instanceof ExplicitInstantiation) as ExplicitInstantiation[];
+    this.upperBounds = unfilteredUpperBounds.filter(
+        (t) => t instanceof ExplicitInstantiation) as ExplicitInstantiation[];
+    this.isConstrained = !!this.lowerBounds.length || !!this.upperBounds.length;
+    this.hasLowerBound = !!this.lowerBounds.length;
+    this.hasUpperBound = !!this.upperBounds.length;
   }
 
   /**
@@ -72,10 +78,12 @@ export class GenericInstantiation implements TypeInstantiation {
   equals(b: TypeInstantiation): boolean {
     return b instanceof GenericInstantiation &&
         this.name === b.name &&
-        this.lowerBounds.length == b.lowerBounds.length &&
-        this.upperBounds.length == b.upperBounds.length &&
-        this.lowerBounds.every((l, i) => l.equals(b.lowerBounds[i])) &&
-        this.upperBounds.every((u, i) => u.equals(b.upperBounds[i]));
+        this.unfilteredLowerBounds.length == b.unfilteredLowerBounds.length &&
+        this.unfilteredUpperBounds.length == b.unfilteredUpperBounds.length &&
+        this.unfilteredLowerBounds.every(
+            (l, i) => l.equals(b.unfilteredLowerBounds[i])) &&
+        this.unfilteredUpperBounds.every(
+            (u, i) => u.equals(b.unfilteredUpperBounds[i]));
   }
 
   /**
@@ -99,6 +107,8 @@ export class GenericInstantiation implements TypeInstantiation {
    */
   clone(): TypeInstantiation {
     return new GenericInstantiation(
-        this.name, [...this.lowerBounds], [...this.upperBounds]);
+        this.name,
+        [...this.unfilteredLowerBounds],
+        [...this.unfilteredUpperBounds]);
   }
 }

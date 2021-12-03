@@ -172,7 +172,7 @@ suite('TypeInstance compatibility', function() {
         'x',
         [
           new GenericInstantiation('m'),
-          new ExplicitInstantiation('y'),  // Does not exist.
+          new ExplicitInstantiation('y'), // Does not exist.
           new GenericInstantiation('0'),
         ]);
     assert.isFalse(

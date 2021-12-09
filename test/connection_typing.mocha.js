@@ -152,6 +152,18 @@ suite.only('Connection typing', function() {
           'Expected the input to be a simple generic');
     });
 
+    test('typing generic input with a non-matching output', function() {
+      const typer = new ConnectionTyper(blankHierarchy());
+      const parent = createBlock('parent', '', ['type']);
+      const child = createBlock('child', 't', ['g']);
+      parent.getInput('0').connection.connect(child.outputConnection);
+      assertConnectionType(
+          typer,
+          child.getInput('0').connection,
+          [new GenericInstantiation('')],
+          'Expected the ionput to be a simple generic');
+    });
+
     test('typing a generic output attached to a parent', function() {
       const typer = new ConnectionTyper(blankHierarchy());
       const parent = createBlock('parent', '', ['type']);
@@ -162,21 +174,6 @@ suite.only('Connection typing', function() {
           child.outputConnection,
           [new GenericInstantiation('')],
           'Expected the output to be a simple generic');
-    });
-
-    test('typing a generic output attached to a child', function() {
-      const h = new TypeHierarchy();
-      h.addTypeDef('type');
-      h.finalize();
-      const typer = new ConnectionTyper(h);
-      const parent = createBlock('parent', 'g', ['g']);
-      const child = createBlock('child', 'type');
-      parent.getInput('0').connection.connect(child.outputConnection);
-      assertConnectionType(
-          typer,
-          parent.outputConnection,
-          [new ExplicitInstantiation('type')],
-          'Expected the generic to have the type of the child');
     });
 
     test('typing a generic output through another generic child', function() {
@@ -194,6 +191,36 @@ suite.only('Connection typing', function() {
           parent.outputConnection,
           [new ExplicitInstantiation('type')],
           'Expetd the generic to have the type of the child');
+    });
+
+    test('typing a generic output attached to a child', function() {
+      const h = new TypeHierarchy();
+      h.addTypeDef('type');
+      h.finalize();
+      const typer = new ConnectionTyper(h);
+      const parent = createBlock('parent', 'g', ['g']);
+      const child = createBlock('child', 'type');
+      parent.getInput('0').connection.connect(child.outputConnection);
+      assertConnectionType(
+          typer,
+          parent.outputConnection,
+          [new ExplicitInstantiation('type')],
+          'Expected the generic to have the type of the child');
+    });
+
+    test('typing a generic output with only non-matching inputs', function() {
+      const h = new TypeHierarchy();
+      h.addTypeDef('type');
+      h.finalize();
+      const typer = new ConnectionTyper(h);
+      const parent = createBlock('parent', 'g', ['t']);
+      const child = createBlock('child', 'type');
+      parent.getInput('0').connection.connect(child.outputConnection);
+      assertConnectionType(
+          typer,
+          parent.outputConnection,
+          [new GenericInstantiation('')],
+          'Expected the the output to be a simple generic');
     });
 
     test('typing a generic output with multiple children', function() {

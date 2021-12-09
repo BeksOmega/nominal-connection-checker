@@ -26,11 +26,12 @@ export class ConnectionTyper {
       c: Connection, t: GenericInstantiation
   ): TypeInstantiation[] {
     const s = c.getSourceBlock();
-    const pConn = s.outputConnection || s.previousConnection;
+    const c2 = s.outputConnection || s.previousConnection;
     // TODO: Tests for this.
-    // TODO: tests for when output does not match input type
-    if (!pConn || !pConn.targetConnection) return [new GenericInstantiation('')];
-    const pTypes = this.getTypesOfConnection(pConn.targetConnection);
+    if (!c2 || !this.getCheck(c2).equals(t) || !c2.targetConnection) {
+      return [new GenericInstantiation('')];
+    }
+    const pTypes = this.getTypesOfConnection(c2.targetConnection);
     // TODO: How do we handle multiple types?
     if (pTypes[0] instanceof ExplicitInstantiation) {
       return [new GenericInstantiation('', [], pTypes)];

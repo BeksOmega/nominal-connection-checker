@@ -11,7 +11,7 @@ import {assert} from 'chai';
 import * as Blockly from 'blockly';
 import {ParameterDefinition, Variance} from '../src/parameter_definition';
 
-suite.only('Connection typing', function() {
+suite('Connection typing', function() {
   class TestConnectionChecker extends Blockly.ConnectionChecker {
     doTypeChecks() {
       return true;

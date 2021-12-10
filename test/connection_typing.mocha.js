@@ -9,6 +9,7 @@ import {ExplicitInstantiation, GenericInstantiation} from '../src/type_instantia
 import {TypeHierarchy} from '../src/type_hierarchy';
 import {assert} from 'chai';
 import * as Blockly from 'blockly';
+import {ParameterDefinition, Variance} from '../src/parameter_definition';
 
 suite.only('Connection typing', function() {
   class TestConnectionChecker extends Blockly.ConnectionChecker {
@@ -63,7 +64,10 @@ suite.only('Connection typing', function() {
 
   suite('basic typing (no connected blocks)', function() {
     test('typing an explicit type', function() {
-      const typer = new ConnectionTyper(blankHierarchy());
+      const h = new TypeHierarchy();
+      h.addTypeDef('test');
+      h.finalize();
+      const typer = new ConnectionTyper(h);
       const block = createBlock('test', 'test');
       assertConnectionType(
           typer, block.outputConnection, [new ExplicitInstantiation('test')],
@@ -71,7 +75,14 @@ suite.only('Connection typing', function() {
     });
 
     test('typing an explicit type with params', function() {
-      const typer = new ConnectionTyper(blankHierarchy());
+      const h = new TypeHierarchy();
+      const paramA = new ParameterDefinition('a', Variance.CO);
+      const paramB = new ParameterDefinition('b', Variance.CO);
+      h.addTypeDef('test', [paramA, paramB]);
+      h.addTypeDef('test2');
+      h.addTypeDef('test3');
+      h.finalize();
+      const typer = new ConnectionTyper(h);
       const block = createBlock('test', 'test[test2, test3]');
       assertConnectionType(
           typer,
@@ -94,8 +105,24 @@ suite.only('Connection typing', function() {
     });
 
     test('typing a generic type with bounds', function() {
-      const typer = new ConnectionTyper(blankHierarchy());
-      const block = createBlock('test', 'test1, test2 <: t <: test3, test4');
+      const h = new TypeHierarchy();
+      const t1 = h.addTypeDef('test1');
+      const t2 = h.addTypeDef('test2');
+      const t3 = h.addTypeDef('test3');
+      const t4 = h.addTypeDef('test4');
+      const t5 = h.addTypeDef('test5');
+      const t6 = h.addTypeDef('test6');
+      t1.addParent(t3.createInstance());
+      t1.addParent(t4.createInstance());
+      t2.addParent(t3.createInstance());
+      t2.addParent(t4.createInstance());
+      t3.addParent(t5.createInstance());
+      t3.addParent(t6.createInstance());
+      t4.addParent(t5.createInstance());
+      t4.addParent(t6.createInstance());
+      h.finalize();
+      const typer = new ConnectionTyper(h);
+      const block = createBlock('test', 'test1, test2 <: t <: test5, test6');
       assertConnectionType(
           typer,
           block.outputConnection,
@@ -106,8 +133,8 @@ suite.only('Connection typing', function() {
                 new ExplicitInstantiation('test2'),
               ],
               [
-                new ExplicitInstantiation('test3'),
-                new ExplicitInstantiation('test4'),
+                new ExplicitInstantiation('test5'),
+                new ExplicitInstantiation('test6'),
               ])],
           'Expected an unattached generic ouput with bounds to be simply parsed');
     });
@@ -243,6 +270,37 @@ suite.only('Connection typing', function() {
           parent.outputConnection,
           [new ExplicitInstantiation('typeA')],
           'Expected the ouput to have the type of the NCA of the children');
+    });
+
+    test('typing a generic input with multiple nested children', function() {
+      const h = new TypeHierarchy();
+      const a = h.addTypeDef('typeA');
+      const b = h.addTypeDef('typeB');
+      const c = h.addTypeDef('typeC');
+      const d = h.addTypeDef('typeD');
+      const e = h.addTypeDef('typeE');
+      c.addParent(a.createInstance());
+      d.addParent(a.createInstance());
+      e.addParent(a.createInstance());
+      d.addParent(b.createInstance());
+      e.addParent(b.createInstance());
+      h.finalize();
+      const typer = new ConnectionTyper(h);
+
+      const parent = createBlock('parent', 'g', ['g', 'g']);
+      const middle = createBlock('middle', 'g', ['g', 'g']);
+      const typeC = createBlock('c', 'typeC');
+      const typeD = createBlock('d', 'typeD');
+      const typeE = createBlock('d', 'typeE');
+      parent.getInput('0').connection.connect(typeC.outputConnection);
+      parent.getInput('1').connection.connect(middle.outputConnection);
+      middle.getInput('0').connection.connect(typeD.outputConnection);
+      middle.getInput('1').connection.connect(typeE.outputConnection);
+      assertConnectionType(
+          typer,
+          parent.outputConnection,
+          [new ExplicitInstantiation('typeA')],
+          'Expected the ouput to have the type of the NCA of all of the children');
     });
 
     test('typing a generic input with a sibling', function() {

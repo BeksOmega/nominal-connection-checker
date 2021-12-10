@@ -355,6 +355,7 @@ export class TypeHierarchy {
     });
 
     if (types.length == 0) return [];
+    if (types.length == 1) return types;
     types = types.filter(t =>
       t instanceof ExplicitInstantiation ||
       t instanceof GenericInstantiation && t.isConstrained);

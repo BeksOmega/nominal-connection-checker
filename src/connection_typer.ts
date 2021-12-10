@@ -15,16 +15,15 @@ export class ConnectionTyper {
   ) {}
 
   getTypesOfConnection(c: Connection): TypeInstantiation[] {
-    const t = this.getCheck(c);
-    // TODO: Handling parameterized yptes.
-    if (t instanceof ExplicitInstantiation) return [t];
-    if (c.isSuperior()) return this.getTypesOfInput(c, t as GenericInstantiation);
-    return this.getTypesOfOutput(c, t as GenericInstantiation);
+    if (c.isSuperior()) return this.getTypesOfInput(c);
+    return this.hierarchy.getNearestCommonAncestors(
+        ...this.getTypesOfOutput(c));
   }
 
-  private getTypesOfInput(
-      c: Connection, t: GenericInstantiation
-  ): TypeInstantiation[] {
+  private getTypesOfInput(c: Connection): TypeInstantiation[] {
+    const t = this.getCheck(c);
+    if (t instanceof ExplicitInstantiation) return [t];
+
     const s = c.getSourceBlock();
     const c2 = s.outputConnection || s.previousConnection;
     // TODO: Tests for this.
@@ -39,20 +38,21 @@ export class ConnectionTyper {
     return pTypes;
   }
 
-  private getTypesOfOutput(
-      c: Connection, t: GenericInstantiation
-  ): TypeInstantiation[] {
-    const s = c.getSourceBlock();
-    const matches = this.getInputConnections(s).reduce((acc, c2) => {
-      if (!this.getCheck(c2).equals(t) || !c2.targetConnection) return acc;
-      // TODO: Not sure if we need to do an explicit test like inputs.
-      return [...acc, ...this.getTypesOfConnection(c2.targetConnection)];
-    }, [] as TypeInstantiation[]);
-    if (matches.length) {
-      return this.hierarchy.getNearestCommonAncestors(...matches);
+  private getTypesOfOutput(c: Connection): TypeInstantiation[] {
+    const t = this.getCheck(c);
+    if (t instanceof ExplicitInstantiation) {
+      return [t];
+    } else if (t instanceof GenericInstantiation) {
+      const s = c.getSourceBlock();
+      const matches = this.getInputConnections(s).reduce((acc, c2) => {
+        if (!this.getCheck(c2).equals(t) || !c2.targetConnection) return acc;
+        // TODO: Not sure if we need to do an explicit test like inputs.
+        return [...acc, ...this.getTypesOfOutput(c2.targetConnection, )];
+      }, [] as TypeInstantiation[]);
+      if (matches.length) return matches;
+      return [new GenericInstantiation(
+          '', t.unfilteredLowerBounds, t.unfilteredUpperBounds)];
     }
-    return [new GenericInstantiation(
-        '', t.unfilteredLowerBounds, t.unfilteredUpperBounds)];
   }
 
   private getInputConnections(b: Block): Connection[] {

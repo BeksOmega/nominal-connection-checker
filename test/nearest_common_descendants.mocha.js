@@ -495,6 +495,38 @@ suite('Nearest common descendants', function() {
   });
 
   suite('constrained generic nearest common descendants', function() {
+    test('single constrained generic', function() {
+      const h = new TypeHierarchy();
+      const t1 = h.addTypeDef('test1');
+      const t2 = h.addTypeDef('test2');
+      const t3 = h.addTypeDef('test3');
+      const t4 = h.addTypeDef('test4');
+      const t5 = h.addTypeDef('test5');
+      const t6 = h.addTypeDef('test6');
+      t1.addParent(t3.createInstance());
+      t1.addParent(t4.createInstance());
+      t2.addParent(t3.createInstance());
+      t2.addParent(t4.createInstance());
+      t3.addParent(t5.createInstance());
+      t3.addParent(t6.createInstance());
+      t4.addParent(t5.createInstance());
+      t4.addParent(t6.createInstance());
+      h.finalize();
+
+      const g = new GenericInstantiation(
+          'g',
+          [
+            new ExplicitInstantiation('test1'),
+            new ExplicitInstantiation('test2'),
+          ],
+          [
+            new ExplicitInstantiation('test5'),
+            new ExplicitInstantiation('test6'),
+          ]);
+      assertNearestCommonDescendants(
+          h, [g], [g], 'Expected the ncd of a single constrained generic to be itself');
+    });
+
     suite('constrained generics with unconstrained generics', function() {
       test('ncd of a generic and an upper bound generic is the upper bound generic',
           function() {

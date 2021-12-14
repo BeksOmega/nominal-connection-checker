@@ -149,7 +149,7 @@ suite('Connection typing', function() {
       assertConnectionType(
           typer,
           child.getInput('0').connection,
-          [new GenericInstantiation('', [], [new ExplicitInstantiation('type')])],
+          [new ExplicitInstantiation('type')],
           'Expected the generic input to have a bound of <: the parent');
     });
 
@@ -163,7 +163,7 @@ suite('Connection typing', function() {
       assertConnectionType(
           typer,
           child.getInput('0').connection,
-          [new GenericInstantiation('', [], [new ExplicitInstantiation('type')])],
+          [new ExplicitInstantiation('type')],
           'Expected the generic to have a bound of <: the parent');
     });
 
@@ -402,8 +402,7 @@ suite('Connection typing', function() {
         assertConnectionType(
             typer,
             child.getInput('0').connection,
-            [new ExplicitInstantiation(
-                'typeA', [new ExplicitInstantiation('typeB')])],
+            [new ExplicitInstantiation('typeB')],
             'Expected generics to properly look at parameters');
       });
 

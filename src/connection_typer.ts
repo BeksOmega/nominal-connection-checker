@@ -28,19 +28,20 @@ export class ConnectionTyper {
 
     const s = c.getSourceBlock();
     const c2 = s.outputConnection || s.previousConnection;
+    if (!c2 || !c2.targetConnection) return [new GenericInstantiation('')];
     const ot = this.getCheck(c2);
-    if (!c2 || !c2.targetConnection ||
-        !gens.some(g => this.typeContainsGeneric(ot, g))) {
+    if (!gens.some(g => this.typeContainsGeneric(ot, g))) {
       return [new GenericInstantiation('')];
     }
     const pts = this.getTypesOfConnection(c2.targetConnection);
     // TOOD: Is this how they array should work? Or should we be mapping each
     //   explicit to a new param type?
     return gens.reduce(
-        (accts, g) =>
-          accts.flatMap(
+        (accts, g) => {
+          return accts.flatMap(
               a => this.replaceGenericWithTypes(
-                  a, g, pts.flatMap(p => this.getTypesBoundToGeneric(p, ot, g)))),
+                  a, g, pts.flatMap(p => this.getTypesBoundToGeneric(p, ot, g))));
+        },
         [t]);
   }
 
@@ -74,7 +75,7 @@ export class ConnectionTyper {
 
   private typeContainsGeneric(t: TypeInstantiation, g: GenericInstantiation) {
     if (t instanceof GenericInstantiation) {
-      return t.isEquivalentTo(g);
+      return t.name == g.name;
     } else if (t instanceof ExplicitInstantiation) {
       return t.params.some(p => this.typeContainsGeneric(p, g));
     }
@@ -86,7 +87,7 @@ export class ConnectionTyper {
       g: GenericInstantiation
   ): TypeInstantiation[] {
     if (ref instanceof GenericInstantiation) {
-      return ref.isEquivalentTo(g) ? [t] : null;
+      return ref.name == g.name ? [t] : [];
     }
     if (ref instanceof ExplicitInstantiation &&
         t instanceof ExplicitInstantiation) {
@@ -108,7 +109,7 @@ export class ConnectionTyper {
       news: TypeInstantiation[],
   ): TypeInstantiation[] {
     if (t instanceof GenericInstantiation) {
-      if (t.isEquivalentTo(g)) return news.map(n => n.clone());
+      if (t.name == g.name) return news.map(n => n.clone());
       return [t];
     }
     if (t instanceof ExplicitInstantiation) {

@@ -43,7 +43,9 @@ export class ConnectionTyper {
           tts.flatMap(tt => this.getTypesBoundToGeneric(tt, ot, g, mapper)))
         .map(a => a.length ? a : [new GenericInstantiation('')]);
     return gens.reduce((accts, g, i) =>
-      accts.flatMap(a => this.replaceGenericWithTypes(a, g, mapped[i])), [t]);
+      accts.flatMap(a =>
+        mapped[i].flatMap(m =>
+          this.replaceGenericWithType(a, g, m))), [t]);
   }
 
   private getTypesOfOutput(c: Connection): TypeInstantiation[] {
@@ -71,21 +73,9 @@ export class ConnectionTyper {
               this.getTypesBoundToGeneric(tt, it, g, mapper))))
         .map(a => a.length ? a : [new GenericInstantiation('')]);
     return gens.reduce((accts, g, i) =>
-      accts.flatMap(a => this.replaceGenericWithTypes(a, g, mapped[i])), [t]);
-
-    // if (t instanceof ExplicitInstantiation) {
-    //   return [t];
-    // } else if (t instanceof GenericInstantiation) {
-    //   const s = c.getSourceBlock();
-    //   const matches = this.getInputConnections(s).reduce((acc, c2) => {
-    //     if (!this.getCheck(c2).equals(t) || !c2.targetConnection) return acc;
-    //     // TODO: Not sure if we need to do an explicit test like inputs.
-    //     return [...acc, ...this.getTypesOfOutput(c2.targetConnection, )];
-    //   }, [] as TypeInstantiation[]);
-    //   if (matches.length) return matches;
-    //   return [new GenericInstantiation(
-    //       '', t.unfilteredLowerBounds, t.unfilteredUpperBounds)];
-    // }
+      accts.flatMap(a =>
+        mapped[i].flatMap(m =>
+          this.replaceGenericWithType(a, g, m))), [t]);
   }
 
   private getGenericsOfType(t: TypeInstantiation): GenericInstantiation[] {
@@ -130,14 +120,13 @@ export class ConnectionTyper {
     return [];
   }
 
-  // TODO: Change this to take in a single type.
-  private replaceGenericWithTypes(
+  private replaceGenericWithType(
       t: TypeInstantiation,
       g: GenericInstantiation,
-      news: TypeInstantiation[],
+      n: TypeInstantiation,
   ): TypeInstantiation[] {
     if (t instanceof GenericInstantiation) {
-      if (t.name == g.name) return news.map(n => n.clone());
+      if (t.name == g.name) return [n.clone()];
       return [t];
     }
     if (t instanceof ExplicitInstantiation) {
@@ -145,7 +134,7 @@ export class ConnectionTyper {
       if (!t.params.length) return [t];
       // Typescript can't deal w/ heterogeneous arrays :/
       const mapped: any = t.params.map(
-          p => this.replaceGenericWithTypes(p, g, news));
+          p => this.replaceGenericWithType(p, g, n));
       mapped[0] = mapped[0].map(v => [v]);
       const combos: TypeInstantiation[][] = combine(mapped);
       return combos.map(c => new ExplicitInstantiation(t.name, c));

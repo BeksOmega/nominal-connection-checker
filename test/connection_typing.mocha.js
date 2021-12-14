@@ -613,7 +613,7 @@ suite('Connection typing', function() {
 
             const typer = new ConnectionTyper(h);
             const parent = createBlock('parent', 'typeA[a, b]', ['typeA[a, b]']);
-            const middle = createBlock('middle', 'typeA[a, b]', ['typeB[b]']);
+            const middle = createBlock('middle', 'typeA[a, b]', ['typeA[a, b]']);
             const child = createBlock('child', 'typeB[typeD]');
             parent.getInput('0').connection.connect(middle.outputConnection);
             middle.getInput('0').connection.connect(child.outputConnection);

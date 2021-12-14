@@ -33,33 +33,60 @@ export class ConnectionTyper {
     if (!gens.some(g => this.typeContainsGeneric(ot, g))) {
       return [new GenericInstantiation('')];
     }
-    const pts = this.getTypesOfConnection(c2.targetConnection);
+    const tts = this.getTypesOfConnection(c2.targetConnection);
     // TOOD: Is this how they array should work? Or should we be mapping each
     //   explicit to a new param type?
+    const mapper = (t, r, ps) =>
+      this.hierarchy.getTypeDef(t).getParamsForDescendant(r, ps);
     return gens.reduce(
         (accts, g) => {
           return accts.flatMap(
               a => this.replaceGenericWithTypes(
-                  a, g, pts.flatMap(p => this.getTypesBoundToGeneric(p, ot, g))));
+                  a, g, tts.flatMap(tt =>
+                    this.getTypesBoundToGeneric(tt, ot, g, mapper))));
         },
         [t]);
   }
 
   private getTypesOfOutput(c: Connection): TypeInstantiation[] {
     const t = this.getCheck(c);
-    if (t instanceof ExplicitInstantiation) {
+    const gens = this.getGenericsOfType(t);
+    if (!gens.length) {
       return [t];
-    } else if (t instanceof GenericInstantiation) {
-      const s = c.getSourceBlock();
-      const matches = this.getInputConnections(s).reduce((acc, c2) => {
-        if (!this.getCheck(c2).equals(t) || !c2.targetConnection) return acc;
-        // TODO: Not sure if we need to do an explicit test like inputs.
-        return [...acc, ...this.getTypesOfOutput(c2.targetConnection, )];
-      }, [] as TypeInstantiation[]);
-      if (matches.length) return matches;
-      return [new GenericInstantiation(
-          '', t.unfilteredLowerBounds, t.unfilteredUpperBounds)];
     }
+
+    const s = c.getSourceBlock();
+    const ics = this.getInputConnections(s)
+        .filter(c => c.targetConnection)
+        .filter(c => gens.some(g => this.typeContainsGeneric(this.getCheck(c), g)));
+    if (!ics.length) {
+      return [new GenericInstantiation('')];
+    }
+    const its = ics.map(c => this.getCheck(c));
+    const ttss = ics.map(c => this.getTypesOfConnection(c.targetConnection));
+    const mapper = (t, r, ps) =>
+      this.hierarchy.getTypeDef(t).getParamsForAncestor(r, ps).map(t => [t]);
+    const mapped = gens.map(g =>
+      its.flatMap((it, i) =>
+        ttss[i].flatMap(tt =>
+          // TODO: I think the issue is in here.
+          this.getTypesBoundToGeneric(tt, it, g, mapper))));
+    return gens.reduce((accts, g, i) =>
+      accts.flatMap(a => this.replaceGenericWithTypes(a, g, mapped[i])), [t]);
+
+    // if (t instanceof ExplicitInstantiation) {
+    //   return [t];
+    // } else if (t instanceof GenericInstantiation) {
+    //   const s = c.getSourceBlock();
+    //   const matches = this.getInputConnections(s).reduce((acc, c2) => {
+    //     if (!this.getCheck(c2).equals(t) || !c2.targetConnection) return acc;
+    //     // TODO: Not sure if we need to do an explicit test like inputs.
+    //     return [...acc, ...this.getTypesOfOutput(c2.targetConnection, )];
+    //   }, [] as TypeInstantiation[]);
+    //   if (matches.length) return matches;
+    //   return [new GenericInstantiation(
+    //       '', t.unfilteredLowerBounds, t.unfilteredUpperBounds)];
+    // }
   }
 
   private getGenericsOfType(t: TypeInstantiation): GenericInstantiation[] {
@@ -84,21 +111,22 @@ export class ConnectionTyper {
   private getTypesBoundToGeneric(
       t: TypeInstantiation,
       ref: TypeInstantiation,
-      g: GenericInstantiation
+      g: GenericInstantiation,
+      mapType: (t: string, ref: string, ps: TypeInstantiation[]) =>
+        TypeInstantiation[][]
   ): TypeInstantiation[] {
     if (ref instanceof GenericInstantiation) {
       return ref.name == g.name ? [t] : [];
     }
     if (ref instanceof ExplicitInstantiation &&
         t instanceof ExplicitInstantiation) {
-      const mapped = this.hierarchy.getTypeDef(t.name)
-          .getParamsForDescendant(ref.name, t.params);
+      const mapped = mapType(t.name, ref.name, t.params);
       // TODO: Tests for nested params.
       return ref.params.flatMap(
           // TODO: Is this how we should be handling multiple mappings for at
           // generic?
           (rp, i) => mapped[i].flatMap(
-              m => this.getTypesBoundToGeneric(m, rp, g)));
+              m => this.getTypesBoundToGeneric(m, rp, g, mapType)));
     }
     return [];
   }

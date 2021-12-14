@@ -33,7 +33,7 @@ export class ConnectionTyper {
     if (!gens.some(g => this.typeContainsGeneric(ot, g))) {
       return [new GenericInstantiation('')];
     }
-    const tts = this.getTypesOfConnection(c2.targetConnection);
+    const tts = this.getTypesOfInput(c2.targetConnection);
     // TOOD: Is this how they array should work? Or should we be mapping each
     //   explicit to a new param type?
     const mapper = (t, r, ps) =>
@@ -60,10 +60,10 @@ export class ConnectionTyper {
         .filter(c => c.targetConnection)
         .filter(c => gens.some(g => this.typeContainsGeneric(this.getCheck(c), g)));
     if (!ics.length) {
-      return [new GenericInstantiation('')];
+      return [this.removeGenericNames(t)];
     }
     const its = ics.map(c => this.getCheck(c));
-    const ttss = ics.map(c => this.getTypesOfConnection(c.targetConnection));
+    const ttss = ics.map(c => this.getTypesOfOutput(c.targetConnection));
     const mapper = (t, r, ps) =>
       this.hierarchy.getTypeDef(t).getParamsForAncestor(r, ps).map(t => [t]);
     const mapped = gens.map(g =>
@@ -131,6 +131,7 @@ export class ConnectionTyper {
     return [];
   }
 
+  // TODO: Change this to take in a single type.
   private replaceGenericWithTypes(
       t: TypeInstantiation,
       g: GenericInstantiation,
@@ -149,6 +150,16 @@ export class ConnectionTyper {
       mapped[0] = mapped[0].map(v => [v]);
       const combos: TypeInstantiation[][] = combine(mapped);
       return combos.map(c => new ExplicitInstantiation(t.name, c));
+    }
+  }
+
+  private removeGenericNames(t: TypeInstantiation): TypeInstantiation {
+    if (t instanceof GenericInstantiation) {
+      return new GenericInstantiation(
+          '', t.unfilteredLowerBounds, t.unfilteredUpperBounds);
+    } else if (t instanceof ExplicitInstantiation) {
+      return new ExplicitInstantiation(
+          t.name, t.params.map(p => this.removeGenericNames(p)));
     }
   }
 

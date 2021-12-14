@@ -291,7 +291,7 @@ suite('Connection typing', function() {
       const middle = createBlock('middle', 'g', ['g', 'g']);
       const typeC = createBlock('c', 'typeC');
       const typeD = createBlock('d', 'typeD');
-      const typeE = createBlock('d', 'typeE');
+      const typeE = createBlock('e', 'typeE');
       parent.getInput('0').connection.connect(typeC.outputConnection);
       parent.getInput('1').connection.connect(middle.outputConnection);
       middle.getInput('0').connection.connect(typeD.outputConnection);
@@ -319,7 +319,7 @@ suite('Connection typing', function() {
     });
   });
 
-  suite.only('generic parameterized types', function() {
+  suite('generic parameterized types', function() {
     suite('covariant', function() {
       test('typing a parameterized input with parameterized output', function() {
         const h = new TypeHierarchy();

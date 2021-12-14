@@ -645,8 +645,7 @@ suite('Connection typing', function() {
         assertConnectionType(
             typer,
             parent.outputConnection,
-            [new ExplicitInstantiation(
-                'typeA', [new ExplicitInstantiation('typeB')])],
+            [new ExplicitInstantiation('typeB')],
             'Expected generics to be properly bound to params');
       });
 
@@ -672,8 +671,7 @@ suite('Connection typing', function() {
             assertConnectionType(
                 typer,
                 parent.outputConnection,
-                [new ExplicitInstantiation(
-                    'typeA', [new ExplicitInstantiation('typeB')])],
+                [new ExplicitInstantiation('typeB')],
                 'Expected params to be properly unified');
           });
 
@@ -691,16 +689,15 @@ suite('Connection typing', function() {
 
             const typer = new ConnectionTyper(h);
             const parent = createBlock('parent', 't', ['typeA[t]', 't']);
-            const childC = createBlock('child', 'typeC');
-            const childD = createBlock('child', 'typeA[typeD]');
+            const childC = createBlock('child', 'typeA[typeC]');
+            const childD = createBlock('child', 'typeD');
             parent.getInput('0').connection.connect(childC.outputConnection);
             parent.getInput('1').connection.connect(childD.outputConnection);
 
             assertConnectionType(
                 typer,
                 parent.outputConnection,
-                [new ExplicitInstantiation(
-                    'typeA', [new ExplicitInstantiation('typeB')])],
+                [new ExplicitInstantiation('typeB')],
                 'Expected params and generics to be properly unified');
           });
     });

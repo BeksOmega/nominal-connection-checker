@@ -438,6 +438,25 @@ suite('Connection typing', function() {
                 'Expected parameters to be properly reorganized for subtypes, and to travel through blocks');
           });
 
+      test('typing a parameterized input without associated output', function() {
+        const h = new TypeHierarchy();
+        const coParam = new ParameterDefinition('co', Variance.CO);
+        h.addTypeDef('typeA', [coParam]);
+        h.addTypeDef('typeB');
+        h.finalize();
+
+        const typer = new ConnectionTyper(h);
+        const parent = createBlock('parent', '', ['typeA[typeB]']);
+        const child = createBlock('child', 'typeA[b]', ['typeA[t]']);
+        parent.getInput('0').connection.connect(child.outputConnection);
+
+        assertConnectionType(
+            typer,
+            child.getInput('0').connection,
+            [new ExplicitInstantiation('typeA', [new GenericInstantiation('')])],
+            'Expected unbound generics to be unnamed');
+      });
+
       test('typing a parameterized output with parameterized input', function() {
         const h = new TypeHierarchy();
         const coParam = new ParameterDefinition('co', Variance.CO);
@@ -699,6 +718,60 @@ suite('Connection typing', function() {
                 parent.outputConnection,
                 [new ExplicitInstantiation('typeB')],
                 'Expected params and generics to be properly unified');
+          });
+
+      test('typing a parameterized output without associated input', function() {
+        const h = new TypeHierarchy();
+        const coParam = new ParameterDefinition('co', Variance.CO);
+        h.addTypeDef('typeA', [coParam]);
+        h.addTypeDef('typeB');
+        h.finalize();
+
+        const typer = new ConnectionTyper(h);
+        const parent = createBlock('parent', 'typeA[t]', ['typeA[b]']);
+        const child = createBlock('child', 'typeA[typeB]');
+        parent.getInput('0').connection.connect(child.outputConnection);
+
+        assertConnectionType(
+            typer,
+            parent.outputConnection,
+            [new ExplicitInstantiation('typeA', [new GenericInstantiation('')])],
+            'Expected unbound generics to be unnamed');
+      });
+
+      test('typing a parameterized output without one generic associated with an input, and the other not',
+          function() {
+            const h = new TypeHierarchy();
+            const coParamA = new ParameterDefinition('coA', Variance.CO);
+            const coParamB = new ParameterDefinition('coB', Variance.CO);
+            h.addTypeDef('typeA', [coParamA, coParamB]);
+            const b = h.addTypeDef('typeB', [coParamA]);
+            h.addTypeDef('typeC');
+            h.addTypeDef('typeD');
+            b.addParent(new ExplicitInstantiation(
+                'typeA',
+                [
+                  new ExplicitInstantiation('typeC'),
+                  new GenericInstantiation('coA'),
+                ]));
+            h.finalize();
+
+
+            const typer = new ConnectionTyper(h);
+            const parent = createBlock('parent', 'typeA[a, b]', ['typeB[b]']);
+            const child = createBlock('child', 'typeB[typeD]');
+            parent.getInput('0').connection.connect(child.outputConnection);
+
+            assertConnectionType(
+                typer,
+                parent.outputConnection,
+                [new ExplicitInstantiation(
+                    'typeA',
+                    [
+                      new GenericInstantiation(''),
+                      new ExplicitInstantiation('typeD'),
+                    ])],
+                'Expected unbound generics to be unnamed');
           });
     });
   });

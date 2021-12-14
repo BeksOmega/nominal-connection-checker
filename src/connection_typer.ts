@@ -31,21 +31,19 @@ export class ConnectionTyper {
     if (!c2 || !c2.targetConnection) return [new GenericInstantiation('')];
     const ot = this.getCheck(c2);
     if (!gens.some(g => this.typeContainsGeneric(ot, g))) {
-      return [new GenericInstantiation('')];
+      return [this.removeGenericNames(t)];
     }
     const tts = this.getTypesOfInput(c2.targetConnection);
     // TOOD: Is this how they array should work? Or should we be mapping each
     //   explicit to a new param type?
     const mapper = (t, r, ps) =>
       this.hierarchy.getTypeDef(t).getParamsForDescendant(r, ps);
-    return gens.reduce(
-        (accts, g) => {
-          return accts.flatMap(
-              a => this.replaceGenericWithTypes(
-                  a, g, tts.flatMap(tt =>
-                    this.getTypesBoundToGeneric(tt, ot, g, mapper))));
-        },
-        [t]);
+    const mapped = gens
+        .map(g =>
+          tts.flatMap(tt => this.getTypesBoundToGeneric(tt, ot, g, mapper)))
+        .map(a => a.length ? a : [new GenericInstantiation('')]);
+    return gens.reduce((accts, g, i) =>
+      accts.flatMap(a => this.replaceGenericWithTypes(a, g, mapped[i])), [t]);
   }
 
   private getTypesOfOutput(c: Connection): TypeInstantiation[] {
@@ -66,11 +64,12 @@ export class ConnectionTyper {
     const ttss = ics.map(c => this.getTypesOfOutput(c.targetConnection));
     const mapper = (t, r, ps) =>
       this.hierarchy.getTypeDef(t).getParamsForAncestor(r, ps).map(t => [t]);
-    const mapped = gens.map(g =>
-      its.flatMap((it, i) =>
-        ttss[i].flatMap(tt =>
-          // TODO: I think the issue is in here.
-          this.getTypesBoundToGeneric(tt, it, g, mapper))));
+    const mapped = gens
+        .map(g =>
+          its.flatMap((it, i) =>
+            ttss[i].flatMap(tt =>
+              this.getTypesBoundToGeneric(tt, it, g, mapper))))
+        .map(a => a.length ? a : [new GenericInstantiation('')]);
     return gens.reduce((accts, g, i) =>
       accts.flatMap(a => this.replaceGenericWithTypes(a, g, mapped[i])), [t]);
 
@@ -164,7 +163,9 @@ export class ConnectionTyper {
   }
 
   private getInputConnections(b: Block): Connection[] {
-    return b.inputList.map(i => i.connection);
+    const cs = b.inputList.map(i => i.connection);
+    if (b.nextConnection) cs.push(b.nextConnection);
+    return cs;
   }
 
   private getCheck(c: Connection): TypeInstantiation {

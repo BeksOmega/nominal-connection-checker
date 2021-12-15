@@ -149,7 +149,7 @@ suite('Connection typing', function() {
       assertConnectionType(
           typer,
           child.getInput('0').connection,
-          [new GenericInstantiation('', [], [new ExplicitInstantiation('type')])],
+          [new ExplicitInstantiation('type')],
           'Expected the generic input to have a bound of <: the parent');
     });
 
@@ -163,7 +163,7 @@ suite('Connection typing', function() {
       assertConnectionType(
           typer,
           child.getInput('0').connection,
-          [new GenericInstantiation('', [], [new ExplicitInstantiation('type')])],
+          [new ExplicitInstantiation('type')],
           'Expected the generic to have a bound of <: the parent');
     });
 
@@ -291,7 +291,7 @@ suite('Connection typing', function() {
       const middle = createBlock('middle', 'g', ['g', 'g']);
       const typeC = createBlock('c', 'typeC');
       const typeD = createBlock('d', 'typeD');
-      const typeE = createBlock('d', 'typeE');
+      const typeE = createBlock('e', 'typeE');
       parent.getInput('0').connection.connect(typeC.outputConnection);
       parent.getInput('1').connection.connect(middle.outputConnection);
       middle.getInput('0').connection.connect(typeD.outputConnection);
@@ -316,6 +316,658 @@ suite('Connection typing', function() {
           parent.getInput('1').connection,
           [new GenericInstantiation('')],
           'Expected the generic to be a simple generic');
+    });
+  });
+
+  suite('generic parameterized types', function() {
+    suite('covariant', function() {
+      suite('inputs', function() {
+        test('typing a parameterized input with parameterized output', function() {
+          const h = new TypeHierarchy();
+          const coParam = new ParameterDefinition('co', Variance.CO);
+          h.addTypeDef('typeA', [coParam]);
+          h.addTypeDef('typeB');
+          h.finalize();
+
+          const typer = new ConnectionTyper(h);
+          const parent = createBlock('parent', '', ['typeA[typeB]']);
+          const child = createBlock('child', 'typeA[t]', ['typeA[t]']);
+          parent.getInput('0').connection.connect(child.outputConnection);
+
+          assertConnectionType(
+              typer,
+              child.getInput('0').connection,
+              [new ExplicitInstantiation(
+                  'typeA', [new ExplicitInstantiation('typeB')])],
+              'Expected a parameterized input to be bound to the type attached to the output');
+        });
+
+        test('typing a parameterized input with parameterized output attached to super',
+            function() {
+              const h = new TypeHierarchy();
+              const coParamA = new ParameterDefinition('coA', Variance.CO);
+              const coParamB = new ParameterDefinition('coB', Variance.CO);
+              h.addTypeDef('typeA', [coParamA, coParamB]);
+              const b = h.addTypeDef('typeB', [coParamA]);
+              h.addTypeDef('typeC');
+              h.addTypeDef('typeD');
+              b.addParent(new ExplicitInstantiation(
+                  'typeA',
+                  [new ExplicitInstantiation('typeC'), new GenericInstantiation('coA')]));
+              h.finalize();
+
+              const typer = new ConnectionTyper(h);
+              const parent = createBlock('parent', '', ['typeA[typeC, typeD]']);
+              const child = createBlock('child', 'typeB[t]', ['typeB[t]']);
+              parent.getInput('0').connection.connect(child.outputConnection);
+
+              assertConnectionType(
+                  typer,
+                  child.getInput('0').connection,
+                  [new ExplicitInstantiation(
+                      'typeB', [new ExplicitInstantiation('typeD')])],
+                  'Expected parameters to be properly reorganized for subtypes');
+            });
+
+        test('typing a parameterized input with generic output', function() {
+          const h = new TypeHierarchy();
+          const coParam = new ParameterDefinition('co', Variance.CO);
+          h.addTypeDef('typeA', [coParam]);
+          h.addTypeDef('typeB');
+          h.finalize();
+
+          const typer = new ConnectionTyper(h);
+          const parent = createBlock('parent', '', ['typeB']);
+          const child = createBlock('child', 't', ['typeA[t]']);
+          parent.getInput('0').connection.connect(child.outputConnection);
+
+          assertConnectionType(
+              typer,
+              child.getInput('0').connection,
+              [new ExplicitInstantiation(
+                  'typeA', [new ExplicitInstantiation('typeB')])],
+              'Expected generics to be properly slotted into parameters');
+        });
+
+        test('typing a generic input with parameterized output', function() {
+          const h = new TypeHierarchy();
+          const coParam = new ParameterDefinition('co', Variance.CO);
+          h.addTypeDef('typeA', [coParam]);
+          h.addTypeDef('typeB');
+          h.finalize();
+
+          const typer = new ConnectionTyper(h);
+          const parent = createBlock('parent', '', ['typeA[typeB]']);
+          const child = createBlock('child', 'typeA[t]', ['t']);
+          parent.getInput('0').connection.connect(child.outputConnection);
+
+          assertConnectionType(
+              typer,
+              child.getInput('0').connection,
+              [new ExplicitInstantiation('typeB')],
+              'Expected generics to properly look at parameters');
+        });
+
+        test('typing a parameterized input through a parameterized parent',
+            function() {
+              const h = new TypeHierarchy();
+              const coParamA = new ParameterDefinition('coA', Variance.CO);
+              const coParamB = new ParameterDefinition('coB', Variance.CO);
+              h.addTypeDef('typeA', [coParamA, coParamB]);
+              const b = h.addTypeDef('typeB', [coParamA]);
+              h.addTypeDef('typeC');
+              h.addTypeDef('typeD');
+              b.addParent(new ExplicitInstantiation(
+                  'typeA',
+                  [
+                    new ExplicitInstantiation('typeC'),
+                    new GenericInstantiation('coA'),
+                  ]));
+              h.finalize();
+
+              const typer = new ConnectionTyper(h);
+              const parent = createBlock('parent', '', ['typeA[typeC, typeD]']);
+              const middle = createBlock('middle', 'typeA[a, b]', ['typeB[b]']);
+              const child = createBlock('child', 'typeB[t]', ['typeB[t]']);
+              parent.getInput('0').connection.connect(middle.outputConnection);
+              middle.getInput('0').connection.connect(child.outputConnection);
+
+              assertConnectionType(
+                  typer,
+                  child.getInput('0').connection,
+                  [new ExplicitInstantiation(
+                      'typeB', [new ExplicitInstantiation('typeD')])],
+                  'Expected parameters to be properly reorganized for subtypes, and to travel through blocks');
+            });
+
+        test('typing a parameterized input without associated output', function() {
+          const h = new TypeHierarchy();
+          const coParam = new ParameterDefinition('co', Variance.CO);
+          h.addTypeDef('typeA', [coParam]);
+          h.addTypeDef('typeB');
+          h.finalize();
+
+          const typer = new ConnectionTyper(h);
+          const parent = createBlock('parent', '', ['typeA[typeB]']);
+          const child = createBlock('child', 'typeA[b]', ['typeA[t]']);
+          parent.getInput('0').connection.connect(child.outputConnection);
+
+          assertConnectionType(
+              typer,
+              child.getInput('0').connection,
+              [new ExplicitInstantiation('typeA', [new GenericInstantiation('')])],
+              'Expected unbound generics to be unnamed');
+        });
+
+        test('typing a paramterized input with the generic nested', function() {
+          const h = new TypeHierarchy();
+          const coParam = new ParameterDefinition('co', Variance.CO);
+          h.addTypeDef('typeA', [coParam]);
+          h.addTypeDef('typeB');
+          h.finalize();
+
+          const typer = new ConnectionTyper(h);
+          const parent = createBlock('parent', '', ['typeA[typeA[typeB]]']);
+          const child = createBlock('child', 'typeA[typeA[t]]', ['typeA[typeA[t]]']);
+          parent.getInput('0').connection.connect(child.outputConnection);
+
+          assertConnectionType(
+              typer,
+              child.getInput('0').connection,
+              [new ExplicitInstantiation(
+                  'typeA', [new ExplicitInstantiation(
+                      'typeA', [new ExplicitInstantiation('typeB')])])],
+              'Expected the generic param to be properly bound, even though it is nested');
+        });
+      });
+
+      suite('outputs', function() {
+        test('typing a parameterized output with parameterized input', function() {
+          const h = new TypeHierarchy();
+          const coParam = new ParameterDefinition('co', Variance.CO);
+          h.addTypeDef('typeA', [coParam]);
+          h.addTypeDef('typeB');
+          h.finalize();
+
+          const typer = new ConnectionTyper(h);
+          const parent = createBlock('parent', 'typeA[t]', ['typeA[t]']);
+          const child = createBlock('child', 'typeA[typeB]');
+          parent.getInput('0').connection.connect(child.outputConnection);
+
+          assertConnectionType(
+              typer,
+              parent.outputConnection,
+              [new ExplicitInstantiation(
+                  'typeA', [new ExplicitInstantiation('typeB')])],
+              'Expected a parameterized output to be bound to the type attached to the input');
+        });
+
+        test('typing a parameterized output with parameterized input attached to sub',
+            function() {
+              const h = new TypeHierarchy();
+              const coParamA = new ParameterDefinition('coA', Variance.CO);
+              const coParamB = new ParameterDefinition('coB', Variance.CO);
+              h.addTypeDef('typeA', [coParamA, coParamB]);
+              const b = h.addTypeDef('typeB', [coParamA]);
+              h.addTypeDef('typeC');
+              h.addTypeDef('typeD');
+              b.addParent(new ExplicitInstantiation(
+                  'typeA',
+                  [
+                    new ExplicitInstantiation('typeC'),
+                    new GenericInstantiation('coA'),
+                  ]));
+              h.finalize();
+
+
+              const typer = new ConnectionTyper(h);
+              const parent = createBlock('parent', 'typeA[a, b]', ['typeA[a, b]']);
+              const child = createBlock('child', 'typeB[typeD]');
+              parent.getInput('0').connection.connect(child.outputConnection);
+
+              assertConnectionType(
+                  typer,
+                  parent.outputConnection,
+                  [new ExplicitInstantiation(
+                      'typeA',
+                      [
+                        new ExplicitInstantiation('typeC'),
+                        new ExplicitInstantiation('typeD'),
+                      ])],
+                  'Expected parameters to be properly reorganized');
+            });
+
+        test('typing a parameterized output with multiple parameterized inputs',
+            function() {
+              const h = new TypeHierarchy();
+              const coParam = new ParameterDefinition('co', Variance.CO);
+              h.addTypeDef('typeA', [coParam]);
+              const b = h.addTypeDef('typeB');
+              const c = h.addTypeDef('typeC');
+              const d = h.addTypeDef('typeD');
+              c.addParent(b.createInstance());
+              d.addParent(b.createInstance());
+              h.finalize();
+
+              const typer = new ConnectionTyper(h);
+              const parent = createBlock(
+                  'parent', 'typeA[t]', ['typeA[t]', 'typeA[t]']);
+              const childC = createBlock('child', 'typeA[typeC]');
+              const childD = createBlock('child', 'typeA[typeD]');
+              parent.getInput('0').connection.connect(childC.outputConnection);
+              parent.getInput('1').connection.connect(childD.outputConnection);
+
+              assertConnectionType(
+                  typer,
+                  parent.outputConnection,
+                  [new ExplicitInstantiation(
+                      'typeA', [new ExplicitInstantiation('typeB')])],
+                  'Expected params to inputs to be properly unified');
+            });
+
+        test('typing a parameterized output with generic input', function() {
+          const h = new TypeHierarchy();
+          const coParam = new ParameterDefinition('co', Variance.CO);
+          h.addTypeDef('typeA', [coParam]);
+          h.addTypeDef('typeB');
+          h.finalize();
+
+          const typer = new ConnectionTyper(h);
+          const parent = createBlock('parent', 'typeA[t]', ['t']);
+          const child = createBlock('child', 'typeB');
+          parent.getInput('0').connection.connect(child.outputConnection);
+
+          assertConnectionType(
+              typer,
+              parent.outputConnection,
+              [new ExplicitInstantiation(
+                  'typeA', [new ExplicitInstantiation('typeB')])],
+              'Expected generics to be properly slotted into params');
+        });
+
+        test('typing a parameterized output with multiple generic inputs',
+            function() {
+              const h = new TypeHierarchy();
+              const coParam = new ParameterDefinition('co', Variance.CO);
+              h.addTypeDef('typeA', [coParam]);
+              const b = h.addTypeDef('typeB');
+              const c = h.addTypeDef('typeC');
+              const d = h.addTypeDef('typeD');
+              c.addParent(b.createInstance());
+              d.addParent(b.createInstance());
+              h.finalize();
+
+              const typer = new ConnectionTyper(h);
+              const parent = createBlock('parent', 'typeA[t]', ['t', 't']);
+              const childC = createBlock('child', 'typeC');
+              const childD = createBlock('child', 'typeD');
+              parent.getInput('0').connection.connect(childC.outputConnection);
+              parent.getInput('1').connection.connect(childD.outputConnection);
+
+              assertConnectionType(
+                  typer,
+                  parent.outputConnection,
+                  [new ExplicitInstantiation(
+                      'typeA', [new ExplicitInstantiation('typeB')])],
+                  'Expected generics to be properly unified');
+            });
+
+        test('typing a parameterized output with parameterized and generic inputs',
+            function() {
+              const h = new TypeHierarchy();
+              const coParam = new ParameterDefinition('co', Variance.CO);
+              h.addTypeDef('typeA', [coParam]);
+              const b = h.addTypeDef('typeB');
+              const c = h.addTypeDef('typeC');
+              const d = h.addTypeDef('typeD');
+              c.addParent(b.createInstance());
+              d.addParent(b.createInstance());
+              h.finalize();
+
+              const typer = new ConnectionTyper(h);
+              const parent = createBlock('parent', 'typeA[t]', ['t', 'typeA[t]']);
+              const childC = createBlock('child', 'typeC');
+              const childD = createBlock('child', 'typeA[typeD]');
+              parent.getInput('0').connection.connect(childC.outputConnection);
+              parent.getInput('1').connection.connect(childD.outputConnection);
+
+              assertConnectionType(
+                  typer,
+                  parent.outputConnection,
+                  [new ExplicitInstantiation(
+                      'typeA', [new ExplicitInstantiation('typeB')])],
+                  'Expected generics and params to be properly unified');
+            });
+
+        test('typing a parameterized output through a parameterized child',
+            function() {
+              const h = new TypeHierarchy();
+              const coParamA = new ParameterDefinition('coA', Variance.CO);
+              const coParamB = new ParameterDefinition('coB', Variance.CO);
+              h.addTypeDef('typeA', [coParamA, coParamB]);
+              const b = h.addTypeDef('typeB', [coParamA]);
+              h.addTypeDef('typeC');
+              h.addTypeDef('typeD');
+              b.addParent(new ExplicitInstantiation(
+                  'typeA',
+                  [
+                    new ExplicitInstantiation('typeC'),
+                    new GenericInstantiation('coA'),
+                  ]));
+              h.finalize();
+
+              const typer = new ConnectionTyper(h);
+              const parent = createBlock('parent', 'typeA[a, b]', ['typeA[a, b]']);
+              const middle = createBlock('middle', 'typeA[a, b]', ['typeA[a, b]']);
+              const child = createBlock('child', 'typeB[typeD]');
+              parent.getInput('0').connection.connect(middle.outputConnection);
+              middle.getInput('0').connection.connect(child.outputConnection);
+
+              assertConnectionType(
+                  typer,
+                  parent.outputConnection,
+                  [new ExplicitInstantiation(
+                      'typeA',
+                      [
+                        new ExplicitInstantiation('typeC'),
+                        new ExplicitInstantiation('typeD'),
+                      ])],
+                  'Expected Expected parameters to be properly reorganized for subtypes, and to travel through blocks');
+            });
+
+        test('typing a paramterized output with multiple params that unify to multiple things',
+            function() {
+              const h = new TypeHierarchy();
+              const coParamA = new ParameterDefinition('coA', Variance.CO);
+              const coParamB = new ParameterDefinition('coB', Variance.CO);
+              h.addTypeDef('typeA', [coParamA, coParamB]);
+              h.addTypeDef('typeX', [coParamA]);
+              const b = h.addTypeDef('typeB');
+              const c = h.addTypeDef('typeC');
+              const d = h.addTypeDef('typeD');
+              const e = h.addTypeDef('typeE');
+              const f = h.addTypeDef('typeF');
+              const g = h.addTypeDef('typeG');
+              const i = h.addTypeDef('typeI');
+              const j = h.addTypeDef('typeJ');
+              d.addParent(b.createInstance());
+              d.addParent(c.createInstance());
+              e.addParent(b.createInstance());
+              e.addParent(c.createInstance());
+              i.addParent(f.createInstance());
+              i.addParent(g.createInstance());
+              j.addParent(f.createInstance());
+              j.addParent(g.createInstance());
+              h.finalize();
+
+              const typer = new ConnectionTyper(h);
+              const parent = createBlock(
+                  'parent',
+                  'typeA[a, b]',
+                  ['typeX[a]', 'typeX[a]', 'typeX[b]', 'typeX[b]']);
+              const childD = createBlock('child', 'typeX[typeD]');
+              const childE = createBlock('child', 'typeX[typeE]');
+              const childI = createBlock('child', 'typeX[typeI]');
+              const childJ = createBlock('child', 'typeX[typeJ]');
+              parent.getInput('0').connection.connect(childD.outputConnection);
+              parent.getInput('1').connection.connect(childE.outputConnection);
+              parent.getInput('2').connection.connect(childI.outputConnection);
+              parent.getInput('3').connection.connect(childJ.outputConnection);
+
+              assertConnectionType(
+                  typer,
+                  parent.outputConnection,
+                  [
+                    new ExplicitInstantiation(
+                        'typeA',
+                        [
+                          new ExplicitInstantiation('typeB'),
+                          new ExplicitInstantiation('typeF'),
+                        ]),
+                    new ExplicitInstantiation(
+                        'typeA',
+                        [
+                          new ExplicitInstantiation('typeB'),
+                          new ExplicitInstantiation('typeG'),
+                        ]),
+                    new ExplicitInstantiation(
+                        'typeA',
+                        [
+                          new ExplicitInstantiation('typeC'),
+                          new ExplicitInstantiation('typeF'),
+                        ]),
+                    new ExplicitInstantiation(
+                        'typeA',
+                        [
+                          new ExplicitInstantiation('typeC'),
+                          new ExplicitInstantiation('typeG'),
+                        ]),
+                  ],
+                  'Expected params unifying to multiple types to result in multiple types');
+            });
+
+        test('typing a paramterized output with multiple params that unify to multiple things through children',
+            function() {
+              const h = new TypeHierarchy();
+              const coParamA = new ParameterDefinition('coA', Variance.CO);
+              const coParamB = new ParameterDefinition('coB', Variance.CO);
+              h.addTypeDef('typeA', [coParamA, coParamB]);
+              h.addTypeDef('typeX', [coParamA]);
+              const b = h.addTypeDef('typeB');
+              const c = h.addTypeDef('typeC');
+              const d = h.addTypeDef('typeD');
+              const e = h.addTypeDef('typeE');
+              const f = h.addTypeDef('typeF');
+              const g = h.addTypeDef('typeG');
+              const i = h.addTypeDef('typeI');
+              const j = h.addTypeDef('typeJ');
+              d.addParent(b.createInstance());
+              d.addParent(c.createInstance());
+              e.addParent(b.createInstance());
+              e.addParent(c.createInstance());
+              i.addParent(f.createInstance());
+              i.addParent(g.createInstance());
+              j.addParent(f.createInstance());
+              j.addParent(g.createInstance());
+              h.finalize();
+
+              const typer = new ConnectionTyper(h);
+              const parent = createBlock(
+                  'parent', 'typeA[a, b]', ['typeX[a]', 'typeX[b]']);
+              const middle1 = createBlock(
+                  'middle1', 'typeX[t]', ['typeX[t]', 'typeX[t]']);
+              const middle2 = createBlock(
+                  'middle2', 'typeX[t]', ['typeX[t]', 'typeX[t]']);
+              const childD = createBlock('child', 'typeX[typeD]');
+              const childE = createBlock('child', 'typeX[typeE]');
+              const childI = createBlock('child', 'typeX[typeI]');
+              const childJ = createBlock('child', 'typeX[typeJ]');
+              parent.getInput('0').connection.connect(middle1.outputConnection);
+              parent.getInput('1').connection.connect(middle2.outputConnection);
+              middle1.getInput('0').connection.connect(childD.outputConnection);
+              middle1.getInput('1').connection.connect(childE.outputConnection);
+              middle2.getInput('0').connection.connect(childI.outputConnection);
+              middle2.getInput('1').connection.connect(childJ.outputConnection);
+
+              assertConnectionType(
+                  typer,
+                  parent.outputConnection,
+                  [
+                    new ExplicitInstantiation(
+                        'typeA',
+                        [
+                          new ExplicitInstantiation('typeB'),
+                          new ExplicitInstantiation('typeF'),
+                        ]),
+                    new ExplicitInstantiation(
+                        'typeA',
+                        [
+                          new ExplicitInstantiation('typeB'),
+                          new ExplicitInstantiation('typeG'),
+                        ]),
+                    new ExplicitInstantiation(
+                        'typeA',
+                        [
+                          new ExplicitInstantiation('typeC'),
+                          new ExplicitInstantiation('typeF'),
+                        ]),
+                    new ExplicitInstantiation(
+                        'typeA',
+                        [
+                          new ExplicitInstantiation('typeC'),
+                          new ExplicitInstantiation('typeG'),
+                        ]),
+                  ],
+                  'Expected params unifying to multiple types to result in multiple types');
+            });
+
+        test('typing a generic output with parameterized input', function() {
+          const h = new TypeHierarchy();
+          const coParam = new ParameterDefinition('co', Variance.CO);
+          h.addTypeDef('typeA', [coParam]);
+          h.addTypeDef('typeB');
+          h.finalize();
+
+          const typer = new ConnectionTyper(h);
+          const parent = createBlock('parent', 't', ['typeA[t]']);
+          const child = createBlock('child', 'typeA[typeB]');
+          parent.getInput('0').connection.connect(child.outputConnection);
+
+          assertConnectionType(
+              typer,
+              parent.outputConnection,
+              [new ExplicitInstantiation('typeB')],
+              'Expected generics to be properly bound to params');
+        });
+
+        test('typing a generic output with multiple parameterized inputs',
+            function() {
+              const h = new TypeHierarchy();
+              const coParam = new ParameterDefinition('co', Variance.CO);
+              h.addTypeDef('typeA', [coParam]);
+              const b = h.addTypeDef('typeB');
+              const c = h.addTypeDef('typeC');
+              const d = h.addTypeDef('typeD');
+              c.addParent(b.createInstance());
+              d.addParent(b.createInstance());
+              h.finalize();
+
+              const typer = new ConnectionTyper(h);
+              const parent = createBlock('parent', 't', ['typeA[t]', 'typeA[t]']);
+              const childC = createBlock('child', 'typeA[typeC]');
+              const childD = createBlock('child', 'typeA[typeD]');
+              parent.getInput('0').connection.connect(childC.outputConnection);
+              parent.getInput('1').connection.connect(childD.outputConnection);
+
+              assertConnectionType(
+                  typer,
+                  parent.outputConnection,
+                  [new ExplicitInstantiation('typeB')],
+                  'Expected params to be properly unified');
+            });
+
+        test('typing a generic output with parameterized and generic inputs',
+            function() {
+              const h = new TypeHierarchy();
+              const coParam = new ParameterDefinition('co', Variance.CO);
+              h.addTypeDef('typeA', [coParam]);
+              const b = h.addTypeDef('typeB');
+              const c = h.addTypeDef('typeC');
+              const d = h.addTypeDef('typeD');
+              c.addParent(b.createInstance());
+              d.addParent(b.createInstance());
+              h.finalize();
+
+              const typer = new ConnectionTyper(h);
+              const parent = createBlock('parent', 't', ['typeA[t]', 't']);
+              const childC = createBlock('child', 'typeA[typeC]');
+              const childD = createBlock('child', 'typeD');
+              parent.getInput('0').connection.connect(childC.outputConnection);
+              parent.getInput('1').connection.connect(childD.outputConnection);
+
+              assertConnectionType(
+                  typer,
+                  parent.outputConnection,
+                  [new ExplicitInstantiation('typeB')],
+                  'Expected params and generics to be properly unified');
+            });
+
+        test('typing a parameterized output without associated input', function() {
+          const h = new TypeHierarchy();
+          const coParam = new ParameterDefinition('co', Variance.CO);
+          h.addTypeDef('typeA', [coParam]);
+          h.addTypeDef('typeB');
+          h.finalize();
+
+          const typer = new ConnectionTyper(h);
+          const parent = createBlock('parent', 'typeA[t]', ['typeA[b]']);
+          const child = createBlock('child', 'typeA[typeB]');
+          parent.getInput('0').connection.connect(child.outputConnection);
+
+          assertConnectionType(
+              typer,
+              parent.outputConnection,
+              [new ExplicitInstantiation('typeA', [new GenericInstantiation('')])],
+              'Expected unbound generics to be unnamed');
+        });
+
+        test('typing a parameterized output without one generic associated with an input, and the other not',
+            function() {
+              const h = new TypeHierarchy();
+              const coParamA = new ParameterDefinition('coA', Variance.CO);
+              const coParamB = new ParameterDefinition('coB', Variance.CO);
+              h.addTypeDef('typeA', [coParamA, coParamB]);
+              const b = h.addTypeDef('typeB', [coParamA]);
+              h.addTypeDef('typeC');
+              h.addTypeDef('typeD');
+              b.addParent(new ExplicitInstantiation(
+                  'typeA',
+                  [
+                    new ExplicitInstantiation('typeC'),
+                    new GenericInstantiation('coA'),
+                  ]));
+              h.finalize();
+
+
+              const typer = new ConnectionTyper(h);
+              const parent = createBlock('parent', 'typeA[a, b]', ['typeB[b]']);
+              const child = createBlock('child', 'typeB[typeD]');
+              parent.getInput('0').connection.connect(child.outputConnection);
+
+              assertConnectionType(
+                  typer,
+                  parent.outputConnection,
+                  [new ExplicitInstantiation(
+                      'typeA',
+                      [
+                        new GenericInstantiation(''),
+                        new ExplicitInstantiation('typeD'),
+                      ])],
+                  'Expected unbound generics to be unnamed');
+            });
+
+        test('typing a paramterized output with the generic nested', function() {
+          const h = new TypeHierarchy();
+          const coParam = new ParameterDefinition('co', Variance.CO);
+          h.addTypeDef('typeA', [coParam]);
+          h.addTypeDef('typeB');
+          h.finalize();
+
+          const typer = new ConnectionTyper(h);
+          const parent = createBlock(
+              'parent', 'typeA[typeA[t]]', ['typeA[typeA[t]]']);
+          const child = createBlock('child', 'typeA[typeA[typeB]]');
+          parent.getInput('0').connection.connect(child.outputConnection);
+
+          assertConnectionType(
+              typer,
+              parent.outputConnection,
+              [new ExplicitInstantiation(
+                  'typeA', [new ExplicitInstantiation(
+                      'typeA', [new ExplicitInstantiation('typeB')])])],
+              'Expected the generic param to be properly bound, even though it is nested');
+        });
+      });
     });
   });
 });

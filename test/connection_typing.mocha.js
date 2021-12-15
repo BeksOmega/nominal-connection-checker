@@ -401,6 +401,14 @@ suite('Connection typing', function() {
                 'Expected the input to combine the constraints of the other connections');
           });
 
+      test('inputs throw if combining the constraints creates an invalid type',
+          function() {
+            const typer = new ConnectionTyper(defineHierarchy());
+            const block = createBlock('block', 't <: typeE', ['t >: typeA']);
+            assert.throws(
+                () => typer.getTypesOfConnection(block.getInput('0').connection));
+          });
+
       test('outputs get the constraints of inputs', function() {
         const typer = new ConnectionTyper(defineHierarchy());
         const block = createBlock('block', 't', ['typeE <: t <: typeA']);
@@ -433,6 +441,14 @@ suite('Connection typing', function() {
                       new ExplicitInstantiation('typeA'),
                     ])],
                 'Expected the output to combine the constraints of the other connections');
+          });
+
+      test('outputs throw if combining the constraints creates an invalid type',
+          function() {
+            const typer = new ConnectionTyper(defineHierarchy());
+            const block = createBlock('block', 't <: typeE', ['t >: typeA']);
+            assert.throws(
+                () => typer.getTypesOfConnection(block.outputConnection));
           });
     });
   });

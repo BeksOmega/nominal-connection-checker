@@ -22,60 +22,51 @@ export class ConnectionTyper {
   }
 
   private getTypesOfInput(c: Connection): TypeInstantiation[] {
+    return this.getTypesOfConnectionInternal(
+        c,
+        b => [b.outputConnection || b.previousConnection],
+        c => this.getTypesOfInput(c),
+        (t, r, ps) => this.hierarchy.getTypeDef(t).getParamsForDescendant(r, ps));
+  }
+
+  private getTypesOfOutput(c: Connection): TypeInstantiation[] {
+    return this.getTypesOfConnectionInternal(
+        c,
+        b => this.getInputConnections(b),
+        c => this.getTypesOfOutput(c),
+        (t, r, ps) =>
+          this.hierarchy.getTypeDef(t).getParamsForAncestor(r, ps).map(t => [t]));
+  }
+
+  private getTypesOfConnectionInternal(
+      c: Connection,
+      getAssociatedConnections: (b: Block) => Connection[],
+      getTargetTypes: (c: Connection) => TypeInstantiation[],
+      mapParams:
+          (t: string, r: string, ps: TypeInstantiation[]) => TypeInstantiation[][]
+  ): TypeInstantiation[] {
     const t = this.getCheck(c);
     const gens = this.getGenericsOfType(t);
     if (!gens.length) return [t];
 
-    const s = c.getSourceBlock();
-    const c2 = s.outputConnection || s.previousConnection;
-    if (!c2 || !c2.targetConnection) return [new GenericInstantiation('')];
-    const ot = this.getCheck(c2);
-    if (!gens.some(g => this.typeContainsGeneric(ot, g))) {
-      return [this.removeGenericNames(t)];
-    }
-    const tts = this.getTypesOfInput(c2.targetConnection);
-    // TOOD: Is this how they array should work? Or should we be mapping each
-    //   explicit to a new param type?
-    const mapper = (t, r, ps) =>
-      this.hierarchy.getTypeDef(t).getParamsForDescendant(r, ps);
-    const mapped = gens
-        .map(g =>
-          tts.flatMap(tt => this.getTypesBoundToGeneric(tt, ot, g, mapper)))
-        .map(a => a.length ? a : [new GenericInstantiation('')]);
-    return gens.reduce((accts, g, i) =>
-      accts.flatMap(a =>
-        mapped[i].flatMap(m =>
-          this.replaceGenericWithType(a, g, m))), [t]);
-  }
-
-  private getTypesOfOutput(c: Connection): TypeInstantiation[] {
-    const t = this.getCheck(c);
-    const gens = this.getGenericsOfType(t);
-    if (!gens.length) {
-      return [t];
-    }
-
-    const s = c.getSourceBlock();
-    const ics = this.getInputConnections(s)
+    const acs = getAssociatedConnections(c.getSourceBlock())
+        .filter(c => c)
         .filter(c => c.targetConnection)
         .filter(c => gens.some(g => this.typeContainsGeneric(this.getCheck(c), g)));
-    if (!ics.length) {
-      return [this.removeGenericNames(t)];
-    }
-    const its = ics.map(c => this.getCheck(c));
-    const ttss = ics.map(c => this.getTypesOfOutput(c.targetConnection));
-    const mapper = (t, r, ps) =>
-      this.hierarchy.getTypeDef(t).getParamsForAncestor(r, ps).map(t => [t]);
-    const mapped = gens
+    if (!acs.length) return [this.removeGenericNames(t)];
+
+    const ats = acs.map(c => this.getCheck(c));
+    const ttss = acs.map(c => getTargetTypes(c.targetConnection));
+    // TODO: Change this to use WeakMap?
+    const boundTypes: TypeInstantiation[][] = gens
         .map(g =>
-          its.flatMap((it, i) =>
+          ats.flatMap((at, i) =>
             ttss[i].flatMap(tt =>
-              this.getTypesBoundToGeneric(tt, it, g, mapper))))
-        .map(a => a.length ? a : [new GenericInstantiation('')]);
+              this.getTypesBoundToGeneric(tt, at, g, mapParams))));
     return gens.reduce((accts, g, i) =>
       accts.flatMap(a =>
-        mapped[i].flatMap(m =>
-          this.replaceGenericWithType(a, g, m))), [t]);
+        boundTypes[i].flatMap(b =>
+          this.replaceGenericWithType(a, g, b))), [t]);
   }
 
   private getGenericsOfType(t: TypeInstantiation): GenericInstantiation[] {
@@ -112,14 +103,13 @@ export class ConnectionTyper {
       const mapped = mapType(t.name, ref.name, t.params);
       // TODO: Tests for nested params.
       return ref.params.flatMap(
-          // TODO: Is this how we should be handling multiple mappings for at
-          // generic?
           (rp, i) => mapped[i].flatMap(
               m => this.getTypesBoundToGeneric(m, rp, g, mapType)));
     }
     return [];
   }
 
+  // TODO: change this to not return an array.
   private replaceGenericWithType(
       t: TypeInstantiation,
       g: GenericInstantiation,

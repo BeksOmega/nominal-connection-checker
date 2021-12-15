@@ -457,6 +457,27 @@ suite('Connection typing', function() {
             'Expected unbound generics to be unnamed');
       });
 
+      test('typing a paramterized input with the generic nested', function() {
+        const h = new TypeHierarchy();
+        const coParam = new ParameterDefinition('co', Variance.CO);
+        h.addTypeDef('typeA', [coParam]);
+        h.addTypeDef('typeB');
+        h.finalize();
+
+        const typer = new ConnectionTyper(h);
+        const parent = createBlock('parent', '', ['typeA[typeA[typeB]]']);
+        const child = createBlock('child', 'typeA[typeA[t]]', ['typeA[typeA[t]]']);
+        parent.getInput('0').connection.connect(child.outputConnection);
+
+        assertConnectionType(
+            typer,
+            child.getInput('0').connection,
+            [new ExplicitInstantiation(
+                'typeA', [new ExplicitInstantiation(
+                    'typeA', [new ExplicitInstantiation('typeB')])])],
+            'Expected the generic param to be properly bound, even though it is nested');
+      });
+
       test('typing a parameterized output with parameterized input', function() {
         const h = new TypeHierarchy();
         const coParam = new ParameterDefinition('co', Variance.CO);
@@ -920,6 +941,28 @@ suite('Connection typing', function() {
                     ])],
                 'Expected unbound generics to be unnamed');
           });
+
+      test('typing a paramterized output with the generic nested', function() {
+        const h = new TypeHierarchy();
+        const coParam = new ParameterDefinition('co', Variance.CO);
+        h.addTypeDef('typeA', [coParam]);
+        h.addTypeDef('typeB');
+        h.finalize();
+
+        const typer = new ConnectionTyper(h);
+        const parent = createBlock(
+            'parent', 'typeA[typeA[t]]', ['typeA[typeA[t]]']);
+        const child = createBlock('child', 'typeA[typeA[typeB]]');
+        parent.getInput('0').connection.connect(child.outputConnection);
+
+        assertConnectionType(
+            typer,
+            parent.outputConnection,
+            [new ExplicitInstantiation(
+                'typeA', [new ExplicitInstantiation(
+                    'typeA', [new ExplicitInstantiation('typeB')])])],
+            'Expected the generic param to be properly bound, even though it is nested');
+      });
     });
   });
 });

@@ -7,7 +7,6 @@
 import {Block, Connection} from 'blockly';
 import {TypeHierarchy} from './type_hierarchy';
 import {ExplicitInstantiation, GenericInstantiation, TypeInstantiation} from './type_instantiation';
-import {combine} from './utils';
 import {parseType} from './type_parser';
 
 export class ConnectionTyper {
@@ -62,10 +61,11 @@ export class ConnectionTyper {
         .map(g =>
           ats.flatMap((at, i) =>
             ttss[i].flatMap(tt =>
-              this.getTypesBoundToGeneric(tt, at, g, mapParams))));
+              this.getTypesBoundToGeneric(tt, at, g, mapParams))))
+        .map(b => b.length ? b : [new GenericInstantiation('')]);
     return gens.reduce((accts, g, i) =>
       accts.flatMap(a =>
-        boundTypes[i].flatMap(b =>
+        boundTypes[i].map(b =>
           this.replaceGenericWithType(a, g, b))), [t]);
   }
 
@@ -109,25 +109,18 @@ export class ConnectionTyper {
     return [];
   }
 
-  // TODO: change this to not return an array.
   private replaceGenericWithType(
       t: TypeInstantiation,
       g: GenericInstantiation,
       n: TypeInstantiation,
-  ): TypeInstantiation[] {
+  ): TypeInstantiation {
     if (t instanceof GenericInstantiation) {
-      if (t.name == g.name) return [n.clone()];
-      return [t];
+      return t.name == g.name ? n.clone() : t;
     }
     if (t instanceof ExplicitInstantiation) {
-      // TODO: All this needs to be tested w/ multiple params as well.
-      if (!t.params.length) return [t];
-      // Typescript can't deal w/ heterogeneous arrays :/
-      const mapped: any = t.params.map(
-          p => this.replaceGenericWithType(p, g, n));
-      mapped[0] = mapped[0].map(v => [v]);
-      const combos: TypeInstantiation[][] = combine(mapped);
-      return combos.map(c => new ExplicitInstantiation(t.name, c));
+      if (!t.params.length) return t;
+      return new ExplicitInstantiation(
+          t.name, t.params.map(p => this.replaceGenericWithType(p, g, n)));
     }
   }
 

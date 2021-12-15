@@ -11,7 +11,7 @@ import {assert} from 'chai';
 import * as Blockly from 'blockly';
 import {ParameterDefinition, Variance} from '../src/parameter_definition';
 
-suite.only('Connection typing', function() {
+suite('Connection typing', function() {
   class TestConnectionChecker extends Blockly.ConnectionChecker {
     doTypeChecks() {
       return true;
@@ -37,12 +37,6 @@ suite.only('Connection typing', function() {
 
   function assertConnectionType(typer, conn, types, msg) {
     assert.deepEqual(typer.getTypesOfConnection(conn), types, msg);
-  }
-
-  function blankHierarchy() {
-    const h = new TypeHierarchy();
-    h.finalize();
-    return h;
   }
 
   setup(function() {
@@ -97,7 +91,11 @@ suite.only('Connection typing', function() {
     });
 
     test('typing a generic type', function() {
-      const typer = new ConnectionTyper(blankHierarchy());
+      const h = new TypeHierarchy();
+      h.addTypeDef('type');
+      h.finalize();
+
+      const typer = new ConnectionTyper(h);
       const block = createBlock('test', 't');
       assertConnectionType(
           typer, block.outputConnection, [new GenericInstantiation('')],
@@ -142,7 +140,11 @@ suite.only('Connection typing', function() {
 
   suite('simple generics', function() {
     test('typing a generic input attached to a parent', function() {
-      const typer = new ConnectionTyper(blankHierarchy());
+      const h = new TypeHierarchy();
+      h.addTypeDef('type');
+      h.finalize();
+
+      const typer = new ConnectionTyper(h);
       const parent = createBlock('parent', '', ['type']);
       const child = createBlock('child', 'g', ['g']);
       parent.getInput('0').connection.connect(child.outputConnection);
@@ -154,7 +156,11 @@ suite.only('Connection typing', function() {
     });
 
     test('typing a generic input through another generic parent', function() {
-      const typer = new ConnectionTyper(blankHierarchy());
+      const h = new TypeHierarchy();
+      h.addTypeDef('type');
+      h.finalize();
+
+      const typer = new ConnectionTyper(h);
       const parent = createBlock('parent', '', ['type']);
       const middle = createBlock('middle', 't', ['t']);
       const child = createBlock('child', 'g', ['g']);
@@ -168,7 +174,11 @@ suite.only('Connection typing', function() {
     });
 
     test('typing a generic input attached to a child', function() {
-      const typer = new ConnectionTyper(blankHierarchy());
+      const h = new TypeHierarchy();
+      h.addTypeDef('type');
+      h.finalize();
+
+      const typer = new ConnectionTyper(h);
       const parent = createBlock('parent', '', ['g']);
       const child = createBlock('child', 'type');
       parent.getInput('0').connection.connect(child.outputConnection);
@@ -180,7 +190,11 @@ suite.only('Connection typing', function() {
     });
 
     test('typing generic input with a non-matching output', function() {
-      const typer = new ConnectionTyper(blankHierarchy());
+      const h = new TypeHierarchy();
+      h.addTypeDef('type');
+      h.finalize();
+
+      const typer = new ConnectionTyper(h);
       const parent = createBlock('parent', '', ['type']);
       const child = createBlock('child', 't', ['g']);
       parent.getInput('0').connection.connect(child.outputConnection);
@@ -192,7 +206,11 @@ suite.only('Connection typing', function() {
     });
 
     test('typing a generic output attached to a parent', function() {
-      const typer = new ConnectionTyper(blankHierarchy());
+      const h = new TypeHierarchy();
+      h.addTypeDef('type');
+      h.finalize();
+
+      const typer = new ConnectionTyper(h);
       const parent = createBlock('parent', '', ['type']);
       const child = createBlock('child', 'g', ['g']);
       parent.getInput('0').connection.connect(child.outputConnection);
@@ -388,7 +406,7 @@ suite.only('Connection typing', function() {
         const block = createBlock('block', 't', ['typeE <: t <: typeA']);
         assertConnectionType(
             typer,
-            block.output,
+            block.outputConnection,
             [new GenericInstantiation(
                 '',
                 [new ExplicitInstantiation('typeE')],
@@ -403,7 +421,7 @@ suite.only('Connection typing', function() {
                 'block', 't <: typeA', ['t >: typeE', 'typeD <: t <: typeB']);
             assertConnectionType(
                 typer,
-                block.output,
+                block.outputConnection,
                 [new GenericInstantiation(
                     '',
                     [

@@ -1192,11 +1192,11 @@ suite('Connection typing', function() {
             'Expected the generic to be the nearest common ancestor of the types');
       });
 
-      test.only('typing an output with nested identical params, which unify to multiple types',
+      test('typing an output with nested identical params, which unify to multiple types',
           function() {
             const typer = new ConnectionTyper(defineHierarchy());
-            const parent = createBlock('parent', 'typeA[t, t]', ['typeA[t, t]']);
-            const child = createBlock('child', 'typeA[typeL, typeM]');
+            const parent = createBlock('parent', 'typeA[t, typeB[t]]', ['typeA[t, typeB[t]]']);
+            const child = createBlock('child', 'typeA[typeL, typeB[typeM]]');
             parent.getInput('0').connection.connect(child.outputConnection);
             assertConnectionType(
                 typer,

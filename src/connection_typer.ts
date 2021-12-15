@@ -56,7 +56,6 @@ export class ConnectionTyper {
 
     const ats = acs.map(c => this.getCheck(c));
     const ttss = acs.map(c => getTargetTypes(c.targetConnection));
-    // TODO: Change this to use WeakMap?
     const boundTypes: TypeInstantiation[][] = gens
         .map(g =>
           ats.flatMap((at, i) =>

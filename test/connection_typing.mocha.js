@@ -970,4 +970,269 @@ suite('Connection typing', function() {
       });
     });
   });
+
+  suite.only('generic paramterized types with multiple of the same param', function() {
+    suite('covariant', function() {
+      function defineHierarchy() {
+        const h = new TypeHierarchy();
+        const paramA = new ParameterDefinition('a', Variance.CO);
+        const paramB = new ParameterDefinition('b', Variance.CO);
+        h.addTypeDef('typeA', [paramA, paramB]);
+        h.addTypeDef('typeB', [paramA]);
+        const c = h.addTypeDef('typeC');
+        const d = h.addTypeDef('typeD');
+        const e = h.addTypeDef('typeE');
+        const f = h.addTypeDef('typeF');
+        const g = h.addTypeDef('typeG');
+        const i = h.addTypeDef('typeI');
+        const j = h.addTypeDef('typeJ');
+        const k = h.addTypeDef('typeK');
+        const l = h.addTypeDef('typeL');
+        const m = h.addTypeDef('typeM');
+        d.addParent(c.createInstance());
+        e.addParent(c.createInstance());
+        i.addParent(f.createInstance());
+        i.addParent(g.createInstance());
+        l.addParent(j.createInstance());
+        l.addParent(k.createInstance());
+        m.addParent(j.createInstance());
+        m.addParent(k.createInstance());
+        h.finalize();
+        return h;
+      }
+
+      test('typing an input with non-nested identical params', function() {
+        const typer = new ConnectionTyper(defineHierarchy());
+        const parent = createBlock('parent', '', ['typeA[typeF, typeG]']);
+        const child = createBlock('child', 'typeA[t, t]', ['typeA[t, t]']);
+        parent.getInput('0').connection.connect(child.outputConnection);
+        assertConnectionType(
+            typer,
+            child.getInput('0').connection,
+            [new ExplicitInstantiation(
+                'typeA',
+                [
+                  new ExplicitInstantiation('typeI'),
+                  new ExplicitInstantiation('typeI'),
+                ])],
+            'Expected the generic to be the nearest common descendant of the types');
+      });
+
+      test('typing an input with non-nested identical params, which unify to multiple types',
+          function() {
+            const typer = new ConnectionTyper(defineHierarchy());
+            const parent = createBlock('parent', '', ['typeA[typeJ, typeK]']);
+            const child = createBlock('child', 'typeA[t, t]', ['typeA[t, t]']);
+            parent.getInput('0').connection.connect(child.outputConnection);
+            assertConnectionType(
+                typer,
+                child.getInput('0').connection,
+                [
+                  new ExplicitInstantiation(
+                      'typeA',
+                      [
+                        new ExplicitInstantiation('typeL'),
+                        new ExplicitInstantiation('typeL'),
+                      ]),
+                  new ExplicitInstantiation(
+                      'typeA',
+                      [
+                        new ExplicitInstantiation('typeL'),
+                        new ExplicitInstantiation('typeM'),
+                      ]),
+                  new ExplicitInstantiation(
+                      'typeA',
+                      [
+                        new ExplicitInstantiation('typeM'),
+                        new ExplicitInstantiation('typeL'),
+                      ]),
+                  new ExplicitInstantiation(
+                      'typeA',
+                      [
+                        new ExplicitInstantiation('typeM'),
+                        new ExplicitInstantiation('typeM'),
+                      ]),
+                ],
+                'Expected the generic to bound to all of the combinations of the ncds of the types');
+          });
+
+      test('typing an input with nested identical params', function() {
+        const typer = new ConnectionTyper(defineHierarchy());
+        const parent = createBlock('parent', '', ['typeA[typeF, typeB[typeG]]']);
+        const child = createBlock('child', 'typeA[t, typeB[t]]', ['typeA[t, typeB[t]]']);
+        parent.getInput('0').connection.connect(child.outputConnection);
+        assertConnectionType(
+            typer,
+            child.getInput('0').connection,
+            [new ExplicitInstantiation(
+                'typeA',
+                [
+                  new ExplicitInstantiation('typeI'),
+                  new ExplicitInstantiation(
+                      'typeB', [new ExplicitInstantiation('typeI')]),
+                ])],
+            'Expected the generic to be the nearest common descendant of the types');
+      });
+
+      test('typng an input with nested identical params, which unify to multiple types',
+          function() {
+            const typer = new ConnectionTyper(defineHierarchy());
+            const parent = createBlock(
+                'parent', '', ['typeA[typeJ, typeB[typeK]]']);
+            const child = createBlock(
+                'child', 'typeA[t, typeB[t]]', ['typeA[t, typeB[t]]']);
+            parent.getInput('0').connection.connect(child.outputConnection);
+            assertConnectionType(
+                typer,
+                child.getInput('0').connection,
+                [
+                  new ExplicitInstantiation(
+                      'typeA',
+                      [
+                        new ExplicitInstantiation('typeL'),
+                        new ExplicitInstantiation(
+                            'typeB', [new ExplicitInstantiation('typeL')]),
+                      ]),
+                  new ExplicitInstantiation(
+                      'typeA',
+                      [
+                        new ExplicitInstantiation('typeL'),
+                        new ExplicitInstantiation(
+                            'typeB', [new ExplicitInstantiation('typeM')]),
+                      ]),
+                  new ExplicitInstantiation(
+                      'typeA',
+                      [
+                        new ExplicitInstantiation('typeM'),
+                        new ExplicitInstantiation(
+                            'typeB', [new ExplicitInstantiation('typeL')]),
+                      ]),
+                  new ExplicitInstantiation(
+                      'typeA',
+                      [
+                        new ExplicitInstantiation('typeM'),
+                        new ExplicitInstantiation(
+                            'typeB', [new ExplicitInstantiation('typeM')]),
+                      ]),
+                ],
+                'Expected the generic to bound to all of the combinations of the ncds of the types');
+          });
+
+      test('typing an output with non-nested identical params', function() {
+        const typer = new ConnectionTyper(defineHierarchy());
+        const parent = createBlock('parent', 'typeA[t, t]', ['typeA[t, t]']);
+        const child = createBlock('child', 'typeA[typeD, typeE]');
+        parent.getInput('0').connection.connect(child.outputConnection);
+        assertConnectionType(
+            typer,
+            parent.outputConnection,
+            [new ExplicitInstantiation(
+                'typeA',
+                [
+                  new ExplicitInstantiation('typeC'),
+                  new ExplicitInstantiation('typeC'),
+                ])],
+            'Expected the generic to be the nearest common ancestor of the types');
+      });
+
+      test('typing an output with non-nested identical params, which unify to multiple types',
+          function() {
+            const typer = new ConnectionTyper(defineHierarchy());
+            const parent = createBlock('parent', 'typeA[t, t]', ['typeA[t, t]']);
+            const child = createBlock('child', 'typeA[typeL, typeM]');
+            parent.getInput('0').connection.connect(child.outputConnection);
+            assertConnectionType(
+                typer,
+                parent.outputConnection,
+                [
+                  new ExplicitInstantiation(
+                      'typeA',
+                      [
+                        new ExplicitInstantiation('typeJ'),
+                        new ExplicitInstantiation('typeJ'),
+                      ]),
+                  new ExplicitInstantiation(
+                      'typeA',
+                      [
+                        new ExplicitInstantiation('typeJ'),
+                        new ExplicitInstantiation('typeK'),
+                      ]),
+                  new ExplicitInstantiation(
+                      'typeA',
+                      [
+                        new ExplicitInstantiation('typeK'),
+                        new ExplicitInstantiation('typeJ'),
+                      ]),
+                  new ExplicitInstantiation(
+                      'typeA',
+                      [
+                        new ExplicitInstantiation('typeK'),
+                        new ExplicitInstantiation('typeK'),
+                      ]),
+                ],
+                'Expected the generic to be bound to all the combinations of the ncas of the types');
+          });
+
+      test('typing an output with nested identical params', function() {
+        const typer = new ConnectionTyper(defineHierarchy());
+        const parent = createBlock(
+            'parent', 'typeA[t, typeB[t]]', ['typeA[t, typeB[t]]']);
+        const child = createBlock('child', 'typeA[typeD, typeB[typeE]]');
+        parent.getInput('0').connection.connect(child.outputConnection);
+        assertConnectionType(
+            typer,
+            parent.outputConnection,
+            [new ExplicitInstantiation(
+                'typeA',
+                [
+                  new ExplicitInstantiation('typeC'),
+                  new ExplicitInstantiation(
+                      'typeB', [new ExplicitInstantiation('typeC')]),
+                ])],
+            'Expected the generic to be the nearest common ancestor of the types');
+      });
+
+      test('typing an output with nested identical params, which unify to multiple types',
+          function() {
+            const typer = new ConnectionTyper(defineHierarchy());
+            const parent = createBlock('parent', 'typeA[t, typeB[t]]', ['typeA[t, typeB[t]]']);
+            const child = createBlock('child', 'typeA[typeL, typeB[typeM]]');
+            parent.getInput('0').connection.connect(child.outputConnection);
+            assertConnectionType(
+                typer,
+                parent.outputConnection,
+                [
+                  new ExplicitInstantiation(
+                      'typeA',
+                      [
+                        new ExplicitInstantiation('typeJ'),
+                        new ExplicitInstantiation(
+                            'typeB', [new ExplicitInstantiation('typeJ')]),
+                      ]),
+                  new ExplicitInstantiation(
+                      'typeA',
+                      [
+                        new ExplicitInstantiation('typeJ'),
+                        new ExplicitInstantiation(
+                            'typeB', [new ExplicitInstantiation('typeK')]),
+                      ]),
+                  new ExplicitInstantiation(
+                      'typeA',
+                      [
+                        new ExplicitInstantiation('typeK'),
+                        new ExplicitInstantiation(
+                            'typeB', [new ExplicitInstantiation('typeJ')]),
+                      ]),
+                  new ExplicitInstantiation(
+                      'typeA',
+                      [
+                        new ExplicitInstantiation('typeK'),
+                        new ExplicitInstantiation(
+                            'typeB', [new ExplicitInstantiation('typeK')]),
+                      ]),
+                ],
+                'Expected the generic to be bound to all the combinations of the ncas of the types');
+          });
+    });
+  });
 });

@@ -15,7 +15,10 @@ export class ConnectionTyper {
   ) {}
 
   getTypesOfConnection(c: Connection): TypeInstantiation[] {
-    if (c.isSuperior()) return this.getTypesOfInput(c);
+    if (c.isSuperior()) {
+      return this.hierarchy.getNearestCommonDescendants(
+          ...this.getTypesOfInput(c));
+    }
     return this.hierarchy.getNearestCommonAncestors(
         ...this.getTypesOfOutput(c));
   }

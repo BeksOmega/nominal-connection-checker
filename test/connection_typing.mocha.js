@@ -11,7 +11,7 @@ import {assert} from 'chai';
 import * as Blockly from 'blockly';
 import {ParameterDefinition, Variance} from '../src/parameter_definition';
 
-suite('Connection typing', function() {
+suite.only('Connection typing', function() {
   class TestConnectionChecker extends Blockly.ConnectionChecker {
     doTypeChecks() {
       return true;
@@ -316,6 +316,106 @@ suite('Connection typing', function() {
           parent.getInput('1').connection,
           [new GenericInstantiation('')],
           'Expected the generic to be a simple generic');
+    });
+  });
+
+  suite('constrained generic types', function() {
+    suite('sharing constraints within a block', function() {
+      function defineHierarchy() {
+        const h = new TypeHierarchy();
+        const a = h.addTypeDef('typeA');
+        const b = h.addTypeDef('typeB');
+        const c = h.addTypeDef('typeC');
+        const d = h.addTypeDef('typeD');
+        const e = h.addTypeDef('typeE');
+        e.addParent(d.createInstance());
+        d.addParent(c.createInstance());
+        c.addParent(b.createInstance());
+        b.addParent(a.createInstance());
+        h.finalize();
+        return h;
+      }
+
+      test('inputs get the constraints of outputs', function() {
+        const typer = new ConnectionTyper(defineHierarchy());
+        const block = createBlock('block', 'typeE <: t <: typeA', ['t']);
+        assertConnectionType(
+            typer,
+            block.getInput('0').connection,
+            [new GenericInstantiation(
+                '',
+                [new ExplicitInstantiation('typeE')],
+                [new ExplicitInstantiation('typeA')])],
+            'Expected the input to aquire the constraints of the output');
+      });
+
+      test('inputs get the constraints of other inputs', function() {
+        const typer = new ConnectionTyper(defineHierarchy());
+        const block = createBlock('block', '', ['t', 'typeE <: t <: typeA']);
+        assertConnectionType(
+            typer,
+            block.getInput('0').connection,
+            [new GenericInstantiation(
+                '',
+                [new ExplicitInstantiation('typeE')],
+                [new ExplicitInstantiation('typeA')])],
+            'Expected the input to aquire the constraints of the other input');
+      });
+
+      test('inputs combine the constraints of multiple other connections',
+          function() {
+            const typer = new ConnectionTyper(defineHierarchy());
+            const block = createBlock(
+                'block', 't <: typeA', ['t >: typeE', 'typeD <: t <: typeB']);
+            assertConnectionType(
+                typer,
+                block.getInput('0').connection,
+                [new GenericInstantiation(
+                    '',
+                    [
+                      new ExplicitInstantiation('typeE'),
+                      new ExplicitInstantiation('typeD'),
+                    ],
+                    [
+                      new ExplicitInstantiation('typeB'),
+                      new ExplicitInstantiation('typeA'),
+                    ])],
+                'Expected the input to combine the constraints of the other connections');
+          });
+
+      test('outputs get the constraints of inputs', function() {
+        const typer = new ConnectionTyper(defineHierarchy());
+        const block = createBlock('block', 't', ['typeE <: t <: typeA']);
+        assertConnectionType(
+            typer,
+            block.output,
+            [new GenericInstantiation(
+                '',
+                [new ExplicitInstantiation('typeE')],
+                [new ExplicitInstantiation('typeA')])],
+            'Expected the output to aquire the constraints of the input');
+      });
+
+      test('outputs combine the constraints of multiple other connections',
+          function() {
+            const typer = new ConnectionTyper(defineHierarchy());
+            const block = createBlock(
+                'block', 't <: typeA', ['t >: typeE', 'typeD <: t <: typeB']);
+            assertConnectionType(
+                typer,
+                block.output,
+                [new GenericInstantiation(
+                    '',
+                    [
+                      new ExplicitInstantiation('typeE'),
+                      new ExplicitInstantiation('typeD'),
+                    ],
+                    [
+                      new ExplicitInstantiation('typeB'),
+                      new ExplicitInstantiation('typeA'),
+                    ])],
+                'Expected the output to combine the constraints of the other connections');
+          });
     });
   });
 
@@ -971,7 +1071,7 @@ suite('Connection typing', function() {
     });
   });
 
-  suite.only('generic paramterized types with multiple of the same param', function() {
+  suite('generic paramterized types with multiple of the same param', function() {
     suite('covariant', function() {
       function defineHierarchy() {
         const h = new TypeHierarchy();

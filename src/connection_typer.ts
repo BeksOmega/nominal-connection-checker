@@ -63,7 +63,8 @@ export class ConnectionTyper {
     const boundTypes: TypeInstantiation[][] = gens
         .map(g =>
           [
-            ...this.getConstraintsOnGeneric(s, g),
+            ...this.hierarchy.getNearestCommonDescendants(
+                ...this.getConstraintsOnGeneric(s, g)),
             ...ats.flatMap((at, i) =>
               ttss[i].flatMap(tt =>
                 this.getTypesBoundToGeneric(tt, at, g, mapParams)))])

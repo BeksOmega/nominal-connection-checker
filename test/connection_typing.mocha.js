@@ -337,7 +337,7 @@ suite.only('Connection typing', function() {
     });
   });
 
-  suite('constrained generic types', function() {
+  suite.only('constrained generic types', function() {
     function defineHierarchy() {
       const h = new TypeHierarchy();
       const a = h.addTypeDef('typeA');
@@ -380,26 +380,62 @@ suite.only('Connection typing', function() {
             'Expected the input to aquire the constraints of the other input');
       });
 
-      test('inputs combine the constraints of multiple other connections',
+      test('inputs combine the constraints of outputs with their own constraints',
           function() {
             const typer = new ConnectionTyper(defineHierarchy());
-            const block = createBlock(
-                'block', 't <: typeA', ['t >: typeE', 'typeD <: t <: typeB']);
+            const block = createBlock('block', 't >: typeE', ['t <: typeA']);
             assertConnectionType(
                 typer,
                 block.getInput('0').connection,
                 [new GenericInstantiation(
                     '',
-                    [
-                      new ExplicitInstantiation('typeE'),
-                      new ExplicitInstantiation('typeD'),
-                    ],
-                    [
-                      new ExplicitInstantiation('typeB'),
-                      new ExplicitInstantiation('typeA'),
-                    ])],
+                    [new ExplicitInstantiation('typeE')],
+                    [new ExplicitInstantiation('typeA')])],
+                'Expected the input to combine its constraints with the constraints on the output');
+          });
+
+      test('inputs combine constraints of other inputs with their own constraints',
+          function() {
+            const typer = new ConnectionTyper(defineHierarchy());
+            const block = createBlock('block', '', ['t >: typeE', 't <: typeA']);
+            assertConnectionType(
+                typer,
+                block.getInput('0').connection,
+                [new GenericInstantiation(
+                    '',
+                    [new ExplicitInstantiation('typeE')],
+                    [new ExplicitInstantiation('typeA')])],
+                'Expected the input to combine its constraints with the constraints on the other input');
+          });
+
+      test('inputs combine the constraints of other connections with eachother',
+          function() {
+            const typer = new ConnectionTyper(defineHierarchy());
+            const block = createBlock(
+                'block', 't <: typeA', ['t', 't >: typeE']);
+            assertConnectionType(
+                typer,
+                block.getInput('0').connection,
+                [new GenericInstantiation(
+                    '',
+                    [new ExplicitInstantiation('typeE')],
+                    [new ExplicitInstantiation('typeA')])],
                 'Expected the input to combine the constraints of the other connections');
           });
+
+      test('inputs combine constraints to create the narrowest range', function() {
+        const typer = new ConnectionTyper(defineHierarchy());
+        const block = createBlock(
+            'block', 't <: typeA', ['t', 't >: typeE', 't >: typeD', 't <: typeB']);
+        assertConnectionType(
+            typer,
+            block.getInput('0').connection,
+            [new GenericInstantiation(
+                '',
+                [new ExplicitInstantiation('typeD')],
+                [new ExplicitInstantiation('typeB')])],
+            'Expected the input to combine the constraints to create the narrowest range');
+      });
 
       test('inputs throw if combining the constraints creates an invalid type',
           function() {
@@ -422,26 +458,48 @@ suite.only('Connection typing', function() {
             'Expected the output to aquire the constraints of the input');
       });
 
-      test('outputs combine the constraints of multiple other connections',
+      test('outputs combine the constraints of inputs with their own constraints',
           function() {
             const typer = new ConnectionTyper(defineHierarchy());
-            const block = createBlock(
-                'block', 't <: typeA', ['t >: typeE', 'typeD <: t <: typeB']);
+            const block = createBlock('block', 't >: typeE', ['t <: typeA']);
             assertConnectionType(
                 typer,
                 block.outputConnection,
                 [new GenericInstantiation(
                     '',
-                    [
-                      new ExplicitInstantiation('typeE'),
-                      new ExplicitInstantiation('typeD'),
-                    ],
-                    [
-                      new ExplicitInstantiation('typeB'),
-                      new ExplicitInstantiation('typeA'),
-                    ])],
+                    [new ExplicitInstantiation('typeE')],
+                    [new ExplicitInstantiation('typeA')])],
+                'Expected the output to combine its own constraints with the constraints on the input');
+          });
+
+      test('outputs combine the constraints of multiple other connections',
+          function() {
+            const typer = new ConnectionTyper(defineHierarchy());
+            const block = createBlock(
+                'block', 't', ['t <: typeA', 't >: typeE']);
+            assertConnectionType(
+                typer,
+                block.outputConnection,
+                [new GenericInstantiation(
+                    '',
+                    [new ExplicitInstantiation('typeE')],
+                    [new ExplicitInstantiation('typeA')])],
                 'Expected the output to combine the constraints of the other connections');
           });
+
+      test('outputs combine constraints to create the narrowest range', function() {
+        const typer = new ConnectionTyper(defineHierarchy());
+        const block = createBlock(
+            'block', 't', ['t <: typeA', 't >: typeD', 't >: typeE', 't <: typeB']);
+        assertConnectionType(
+            typer,
+            block.outputConnection,
+            [new GenericInstantiation(
+                '',
+                [new ExplicitInstantiation('typeD')],
+                [new ExplicitInstantiation('typeB')])],
+            'Expected the output to combine constraints to create the narrowest range');
+      });
 
       test('outputs throw if combining the constraints creates an invalid type',
           function() {
@@ -468,21 +526,6 @@ suite.only('Connection typing', function() {
             'Expected the input to aquire the constraints of the parent');
       });
 
-      test('inputs combine constraints with parents', function() {
-        const typer = new ConnectionTyper(defineHierarchy());
-        const parent = createBlock('parent', '', ['typeE <: t <: typeA']);
-        const child = createBlock('child', 't', ['t >: typeD']);
-        parent.getInput('0').connection.connect(child.outputConnection);
-        assertConnectionType(
-            typer,
-            child.getInput('0').connection,
-            [new GenericInstantiation(
-                '',
-                [new ExplicitInstantiation('typeD')],
-                [new ExplicitInstantiation('typeA')])],
-            'Expected the input to combine with the constraints of the parent');
-      });
-
       test('inputs get constraints through parents', function() {
         const typer = new ConnectionTyper(defineHierarchy());
         const parent = createBlock('parent', 'typeE <: t <: typeA', ['t']);
@@ -499,6 +542,37 @@ suite.only('Connection typing', function() {
                 [new ExplicitInstantiation('typeA')])],
             'Expected the input to aquire constraints through the parent');
       });
+
+      test('inputs combine constraints with parents', function() {
+        const typer = new ConnectionTyper(defineHierarchy());
+        const parent = createBlock('parent', '', ['t <: typeA']);
+        const child = createBlock('child', 't', ['t >: typeE']);
+        parent.getInput('0').connection.connect(child.outputConnection);
+        assertConnectionType(
+            typer,
+            child.getInput('0').connection,
+            [new GenericInstantiation(
+                '',
+                [new ExplicitInstantiation('typeE')],
+                [new ExplicitInstantiation('typeA')])],
+            'Expected the input to combine with the constraints of the parent');
+      });
+
+      test('inputs combine constraints with parents to create the narrowest range',
+          function() {
+            const typer = new ConnectionTyper(defineHierarchy());
+            const parent = createBlock('parent', '', ['typeD <: t <: typeA']);
+            const child = createBlock('child', 't', ['typeE <: t <: typeB']);
+            parent.getInput('0').connection.connect(child.outputConnection);
+            assertConnectionType(
+                typer,
+                child.getInput('0').connection,
+                [new GenericInstantiation(
+                    '',
+                    [new ExplicitInstantiation('typeD')],
+                    [new ExplicitInstantiation('typeB')])],
+                'Expected the input to combine with the constraints of the parent to create the narrowest range');
+          });
 
       test('inputs do not get constraints from children', function() {
         const typer = new ConnectionTyper(defineHierarchy());
@@ -524,18 +598,6 @@ suite.only('Connection typing', function() {
             'Expected inputs to not gain constraints from sibling input children');
       });
 
-      test('outputs do not get constraints from parents', function() {
-        const typer = new ConnectionTyper(defineHierarchy());
-        const parent = createBlock('parent', 't', ['typeE <: t <: typeA']);
-        const child = createBlock('child', 't');
-        parent.getInput('0').connection.connect(child.outputConnection);
-        assertConnectionType(
-            typer,
-            child.outputConnection,
-            [new GenericInstantiation('')],
-            'Expected outputs to not gain constraints from parents');
-      });
-
       test('outputs get the constraints of children', function() {
         const typer = new ConnectionTyper(defineHierarchy());
         const parent = createBlock('parent', 't', ['t']);
@@ -549,21 +611,6 @@ suite.only('Connection typing', function() {
                 [new ExplicitInstantiation('typeE')],
                 [new ExplicitInstantiation('typeA')])],
             'Expected outputs to gain constraints from children');
-      });
-
-      test('outputs combine constraints with children', function() {
-        const typer = new ConnectionTyper(defineHierarchy());
-        const parent = createBlock('parent', 't >: typeD', ['t']);
-        const child = createBlock('child', 'typeE <: t <: typeA');
-        parent.getInput('0').connection.connect(child.outputConnection);
-        assertConnectionType(
-            typer,
-            parent.outputConnection,
-            [new GenericInstantiation(
-                '',
-                [new ExplicitInstantiation('typeD')],
-                [new ExplicitInstantiation('typeA')])],
-            'Expected the output to combine with the constraints of the child');
       });
 
       test('outputs get constraints through children', function() {
@@ -583,26 +630,149 @@ suite.only('Connection typing', function() {
             'Expected the output to aquire constraints through the child');
       });
 
-      test('outputs with multiple children combine constraints', function() {
+      test('outputs combine constraints with children', function() {
         const typer = new ConnectionTyper(defineHierarchy());
-        const parent = createBlock('parent', 't', ['t', 't', 't']);
-        const child1 = createBlock('child1', 't', ['t >: typeE']);
-        const child2 = createBlock('child2', 't', ['t >: typeD']);
-        const child3 = createBlock('child3', 't', ['t <: typeA']);
-        parent.getInput('0').connection.connect(child1.outputConnection);
-        parent.getInput('1').connection.connect(child2.outputConnection);
-        parent.getInput('2').connection.connect(child3.outputConnection);
+        const parent = createBlock('parent', 't >: typeE', ['t']);
+        const child = createBlock('child', 't <: typeA');
+        parent.getInput('0').connection.connect(child.outputConnection);
         assertConnectionType(
             typer,
             parent.outputConnection,
             [new GenericInstantiation(
                 '',
-                [new ExplicitInstantiation('typeD')],
+                [new ExplicitInstantiation('typeE')],
+                [new ExplicitInstantiation('typeA')])],
+            'Expected the output to combine with the constraints of the child');
+      });
+
+      test('outputs combine constraints with children to create the narrowest range',
+          function() {
+            const typer = new ConnectionTyper(defineHierarchy());
+            const parent = createBlock('parent', 'typeE <: t <: typeB', ['t']);
+            const child = createBlock('child', 'typeD <: t <: typeA');
+            parent.getInput('0').connection.connect(child.outputConnection);
+            assertConnectionType(
+                typer,
+                parent.outputConnection,
+                [new GenericInstantiation(
+                    '',
+                    [new ExplicitInstantiation('typeD')],
+                    [new ExplicitInstantiation('typeB')])],
+                'Expected the output to combine with the constraints of the child to create the narrowest range');
+          });
+
+      test('outputs combine the constraints of multiple children', function() {
+        const typer = new ConnectionTyper(defineHierarchy());
+        const parent = createBlock('parent', 't', ['t', 't']);
+        const child1 = createBlock('child1', 't', ['t >: typeE']);
+        const child2 = createBlock('child2', 't', ['t <: typeA']);
+        parent.getInput('0').connection.connect(child1.outputConnection);
+        parent.getInput('1').connection.connect(child2.outputConnection);
+        assertConnectionType(
+            typer,
+            parent.outputConnection,
+            [new GenericInstantiation(
+                '',
+                [new ExplicitInstantiation('typeE')],
                 [new ExplicitInstantiation('typeA')])],
             'Expected the output to combine the constraints of multiple children');
       });
 
-      test('outputs with multiple nested children combine constraints',
+      test('outputs combine the constraints of multiple children to create the widest range',
+          function() {
+            const typer = new ConnectionTyper(defineHierarchy());
+            const parent = createBlock('parent', 't', ['t', 't', 't', 't']);
+            const child1 = createBlock('child1', 't', ['t >: typeD']);
+            const child2 = createBlock('child1', 't', ['t >: typeE']);
+            const child3 = createBlock('child2', 't', ['t <: typeA']);
+            const child4 = createBlock('child2', 't', ['t <: typeB']);
+            parent.getInput('0').connection.connect(child1.outputConnection);
+            parent.getInput('1').connection.connect(child2.outputConnection);
+            parent.getInput('2').connection.connect(child3.outputConnection);
+            parent.getInput('3').connection.connect(child4.outputConnection);
+            assertConnectionType(
+                typer,
+                parent.outputConnection,
+                [new GenericInstantiation(
+                    '',
+                    [new ExplicitInstantiation('typeE')],
+                    [new ExplicitInstantiation('typeA')])],
+                'Expected the output to combine the constraints of multiple children to create the widest range');
+          });
+
+      test('outputs limit the lower bound of multiple children with their own constraints',
+          function() {
+            const typer = new ConnectionTyper(defineHierarchy());
+            const parent = createBlock(
+                'parent', 't', ['t >: typeD', 't', 't', 't']);
+            const child1 = createBlock('child1', 't', ['t >: typeD']);
+            const child2 = createBlock('child1', 't', ['t >: typeE']);
+            const child3 = createBlock('child2', 't', ['t <: typeA']);
+            const child4 = createBlock('child2', 't', ['t <: typeB']);
+            parent.getInput('0').connection.connect(child1.outputConnection);
+            parent.getInput('1').connection.connect(child2.outputConnection);
+            parent.getInput('2').connection.connect(child3.outputConnection);
+            parent.getInput('3').connection.connect(child4.outputConnection);
+            assertConnectionType(
+                typer,
+                parent.outputConnection,
+                [new GenericInstantiation(
+                    '',
+                    [new ExplicitInstantiation('typeD')],
+                    [new ExplicitInstantiation('typeA')])],
+                'Expected the output to limit the lower bound of multiple children with its own constraints');
+          });
+
+      test('outputs limit the upper bound of multiple children with their own constraints',
+          function() {
+            const typer = new ConnectionTyper(defineHierarchy());
+            const parent = createBlock(
+                'parent', 't', ['t <: typeB', 't', 't', 't']);
+            const child1 = createBlock('child1', 't', ['t >: typeD']);
+            const child2 = createBlock('child1', 't', ['t >: typeE']);
+            const child3 = createBlock('child2', 't', ['t <: typeA']);
+            const child4 = createBlock('child2', 't', ['t <: typeB']);
+            parent.getInput('0').connection.connect(child1.outputConnection);
+            parent.getInput('1').connection.connect(child2.outputConnection);
+            parent.getInput('2').connection.connect(child3.outputConnection);
+            parent.getInput('3').connection.connect(child4.outputConnection);
+            assertConnectionType(
+                typer,
+                parent.outputConnection,
+                [new GenericInstantiation(
+                    '',
+                    [new ExplicitInstantiation('typeE')],
+                    [new ExplicitInstantiation('typeB')])],
+                'Expected the output to limit the upper bound of multiple children with its own constraints');
+          });
+
+      test('outputs with multiple nested children combine constraints to create the widest range',
+          function() {
+            const typer = new ConnectionTyper(defineHierarchy());
+            const parent = createBlock('parent', 't', ['t', 't']);
+            const middle1 = createBlock('middle1', 't', ['t', 't']);
+            const middle2 = createBlock('middle2', 't', ['t', 't']);
+            const childA = createBlock('childA', 't <: typeA');
+            const childD = createBlock('childD', 't >: typeD');
+            const childB = createBlock('childE', 't <: typeB');
+            const childE = createBlock('childD', 't >: typeE');
+            parent.getInput('0').connection.connect(middle1.outputConnection);
+            parent.getInput('1').connection.connect(middle2.outputConnection);
+            middle1.getInput('0').connection.connect(childA.outputConnection);
+            middle1.getInput('1').connection.connect(childD.outputConnection);
+            middle2.getInput('0').connection.connect(childB.outputConnection);
+            middle2.getInput('1').connection.connect(childE.outputConnection);
+            assertConnectionType(
+                typer,
+                parent.outputConnection,
+                [new GenericInstantiation(
+                    '',
+                    [new ExplicitInstantiation('typeE')],
+                    [new ExplicitInstantiation('typeA')])],
+                'Expected the output to combine the constraints of multiple nested children to create the widest range');
+          });
+
+      test('outputs with multiple nested children are not unified prematurely',
           function() {
             const h = new TypeHierarchy();
             const a = h.addTypeDef('typeA');
@@ -636,16 +806,28 @@ suite.only('Connection typing', function() {
                     '',
                     [],
                     [new ExplicitInstantiation('typeB')])],
-                'Expected the output to combine the constraints of multiple nested children');
+                'Expected the output to combine the constraints of multiple nested children to not be unified prematurely');
           });
+
+      test('outputs do not get constraints from parents', function() {
+        const typer = new ConnectionTyper(defineHierarchy());
+        const parent = createBlock('parent', 't', ['typeE <: t <: typeA']);
+        const child = createBlock('child', 't');
+        parent.getInput('0').connection.connect(child.outputConnection);
+        assertConnectionType(
+            typer,
+            child.outputConnection,
+            [new GenericInstantiation('')],
+            'Expected outputs to not gain constraints from parents');
+      });
     });
 
     suite('constraints combining with explicits', function() {
-      test('an explicit attached to an output combines with upper bounds on inputs',
+      test('an upper bound inputs combined with a subtype parent results in an upper bound of the subytpe',
           function() {
             const typer = new ConnectionTyper(defineHierarchy());
             const parent = createBlock('parent', '', ['typeE']);
-            const child = createBlock('child', 't', ['t <: typeA']);
+            const child = createBlock('child', 't', ['t <: typeC']);
             parent.getInput('0').connection.connect(child.outputConnection);
             assertConnectionType(
                 typer,
@@ -654,30 +836,14 @@ suite.only('Connection typing', function() {
                     '',
                     [],
                     [new ExplicitInstantiation('typeE')])],
-                'Expected the upper bound to match the explicit');
+                'Expected the upper bound to match the subtype');
           });
 
-      test('an explcit attached to an output combines with lower bounds on inputs',
+      test('an upper bound input combined with a supertype parent results in an upper bound of the bound',
           function() {
             const typer = new ConnectionTyper(defineHierarchy());
             const parent = createBlock('parent', '', ['typeA']);
-            const child = createBlock('child', 't', ['t >: typeE']);
-            parent.getInput('0').connection.connect(child.outputConnection);
-            assertConnectionType(
-                typer,
-                child.getInput('0').connection,
-                [new GenericInstantiation(
-                    '',
-                    [new ExplicitInstantiation('typeE')],
-                    [new ExplicitInstantiation('typeA')])],
-                'Expected upper bound to match the explicit');
-          });
-
-      test('an explicit attached to an input combines with upper bounds on the output',
-          function() {
-            const typer = new ConnectionTyper(defineHierarchy());
-            const parent = createBlock('parent', 't <: typeA', ['t', 't']);
-            const child = createBlock('child', 'typeE');
+            const child = createBlock('child', 't', ['t <: typeC']);
             parent.getInput('0').connection.connect(child.outputConnection);
             assertConnectionType(
                 typer,
@@ -685,23 +851,61 @@ suite.only('Connection typing', function() {
                 [new GenericInstantiation(
                     '',
                     [],
-                    [new ExplicitInstantiation('typeA')])],
-                'Expected the upper bound to match the constraint');
+                    [new ExplicitInstantiation('typeC')])],
+                'Expected the upper bound to match the bound');
           });
 
-      test('an explicit attached to an input combines with lower bounds on the output',
+      // A lower bound input with a subtype parent is not possible.
+
+      test('a lower bound input combined with a supertype parent results in a lower bound of the bound, and an upper bound of the super type',
           function() {
             const typer = new ConnectionTyper(defineHierarchy());
-            const parent = createBlock('parent', 't >: typeC', ['t', 't']);
-            const child = createBlock('child', 'typeB');
+            const parent = createBlock('parent', '', ['typeA']);
+            const child = createBlock('child', 't', ['t >: typeC']);
             parent.getInput('0').connection.connect(child.outputConnection);
             assertConnectionType(
                 typer,
                 child.getInput('0').connection,
                 [new GenericInstantiation(
                     '',
+                    [new ExplicitInstantiation('typeC')],
+                    [new ExplicitInstantiation('typeA')])],
+                'Expected the lower bound to match the bound, and the upper bound to match the supertype');
+          });
+
+      test('an upper bound output combined with a subtype child results in an upper bound of the bound',
+          function() {
+            const typer = new ConnectionTyper(defineHierarchy());
+            const parent = createBlock('parent', 't <: typeC', ['t']);
+            const child = createBlock('child', 'typeE');
+            parent.getInput('0').connection.connect(child.outputConnection);
+            assertConnectionType(
+                typer,
+                parent.outputConnection,
+                [new GenericInstantiation(
+                    '',
+                    [],
                     [new ExplicitInstantiation('typeC')])],
-                'Expected the lower bound to match the constraint');
+                'Expected the upper bound to match the bound');
+          });
+
+      // An upper bound output with a supertype child is not possible.
+
+      // A lower bound output with a subtype child is not possible.
+
+      test('a lower bound output combined with a supertype child results in a lower bound of the super type',
+          function() {
+            const typer = new ConnectionTyper(defineHierarchy());
+            const parent = createBlock('parent', 't >: typeC', ['t']);
+            const child = createBlock('child', 'typeA');
+            parent.getInput('0').connection.connect(child.outputConnection);
+            assertConnectionType(
+                typer,
+                parent.outputConnection,
+                [new GenericInstantiation(
+                    '',
+                    [new ExplicitInstantiation('typeA')])],
+                'Expected the lower bound to match the supertype');
           });
     });
   });

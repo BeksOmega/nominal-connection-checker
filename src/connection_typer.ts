@@ -51,19 +51,22 @@ export class ConnectionTyper {
     const gens = this.getGenericsOfType(t);
     if (!gens.length) return [t];
 
-    const acs = getAssociatedConnections(c.getSourceBlock())
+    const s = c.getSourceBlock();
+    //const constraints = gens.map(g => this.getConstraintsOnGeneric(s, g));
+    const acs = getAssociatedConnections(s)
         .filter(c => c)
         .filter(c => c.targetConnection)
         .filter(c => gens.some(g => this.typeContainsGeneric(this.getCheck(c), g)));
-    if (!acs.length) return [this.removeGenericNames(t)];
 
     const ats = acs.map(c => this.getCheck(c));
     const ttss = acs.map(c => getTargetTypes(c.targetConnection));
     const boundTypes: TypeInstantiation[][] = gens
         .map(g =>
-          ats.flatMap((at, i) =>
-            ttss[i].flatMap(tt =>
-              this.getTypesBoundToGeneric(tt, at, g, mapParams))))
+          [
+            ...this.getConstraintsOnGeneric(s, g),
+            ...ats.flatMap((at, i) =>
+              ttss[i].flatMap(tt =>
+                this.getTypesBoundToGeneric(tt, at, g, mapParams)))])
         .map(b => b.length ? b : [new GenericInstantiation('')]);
     return gens.reduce((accts, g, i) =>
       accts.flatMap(a =>
@@ -111,6 +114,25 @@ export class ConnectionTyper {
     return [];
   }
 
+  private getConstraintsOnGeneric(
+      b: Block, g: GenericInstantiation
+  ): TypeInstantiation[] {
+    return this.getConnections(b)
+        .map(c => this.getCheck(c))
+        .flatMap(t => this.getConstraintsInType(t, g));
+  }
+
+  private getConstraintsInType(
+      t: TypeInstantiation, g: GenericInstantiation
+  ): TypeInstantiation[] {
+    if (t instanceof GenericInstantiation) {
+      return t.name == g.name && t.isConstrained ? [t.clone()] : [];
+    }
+    if (t instanceof ExplicitInstantiation) {
+      return t.params.flatMap(p => this.getConstraintsInType(p, g));
+    }
+  }
+
   private replaceGenericWithType(
       t: TypeInstantiation,
       g: GenericInstantiation,
@@ -126,20 +148,21 @@ export class ConnectionTyper {
     }
   }
 
-  private removeGenericNames(t: TypeInstantiation): TypeInstantiation {
-    if (t instanceof GenericInstantiation) {
-      return new GenericInstantiation(
-          '', t.unfilteredLowerBounds, t.unfilteredUpperBounds);
-    } else if (t instanceof ExplicitInstantiation) {
-      return new ExplicitInstantiation(
-          t.name, t.params.map(p => this.removeGenericNames(p)));
-    }
-  }
-
   private getInputConnections(b: Block): Connection[] {
     const cs = b.inputList.map(i => i.connection);
     if (b.nextConnection) cs.push(b.nextConnection);
     return cs;
+  }
+
+  private getOutputConnections(b: Block): Connection[] {
+    const cs = [];
+    if (b.outputConnection) cs.push(b.outputConnection);
+    if (b.previousConnection) cs.push(b.previousConnection);
+    return cs;
+  }
+
+  private getConnections(b: Block): Connection[] {
+    return [...this.getInputConnections(b), ...this.getOutputConnections(b)];
   }
 
   private getCheck(c: Connection): TypeInstantiation {

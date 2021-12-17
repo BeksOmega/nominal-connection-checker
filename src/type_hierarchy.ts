@@ -355,7 +355,7 @@ export class TypeHierarchy {
     });
 
     if (types.length == 0) return [];
-    if (types.length == 1) return types;
+    if (types.length == 1) return [this.removeGenericNames(types[0])];
     types = types.filter(t =>
       t instanceof ExplicitInstantiation ||
       t instanceof GenericInstantiation && t.isConstrained);
@@ -484,6 +484,17 @@ export class TypeHierarchy {
       }
     });
   }
+
+  private removeGenericNames(t: TypeInstantiation): TypeInstantiation {
+    if (t instanceof GenericInstantiation) {
+      return new GenericInstantiation(
+          '', t.unfilteredLowerBounds, t.unfilteredUpperBounds);
+    } else if (t instanceof ExplicitInstantiation) {
+      return new ExplicitInstantiation(
+          t.name, t.params.map(p => this.removeGenericNames(p)));
+    }
+  }
+
 
   /**
    * Returns the lower bounds of the given set of types. If none of the types

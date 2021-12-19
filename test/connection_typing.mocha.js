@@ -37,6 +37,8 @@ suite.only('Connection typing', function() {
 
   function assertConnectionType(typer, conn, types, msg) {
     const val = typer.getTypesOfConnection(conn);
+    // console.log('vals');
+    // val.forEach(v => console.log(v));
     assert.deepEqual(val, types, msg);
   }
 
@@ -107,21 +109,10 @@ suite.only('Connection typing', function() {
       const h = new TypeHierarchy();
       const t1 = h.addTypeDef('test1');
       const t2 = h.addTypeDef('test2');
-      const t3 = h.addTypeDef('test3');
-      const t4 = h.addTypeDef('test4');
-      const t5 = h.addTypeDef('test5');
-      const t6 = h.addTypeDef('test6');
-      t1.addParent(t3.createInstance());
-      t1.addParent(t4.createInstance());
-      t2.addParent(t3.createInstance());
-      t2.addParent(t4.createInstance());
-      t3.addParent(t5.createInstance());
-      t3.addParent(t6.createInstance());
-      t4.addParent(t5.createInstance());
-      t4.addParent(t6.createInstance());
+      t1.addParent(t2.createInstance());
       h.finalize();
       const typer = new ConnectionTyper(h);
-      const block = createBlock('test', 'test1, test2 <: t <: test5, test6');
+      const block = createBlock('test', 'test1 <: t <: test2');
       assertConnectionType(
           typer,
           block.outputConnection,
@@ -129,11 +120,9 @@ suite.only('Connection typing', function() {
               '',
               [
                 new ExplicitInstantiation('test1'),
-                new ExplicitInstantiation('test2'),
               ],
               [
-                new ExplicitInstantiation('test5'),
-                new ExplicitInstantiation('test6'),
+                new ExplicitInstantiation('test2'),
               ])],
           'Expected an unattached generic ouput with bounds to be simply parsed');
     });
@@ -152,7 +141,7 @@ suite.only('Connection typing', function() {
       assertConnectionType(
           typer,
           child.getInput('0').connection,
-          [new ExplicitInstantiation('type')],
+          [new GenericInstantiation('', [], [new ExplicitInstantiation('type')])],
           'Expected the generic input to have a bound of <: the parent');
     });
 
@@ -170,7 +159,7 @@ suite.only('Connection typing', function() {
       assertConnectionType(
           typer,
           child.getInput('0').connection,
-          [new ExplicitInstantiation('type')],
+          [new GenericInstantiation('', [], [new ExplicitInstantiation('type')])],
           'Expected the generic to have a bound of <: the parent');
     });
 
@@ -446,6 +435,42 @@ suite.only('Connection typing', function() {
                 () => typer.getTypesOfConnection(block.getInput('0').connection));
           });
 
+      test.only('constraints for inputs are not prematurely unfied', function() {
+        const h = new TypeHierarchy();
+        const t1 = h.addTypeDef('test1');
+        const t2 = h.addTypeDef('test2');
+        const t3 = h.addTypeDef('test3');
+        const t4 = h.addTypeDef('test4');
+        const t5 = h.addTypeDef('test5');
+        const t6 = h.addTypeDef('test6');
+        t1.addParent(t3.createInstance());
+        t1.addParent(t4.createInstance());
+        t2.addParent(t3.createInstance());
+        t2.addParent(t4.createInstance());
+        t3.addParent(t5.createInstance());
+        t3.addParent(t6.createInstance());
+        t4.addParent(t5.createInstance());
+        t4.addParent(t6.createInstance());
+        h.finalize();
+        const typer = new ConnectionTyper(h);
+        const block = createBlock(
+            'test', '', ['test1, test2 <: t <: test5, test6']);
+        assertConnectionType(
+            typer,
+            block.getInput('0').connection,
+            [new GenericInstantiation(
+                '',
+                [
+                  new ExplicitInstantiation('test1'),
+                  new ExplicitInstantiation('test2'),
+                ],
+                [
+                  new ExplicitInstantiation('test5'),
+                  new ExplicitInstantiation('test6'),
+                ])],
+            'Expected bounds to not be prematurely unified');
+      });
+
       test('outputs get the constraints of inputs', function() {
         const typer = new ConnectionTyper(defineHierarchy());
         const block = createBlock('block', 't', ['typeE <: t <: typeA']);
@@ -509,6 +534,41 @@ suite.only('Connection typing', function() {
             assert.throws(
                 () => typer.getTypesOfConnection(block.outputConnection));
           });
+
+      test('constraints for outputs are not prematurely unified', function() {
+        const h = new TypeHierarchy();
+        const t1 = h.addTypeDef('test1');
+        const t2 = h.addTypeDef('test2');
+        const t3 = h.addTypeDef('test3');
+        const t4 = h.addTypeDef('test4');
+        const t5 = h.addTypeDef('test5');
+        const t6 = h.addTypeDef('test6');
+        t1.addParent(t3.createInstance());
+        t1.addParent(t4.createInstance());
+        t2.addParent(t3.createInstance());
+        t2.addParent(t4.createInstance());
+        t3.addParent(t5.createInstance());
+        t3.addParent(t6.createInstance());
+        t4.addParent(t5.createInstance());
+        t4.addParent(t6.createInstance());
+        h.finalize();
+        const typer = new ConnectionTyper(h);
+        const block = createBlock('test', 'test1, test2 <: t <: test5, test6');
+        assertConnectionType(
+            typer,
+            block.outputConnection,
+            [new GenericInstantiation(
+                '',
+                [
+                  new ExplicitInstantiation('test1'),
+                  new ExplicitInstantiation('test2'),
+                ],
+                [
+                  new ExplicitInstantiation('test5'),
+                  new ExplicitInstantiation('test6'),
+                ])],
+            'Expected bounds to not be prematurely unified');
+      });
     });
 
     suite('constraints via connections', function() {
@@ -937,7 +997,8 @@ suite.only('Connection typing', function() {
               typer,
               child.getInput('0').connection,
               [new ExplicitInstantiation(
-                  'typeA', [new ExplicitInstantiation('typeB')])],
+                  'typeA', [new GenericInstantiation(
+                      '', [], [new ExplicitInstantiation('typeB')])])],
               'Expected a parameterized input to be bound to the type attached to the output');
         });
 
@@ -964,7 +1025,8 @@ suite.only('Connection typing', function() {
                   typer,
                   child.getInput('0').connection,
                   [new ExplicitInstantiation(
-                      'typeB', [new ExplicitInstantiation('typeD')])],
+                      'typeB', [new GenericInstantiation(
+                          '', [], [new ExplicitInstantiation('typeD')])])],
                   'Expected parameters to be properly reorganized for subtypes');
             });
 
@@ -984,7 +1046,8 @@ suite.only('Connection typing', function() {
               typer,
               child.getInput('0').connection,
               [new ExplicitInstantiation(
-                  'typeA', [new ExplicitInstantiation('typeB')])],
+                  'typeA', [new GenericInstantiation(
+                      '', [], [new ExplicitInstantiation('typeB')])])],
               'Expected generics to be properly slotted into parameters');
         });
 
@@ -1003,7 +1066,8 @@ suite.only('Connection typing', function() {
           assertConnectionType(
               typer,
               child.getInput('0').connection,
-              [new ExplicitInstantiation('typeB')],
+              [new GenericInstantiation(
+                  '', [], [new ExplicitInstantiation('typeB')])],
               'Expected generics to properly look at parameters');
         });
 
@@ -1035,7 +1099,8 @@ suite.only('Connection typing', function() {
                   typer,
                   child.getInput('0').connection,
                   [new ExplicitInstantiation(
-                      'typeB', [new ExplicitInstantiation('typeD')])],
+                      'typeB', [new GenericInstantiation(
+                          '', [], [new ExplicitInstantiation('typeD')])])],
                   'Expected parameters to be properly reorganized for subtypes, and to travel through blocks');
             });
 
@@ -1054,7 +1119,8 @@ suite.only('Connection typing', function() {
           assertConnectionType(
               typer,
               child.getInput('0').connection,
-              [new ExplicitInstantiation('typeA', [new GenericInstantiation('')])],
+              [new ExplicitInstantiation(
+                  'typeA', [new GenericInstantiation('')])],
               'Expected unbound generics to be unnamed');
         });
 
@@ -1075,7 +1141,8 @@ suite.only('Connection typing', function() {
               child.getInput('0').connection,
               [new ExplicitInstantiation(
                   'typeA', [new ExplicitInstantiation(
-                      'typeA', [new ExplicitInstantiation('typeB')])])],
+                      'typeA', [new GenericInstantiation(
+                          '', [], [new ExplicitInstantiation('typeB')])])])],
               'Expected the generic param to be properly bound, even though it is nested');
         });
       });
@@ -1611,8 +1678,10 @@ suite.only('Connection typing', function() {
             [new ExplicitInstantiation(
                 'typeA',
                 [
-                  new ExplicitInstantiation('typeI'),
-                  new ExplicitInstantiation('typeI'),
+                  new GenericInstantiation(
+                      '', [], [new ExplicitInstantiation('typeI')]),
+                  new GenericInstantiation(
+                      '', [], [new ExplicitInstantiation('typeI')]),
                 ])],
             'Expected the generic to be the nearest common descendant of the types');
       });
@@ -1630,26 +1699,34 @@ suite.only('Connection typing', function() {
                   new ExplicitInstantiation(
                       'typeA',
                       [
-                        new ExplicitInstantiation('typeL'),
-                        new ExplicitInstantiation('typeL'),
+                        new GenericInstantiation(
+                            '', [], [new ExplicitInstantiation('typeL')]),
+                        new GenericInstantiation(
+                            '', [], [new ExplicitInstantiation('typeL')]),
                       ]),
                   new ExplicitInstantiation(
                       'typeA',
                       [
-                        new ExplicitInstantiation('typeL'),
-                        new ExplicitInstantiation('typeM'),
+                        new GenericInstantiation(
+                            '', [], [new ExplicitInstantiation('typeL')]),
+                        new GenericInstantiation(
+                            '', [], [new ExplicitInstantiation('typeM')]),
                       ]),
                   new ExplicitInstantiation(
                       'typeA',
                       [
-                        new ExplicitInstantiation('typeM'),
-                        new ExplicitInstantiation('typeL'),
+                        new GenericInstantiation(
+                            '', [], [new ExplicitInstantiation('typeM')]),
+                        new GenericInstantiation(
+                            '', [], [new ExplicitInstantiation('typeL')]),
                       ]),
                   new ExplicitInstantiation(
                       'typeA',
                       [
-                        new ExplicitInstantiation('typeM'),
-                        new ExplicitInstantiation('typeM'),
+                        new GenericInstantiation(
+                            '', [], [new ExplicitInstantiation('typeM')]),
+                        new GenericInstantiation(
+                            '', [], [new ExplicitInstantiation('typeM')]),
                       ]),
                 ],
                 'Expected the generic to bound to all of the combinations of the ncds of the types');
@@ -1666,9 +1743,11 @@ suite.only('Connection typing', function() {
             [new ExplicitInstantiation(
                 'typeA',
                 [
-                  new ExplicitInstantiation('typeI'),
+                  new GenericInstantiation(
+                      '', [], [new ExplicitInstantiation('typeI')]),
                   new ExplicitInstantiation(
-                      'typeB', [new ExplicitInstantiation('typeI')]),
+                      'typeB', [new GenericInstantiation(
+                          '', [], [new ExplicitInstantiation('typeI')])]),
                 ])],
             'Expected the generic to be the nearest common descendant of the types');
       });
@@ -1688,30 +1767,38 @@ suite.only('Connection typing', function() {
                   new ExplicitInstantiation(
                       'typeA',
                       [
-                        new ExplicitInstantiation('typeL'),
+                        new GenericInstantiation(
+                            '', [], [new ExplicitInstantiation('typeL')]),
                         new ExplicitInstantiation(
-                            'typeB', [new ExplicitInstantiation('typeL')]),
+                            'typeB', [new GenericInstantiation(
+                                '', [], [new ExplicitInstantiation('typeL')])])
                       ]),
                   new ExplicitInstantiation(
                       'typeA',
                       [
-                        new ExplicitInstantiation('typeL'),
+                        new GenericInstantiation(
+                            '', [], [new ExplicitInstantiation('typeL')]),
                         new ExplicitInstantiation(
-                            'typeB', [new ExplicitInstantiation('typeM')]),
+                            'typeB', [new GenericInstantiation(
+                                '', [], [new ExplicitInstantiation('typeM')])]),
                       ]),
                   new ExplicitInstantiation(
                       'typeA',
                       [
-                        new ExplicitInstantiation('typeM'),
+                        new GenericInstantiation(
+                            '', [], [new ExplicitInstantiation('typeM')]),
                         new ExplicitInstantiation(
-                            'typeB', [new ExplicitInstantiation('typeL')]),
+                            'typeB', [new GenericInstantiation(
+                                '', [], [new ExplicitInstantiation('typeL')])]),
                       ]),
                   new ExplicitInstantiation(
                       'typeA',
                       [
-                        new ExplicitInstantiation('typeM'),
+                        new GenericInstantiation(
+                            '', [], [new ExplicitInstantiation('typeM')]),
                         new ExplicitInstantiation(
-                            'typeB', [new ExplicitInstantiation('typeM')]),
+                            'typeB', [new GenericInstantiation(
+                                '', [], [new ExplicitInstantiation('typeM')])]),
                       ]),
                 ],
                 'Expected the generic to bound to all of the combinations of the ncds of the types');

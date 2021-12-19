@@ -29,7 +29,7 @@ export class ConnectionTyper {
         b => [b.outputConnection || b.previousConnection],
         c => this.getTypesOfInput(c),
         (t, r, ps) => this.hierarchy.getTypeDef(t).getParamsForDescendant(r, ps),
-        (t) => [new GenericInstantiation('', [], [t])]);
+        (t) => new GenericInstantiation('', [], [t]));
   }
 
   private getTypesOfOutput(c: Connection): TypeInstantiation[] {
@@ -39,7 +39,7 @@ export class ConnectionTyper {
         c => this.getTypesOfOutput(c),
         (t, r, ps) =>
           this.hierarchy.getTypeDef(t).getParamsForAncestor(r, ps).map(t => [t]),
-        (t) => [t]);
+        (t) => t);
   }
 
   private getTypesOfConnectionInternal(
@@ -48,11 +48,11 @@ export class ConnectionTyper {
       getTargetTypes: (c: Connection) => TypeInstantiation[],
       mapParams:
           (t: string, r: string, ps: TypeInstantiation[]) => TypeInstantiation[][],
-      wrapExplicit: (t: TypeInstantiation) => TypeInstantiation[],
+      wrapExplicit: (t: TypeInstantiation) => TypeInstantiation,
   ): TypeInstantiation[] {
     const t = this.getCheck(c);
     const gens = this.getGenericsOfType(t);
-    if (!gens.length) return wrapExplicit(t);
+    if (!gens.length) return [t];
     //if (!gens.length) return [t];
     //if (!gens.length) return [new GenericInstantiation('', [], [t])];
 
@@ -64,22 +64,46 @@ export class ConnectionTyper {
 
     const ats = acs.map(c => this.getCheck(c));
     const ttss = acs.map(c => getTargetTypes(c.targetConnection));
-    const constraints = gens.map(g => {
-      const cs = this.getConstraintsOnGeneric(s, g);
-      const ncds = this.hierarchy.getNearestCommonDescendants(...cs);
-      // TODO: Make this error better.
-      if (cs.length && !ncds.length) throw Error();
-      return ncds;
+    // console.log('acs', acs);
+    // console.log('ats', ats);
+    // console.log('ttss', ttss);
+    // const constraints = gens.map(g => {
+    //   const cs = this.getConstraintsOnGeneric(s, g);
+    //   const ncds = this.hierarchy.getNearestCommonDescendants(...cs);
+    //   // TODO: Make this error better.
+    //   if (cs.length && !ncds.length) throw Error();
+    //   return cs.flatMap(c => [...c.]);
+    // });
+    const constraints = gens
+        .map(g => this.getConstraintsOnGeneric(s, g))
+        .map(cs => cs.flatMap(c => {
+          if (c instanceof GenericInstantiation) {
+            return [
+              ...c.lowerBounds.map(l => new GenericInstantiation('', [l])),
+              ...c.upperBounds.map(u => new GenericInstantiation('', [], [u])),
+            ];
+          }
+        }));
+    constraints.forEach(cs => {
+      if (cs.length && !this.hierarchy.getNearestCommonDescendants(...cs)) {
+        throw Error();
+      }
     });
+    console.log('constraints');
+    constraints.forEach(x => x.forEach(t => console.log(t)));
     const boundTypes: TypeInstantiation[][] = gens
-        .map((g, i) =>
+        .map((g) =>
           ats.flatMap((at, i) =>
             ttss[i].flatMap(tt =>
               this.getTypesBoundToGeneric(tt, at, g, mapParams))))
         .map(b => b.length ? b : [new GenericInstantiation('')])
         .map((bs, i) =>
           bs.flatMap(b =>
-            this.hierarchy.getNearestCommonDescendants(...constraints[i], b)));
+            this.hierarchy.getNearestCommonDescendants(
+                ...constraints[i],
+                b instanceof ExplicitInstantiation ? wrapExplicit(b) : b)));
+    console.log('bound types');
+    boundTypes.forEach(x => x.forEach(t => console.log(t)));
     return gens.reduce((accts, g, i) =>
       accts.flatMap(a =>
         boundTypes[i].map(b =>

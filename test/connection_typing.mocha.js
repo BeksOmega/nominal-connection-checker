@@ -36,7 +36,8 @@ suite.only('Connection typing', function() {
   }
 
   function assertConnectionType(typer, conn, types, msg) {
-    assert.deepEqual(typer.getTypesOfConnection(conn), types, msg);
+    const val = typer.getTypesOfConnection(conn);
+    assert.deepEqual(val, types, msg);
   }
 
   setup(function() {
@@ -337,7 +338,7 @@ suite.only('Connection typing', function() {
     });
   });
 
-  suite.only('constrained generic types', function() {
+  suite('constrained generic types', function() {
     function defineHierarchy() {
       const h = new TypeHierarchy();
       const a = h.addTypeDef('typeA');
@@ -873,20 +874,27 @@ suite.only('Connection typing', function() {
                 'Expected the lower bound to match the bound, and the upper bound to match the supertype');
           });
 
-      test('an upper bound output combined with a subtype child results in an upper bound of the bound',
+      test('an upper bound output combined with a subtype child results in an upper bound of the subtype',
           function() {
             const typer = new ConnectionTyper(defineHierarchy());
             const parent = createBlock('parent', 't <: typeC', ['t']);
             const child = createBlock('child', 'typeE');
             parent.getInput('0').connection.connect(child.outputConnection);
+
+            // Technically we could also return t <: typeC, since t could be
+            // bound to another different subtype of typeC.
+            // However, this is fine as well. If the parent then gets assigned
+            // to an input of type typeE, we just enforce that any further
+            // children of the parent must be <: typeE.
+
             assertConnectionType(
                 typer,
                 parent.outputConnection,
                 [new GenericInstantiation(
                     '',
                     [],
-                    [new ExplicitInstantiation('typeC')])],
-                'Expected the upper bound to match the bound');
+                    [new ExplicitInstantiation('typeE')])],
+                'Expected the upper bound to match the subtype');
           });
 
       // An upper bound output with a supertype child is not possible.
@@ -896,15 +904,15 @@ suite.only('Connection typing', function() {
       test('a lower bound output combined with a supertype child results in a lower bound of the super type',
           function() {
             const typer = new ConnectionTyper(defineHierarchy());
-            const parent = createBlock('parent', 't >: typeC', ['t']);
-            const child = createBlock('child', 'typeA');
+            const parent = createBlock('parent', 't >: typeE', ['t']);
+            const child = createBlock('child', 'typeD');
             parent.getInput('0').connection.connect(child.outputConnection);
             assertConnectionType(
                 typer,
                 parent.outputConnection,
                 [new GenericInstantiation(
                     '',
-                    [new ExplicitInstantiation('typeA')])],
+                    [new ExplicitInstantiation('typeD')])],
                 'Expected the lower bound to match the supertype');
           });
     });

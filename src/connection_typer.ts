@@ -75,24 +75,24 @@ export class ConnectionTyper {
     //   return cs.flatMap(c => [...c.]);
     // });
     const constraints = gens
-        .map(g => this.getConstraintsOnGeneric(s, g))
-        .map(cs => cs.flatMap(c => {
-          if (c instanceof GenericInstantiation) {
-            return [
-              ...c.lowerBounds.map(l => new GenericInstantiation('', [l])),
-              ...c.upperBounds.map(u => new GenericInstantiation('', [], [u])),
-            ];
-          }
-        }));
+        .map(g => this.getConstraintsOnGeneric(s, g));
+        // .map(cs => cs.flatMap(c => {
+        //   if (c instanceof GenericInstantiation) {
+        //     return [
+        //       ...c.lowerBounds.map(l => new GenericInstantiation('', [l])),
+        //       ...c.upperBounds.map(u => new GenericInstantiation('', [], [u])),
+        //     ];
+        //   }
+        // }));
     constraints.forEach(cs => {
-      if (cs.length && !this.hierarchy.getNearestCommonDescendants(...cs)) {
+      if (cs.length && !this.hierarchy.getNearestCommonDescendants(...cs).length) {
         throw Error();
       }
     });
-    console.log('constraints');
-    constraints.forEach(x => x.forEach(t => console.log(t)));
+    // console.log('constraints');
+    // constraints.forEach(x => x.forEach(t => console.log(t)));
     const boundTypes: TypeInstantiation[][] = gens
-        .map((g) =>
+        .map((g, j) =>
           ats.flatMap((at, i) =>
             ttss[i].flatMap(tt =>
               this.getTypesBoundToGeneric(tt, at, g, mapParams))))
@@ -102,8 +102,8 @@ export class ConnectionTyper {
             this.hierarchy.getNearestCommonDescendants(
                 ...constraints[i],
                 b instanceof ExplicitInstantiation ? wrapExplicit(b) : b)));
-    console.log('bound types');
-    boundTypes.forEach(x => x.forEach(t => console.log(t)));
+    // console.log('bound types');
+    // boundTypes.forEach(x => x.forEach(t => console.log(t)));
     return gens.reduce((accts, g, i) =>
       accts.flatMap(a =>
         boundTypes[i].map(b =>

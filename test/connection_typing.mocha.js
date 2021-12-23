@@ -344,10 +344,192 @@ suite.only('Connection typing', function() {
     }
 
     suite('combining constraints within a block', function() {
+      function defineTyper() {
+        const h = new TypeHierarchy();
+        const a = h.addTypeDef('typeA');
+        const b = h.addTypeDef('typeB');
+        const c = h.addTypeDef('typeC');
+        const d = h.addTypeDef('typeD');
+        b.addParent(a.createInstance());
+        c.addParent(a.createInstance());
+        d.addParent(b.createInstance());
+        d.addParent(c.createInstance());
+        h.finalize();
+        return new ConnectionTyper(h);
+      }
+
+      suite('outputs', function() {
+        test('outputs get the constraints of inputs', function() {
+          const typer = defineTyper();
+          const block = createBlock('block', 't', ['t <: typeB']);
+          assertConnectionType(
+              typer,
+              block.outputConnection,
+              [new GenericInstantiation(
+                  '', [], [new ExplicitInstantiation('typeB')])],
+              'Expected outputs to get the constraints of inputs');
+        });
+
+        test('outputs combine the constraints of inputs with their own constraints',
+            function() {
+              const typer = defineTyper();
+              const block = createBlock('block', 't <: typeC', ['t <: typeB']);
+              assertConnectionType(
+                  typer,
+                  block.outputConnection,
+                  [new GenericInstantiation(
+                      '', [], [new ExplicitInstantiation('typeD')])],
+                  'Expected outputs to combine their constraints with the constraints of inputs');
+            });
+      });
+
+      suite('inputs', function() {
+        test('inputs get the constraints of outputs', function() {
+          const typer = defineTyper();
+          const block = createBlock('block', 't <: typeB', ['t']);
+          assertConnectionType(
+              typer,
+              block.getInput('0').connection,
+              [new GenericInstantiation(
+                  '', [], [new ExplicitInstantiation('typeB')])],
+              'Expected inputs to get the constraints of outputs');
+        });
+
+        test('inputs combine the constraints of outputs with their own constraints',
+            function() {
+              const typer = defineTyper();
+              const block = createBlock('block', 't <: typeB', ['t <: typeC']);
+              assertConnectionType(
+                  typer,
+                  block.getInput('0').connection,
+                  [new GenericInstantiation(
+                      '', [], [new ExplicitInstantiation('typeD')])],
+                  'Expected inputs to combine their constraints with the constraints of outputs');
+            });
+
+        test('inputs get the constraints of other inputs', function() {
+          const typer = defineTyper();
+          const block = createBlock('block', 't', ['t', 't <: typeB']);
+          assertConnectionType(
+              typer,
+              block.getInput('0').connection,
+              [new GenericInstantiation(
+                  '', [], [new ExplicitInstantiation('typeB')])],
+              'Expected inputs to get the constraints of other inputs');
+        });
+
+        test('inputs combine the constraints of other inputs with their own constraints',
+            function() {
+              const typer = defineTyper();
+              const block = createBlock(
+                  'block', 't', ['t <: typeC', 't <: typeB']);
+              assertConnectionType(
+                  typer,
+                  block.getInput('0').connection,
+                  [new GenericInstantiation(
+                      '', [], [new ExplicitInstantiation('typeD')])],
+                  'Expected inputs to combine their constraints with the constraints of other inputs');
+            });
+      });
     });
 
     suite('getting constraints from other blocks', function() {
+      suite('outputs', function() {
+        test('outputs get the constraints of children', function() {
+          const typer = defineTyper();
+          const parent = createBlock('parent', 't', ['t']);
+          const child = createBlock('child', 'g <: typeD', ['g']);
+          parent.getInput('0').connection.connect(child.outputConnection);
+          assertConnectionType(
+              typer,
+              parent.outputConnection,
+              [new GenericInstantiation(
+                  '', [], [new ExplicitInstantiation('typeD')])],
+              'Expected outputs to get the constraints of children');
+        });
 
+        test('outputs get constraints through children', function() {
+          const typer = defineTyper();
+          const parent = createBlock('parent', 't', ['t']);
+          const middle = createBlock('parent', 'g', ['g']);
+          const child = createBlock('child', 'h <: typeD', ['g']);
+          parent.getInput('0').connection.connect(middle.outputConnection);
+          middle.getInput('0').connection.connect(child.outputConnection);
+          assertConnectionType(
+              typer,
+              parent.outputConnection,
+              [new GenericInstantiation(
+                  '', [], [new ExplicitInstantiation('typeD')])],
+              'Expected outputs to get constraints through children');
+        });
+
+        test('ouputs do not get the constraints of parents', function() {
+          const typer = defineTyper();
+          const parent = createBlock('parent', 't', ['t']);
+          const child = createBlock('child', 'g', ['g']);
+          parent.getInput('0').connection.connect(child.outputConnection);
+          assertConnectionType(
+              typer,
+              child.outputConnection,
+              [new GenericInstantiation('')],
+              'Expected outputs to not get the constraints of parents children');
+        });
+      });
+
+      suite('inputs', function() {
+        test('inputs get the constraints of parents', function() {
+          const typer = defineTyper();
+          const parent = createBlock('parent', 't <: typeC', ['t']);
+          const child = createBlock('child', 'g', ['g']);
+          parent.getInput('0').connection.connect(child.outputConnection);
+          assertConnectionType(
+              typer,
+              child.getInput('0').connection,
+              [new GenericInstantiation(
+                  '', [], [new ExplicitInstantiation('typeC')])],
+              'Expected inputs to get the constraints of parents');
+        });
+
+        test('inputs get constraints through parents', function() {
+          const typer = defineTyper();
+          const parent = createBlock('parent', 't <: typeC', ['t']);
+          const middle = createBlock('middle', 't', ['t']);
+          const child = createBlock('child', 'g', ['g']);
+          parent.getInput('0').connection.connect(middle.outputConnection);
+          middle.getInput('0').connection.connect(child.outputConnection);
+          assertConnectionType(
+              typer,
+              child.getInput('0').connection,
+              [new GenericInstantiation(
+                  '', [], [new ExplicitInstantiation('typeC')])],
+              'Expected inputs to get constraints through parents');
+        });
+
+        test('inputs do not get the constraints of children', function() {
+          const typer = defineTyper();
+          const parent = createBlock('parent', 't', ['t']);
+          const child = createBlock('child', 'g <: typeC', ['g']);
+          parent.getInput('0').connection.connect(child.outputConnection);
+          assertConnectionType(
+              typer,
+              parent.getInput('0').connection,
+              [new GenericInstantiation('')],
+              'Expected inputs to not get the constraints of children');
+        });
+
+        test('inputs do not get the constraints of sibling input children',
+            function() {
+              const typer = defineTyper();
+              const parent = createBlock('parent', 't', ['t', 't']);
+              const child = createBlock('child', 'g <: typeC', ['g']);
+              parent.getInput('1').connection.connect(child.outputConnection);
+              assertConnectionType(
+                  typer,
+                  parent.getInput('0').connection,
+                  [new GenericInstantiation('')],
+                  'Expected inputs to not get the constraints of sibling input children');
+            });
+      });
     });
 
     suite('unification of checks with explicit children', function() {
@@ -363,7 +545,7 @@ suite.only('Connection typing', function() {
               assertConnectionType(
                   typer,
                   parent.outputConnection,
-                  [new ExplicitInstantiation('Dog')],
+                  [new ExplicitInstantiation('typeD')],
                   'Expected typing to result in the subtype');
             });
       });
@@ -377,7 +559,7 @@ suite.only('Connection typing', function() {
               parent.getInput('0').connection.connect(child.outputConnection);
               assertConnectionType(
                   typer,
-                  parent.outputConnection,
+                  child.getInput('0').connection,
                   [new GenericInstantiation(
                       '', [], [new ExplicitInstantiation('typeC')])],
                   'Expected typing to result an upper bound with the subtype');
@@ -391,7 +573,7 @@ suite.only('Connection typing', function() {
               parent.getInput('0').connection.connect(child.outputConnection);
               assertConnectionType(
                   typer,
-                  parent.outputConnection,
+                  child.getInput('0').connection,
                   [new GenericInstantiation(
                       '', [], [new ExplicitInstantiation('typeD')])],
                   'Expected typing to result an upper bound with the subtype');
@@ -455,7 +637,7 @@ suite.only('Connection typing', function() {
               parent.getInput('0').connection.connect(child.outputConnection);
               assertConnectionType(
                   typer,
-                  parent.outputConnection,
+                  child.getInput('0').connection,
                   [new GenericInstantiation(
                       '', [], [new ExplicitInstantiation('typeC')])],
                   'Expected typing to result an upper bound with the subtype');
@@ -469,7 +651,7 @@ suite.only('Connection typing', function() {
               parent.getInput('0').connection.connect(child.outputConnection);
               assertConnectionType(
                   typer,
-                  parent.outputConnection,
+                  child.getInput('0').connection,
                   [new GenericInstantiation(
                       '', [], [new ExplicitInstantiation('typeD')])],
                   'Expected typing to result an upper bound with the subtype');

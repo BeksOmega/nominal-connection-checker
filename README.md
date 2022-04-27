@@ -1,3 +1,16 @@
+# NOTICE!
+
+This project is sadly **no longer being developed** (as of 2022/02). While I
+(BeksOmega) love this project, I am only an amateur type theorist, and solving
+the problem of just-in-time type checking based on local information is
+currently beyond me.
+
+I may pick this project up again in the future.
+
+That being said, this is an open source, and anyone is free to use whatever
+parts of this project they like. If anyone else would like to pick the project
+up, that would delight me as well.
+
 # blockly-nominal-connection-checker [![Built on Blockly](https://tinyurl.com/built-on-blockly)](https://github.com/google/blockly)
 
 A [Blockly](https://www.npmjs.com/package/blockly) plugin that allows you to
